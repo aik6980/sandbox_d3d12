@@ -1,0 +1,75 @@
+#pragma once
+
+#include "engine_graphic.h"
+
+struct TextureData;
+
+namespace D3D12 {
+
+class Resource_manager {
+  public:
+    Resource_manager(Device& device) : m_device(device) {}
+
+    ~Resource_manager() {}
+
+    std::shared_ptr<Buffer> create_static_buffer(const string& name, uint32_t byte_size, const void* init_data);
+    std::shared_ptr<Buffer> create_texture(
+        const string& name, const CD3DX12_RESOURCE_DESC& info, const CD3DX12_CLEAR_VALUE* clear_val, const TextureData* init_data);
+    void create_srv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& info);
+    void create_dsv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& info);
+
+    std::weak_ptr<MESH_BUFFER> request_mesh_buffer(const string& str_id);
+    bool                       register_mesh_buffer(const string& str_id, const std::shared_ptr<MESH_BUFFER> mesh_buffer);
+
+    std::weak_ptr<Buffer>  request_buffer(const string& str_id) { return request_resource(m_static_buffers, str_id); }
+    std::weak_ptr<Sampler> request_sampler(const string& str_id) { return request_resource(m_samplers, str_id); }
+
+    bool register_buffer(const string& str_id, const std::shared_ptr<Buffer> buffer) { return register_resource(m_static_buffers, str_id, buffer); }
+    bool deregister_buffer(const string& str_id) { return deregister_resource(m_static_buffers, str_id); }
+
+    DXGI_FORMAT format_to_view_mapping(DXGI_FORMAT fmt, bool using_as_srv);
+
+    std::shared_ptr<Sampler> create_sampler(const string& name, const D3d12x_sampler_desc& desc);
+    bool register_sampler(const string& str_id, const std::shared_ptr<Sampler> sampler) { return register_resource(m_samplers, str_id, sampler); }
+
+  private:
+    template <class T>
+    std::weak_ptr<T> request_resource(unordered_map<string, std::shared_ptr<T>>& map, const string& str_id)
+    {
+        auto&& itr = map.find(str_id);
+        if (itr != map.end()) {
+            return itr->second;
+        }
+        return std::weak_ptr<T>();
+    }
+
+    template <class T>
+    bool register_resource(unordered_map<string, std::shared_ptr<T>>& map, const string& str_id, const std::shared_ptr<T> buffer)
+    {
+        auto&& handle = request_mesh_buffer(str_id);
+        if (handle.expired()) {
+            map.insert(make_pair(str_id, buffer));
+            return true;
+        }
+        return false;
+    }
+
+    template <class T>
+    bool deregister_resource(unordered_map<string, std::shared_ptr<T>>& map, const string& str_id)
+    {
+        auto&& itr = map.find(str_id);
+        if (itr != map.end()) {
+            map.erase(itr);
+            return true;
+        }
+        return false;
+    }
+
+    // parent
+    Device& m_device;
+
+    unordered_map<string, std::shared_ptr<MESH_BUFFER>> m_mesh_buffer_list;
+    unordered_map<string, std::shared_ptr<Buffer>>      m_static_buffers;
+    unordered_map<string, std::shared_ptr<Sampler>>     m_samplers;
+};
+} // namespace D3D12

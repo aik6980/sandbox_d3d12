@@ -1,0 +1,15 @@
+# Format Style Options - Created with Clang Power Tools
+---
+BasedOnStyle: Microsoft
+IndentWidth: 4
+ColumnLimit: 160
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+PointerAlignment: Left
+BreakBeforeBraces: Stroustrup
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortFunctionsOnASingleLine: Inline
+AlignAfterOpenBracket : DontAlign
+ConstructorInitializerIndentWidth : 4
+ContinuationIndentWidth : 4
+...
