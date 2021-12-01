@@ -3,8 +3,8 @@
 #include "app.h"
 #include "engine_graphic/engine_graphic.h"
 
-const int WINDOW_WIDTH  = 1920;
-const int WINDOW_HEIGHT = 1080;
+const int WINDOW_WIDTH  = 1920/2;
+const int WINDOW_HEIGHT = 1080/2;
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
