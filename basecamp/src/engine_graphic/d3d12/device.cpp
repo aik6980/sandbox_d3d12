@@ -298,9 +298,9 @@ shared_ptr<Buffer> Device::create_cbuffer(uint32_t size, const string& name)
     return buffer;
 }
 
-shared_ptr<DYNAMIC_BUFFER> Device::create_dynamic_cbuffer(uint32_t size, const string& name)
+shared_ptr<Dynamic_buffer> Device::create_dynamic_cbuffer(uint32_t size, const string& name)
 {
-    auto&& dynamic_buffer = std::make_shared<DYNAMIC_BUFFER>();
+    auto&& dynamic_buffer = std::make_shared<Dynamic_buffer>();
 
     for (auto&& frame_resource : m_frame_resource_list) {
         auto&& buffer = create_cbuffer(size, name);
@@ -319,12 +319,12 @@ shared_ptr<DYNAMIC_BUFFER> Device::create_dynamic_cbuffer(uint32_t size, const s
     return dynamic_buffer;
 }
 
-void* Device::get_mapped_data(const DYNAMIC_BUFFER& buffer)
+void* Device::get_mapped_data(const Dynamic_buffer& buffer)
 {
     return buffer.m_data[m_curr_frame_resource_index];
 }
 
-std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_gpu_descriptor_handle(const DYNAMIC_BUFFER& buffer)
+std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_gpu_descriptor_handle(const Dynamic_buffer& buffer)
 {
     auto&& buffer_handle = buffer.m_buffer[m_curr_frame_resource_index];
     return get_gpu_descriptor_handle(buffer_handle);

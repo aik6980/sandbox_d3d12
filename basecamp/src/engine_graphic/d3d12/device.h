@@ -51,11 +51,11 @@ class Device {
     void flush_command_queue();
 
     shared_ptr<Buffer>         create_cbuffer(uint32_t size, const string& name);
-    shared_ptr<DYNAMIC_BUFFER> create_dynamic_cbuffer(uint32_t size, const string& name);
+    shared_ptr<Dynamic_buffer> create_dynamic_cbuffer(uint32_t size, const string& name);
 
-    void* get_mapped_data(const DYNAMIC_BUFFER& buffer);
+    void* get_mapped_data(const Dynamic_buffer& buffer);
 
-    std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(const DYNAMIC_BUFFER& buffer);
+    std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(const Dynamic_buffer& buffer);
     std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
     std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(weak_ptr<Sampler> handle);
     std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> get_dsv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);

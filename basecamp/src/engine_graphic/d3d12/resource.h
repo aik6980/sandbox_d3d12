@@ -27,7 +27,7 @@ struct Buffer {
     ~Buffer() { destroy(); }
 };
 
-struct DYNAMIC_BUFFER {
+struct Dynamic_buffer {
     vector<weak_ptr<Buffer>> m_buffer;
     vector<void*>            m_data;
 };

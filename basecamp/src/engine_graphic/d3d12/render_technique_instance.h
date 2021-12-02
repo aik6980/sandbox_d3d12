@@ -9,7 +9,7 @@ struct CBUFFER_INFO;
 struct CBUFFER_VARIABLE_INFO;
 struct Buffer;
 struct Sampler;
-struct DYNAMIC_BUFFER;
+struct Dynamic_buffer;
 struct INPUT_LAYOUT_DESC;
 
 class Technique {
@@ -64,7 +64,7 @@ class TechniqueInstance {
 
     weak_ptr<Technique> m_technique_handle;
 
-    unordered_map<string, shared_ptr<DYNAMIC_BUFFER>> m_cbuffer;
+    unordered_map<string, shared_ptr<Dynamic_buffer>> m_cbuffer;
     unordered_map<string, weak_ptr<Buffer>>           m_srv;
     unordered_map<string, weak_ptr<Sampler>>          m_samplers;
 };
