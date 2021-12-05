@@ -94,6 +94,18 @@ void MeshRenderer::load_resource()
         m_shadow_map_technique_instance->init(technique_name);
     }
 
+    {
+        string               technique_name = "mesh_instancing";
+        D3D12::TechniqueInit t;
+        t.m_vs = "mesh_instancing.vs";
+        t.m_ps = "mesh.ps";
+
+        m_engine.shader_mgr().register_technique(technique_name, t);
+
+        m_mesh_instancing_technique_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
+        m_mesh_instancing_technique_instance->init(technique_name);
+    }
+
     // build a mesh
     build_quad_mesh();
     build_cube_mesh();
@@ -103,6 +115,10 @@ void MeshRenderer::load_resource()
     m_grid_mesh       = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), "grid_mesh", m_engine);
 
     build_texture();
+
+    // create an instance buffer
+    m_instance_data.resize(m_num_instances);
+    m_engine.resource_mgr().create_instance_buffer(m_instance_data_buffer_name, sizeof(Instance_data) * m_num_instances);
 
     m_render_pass_main       = make_unique<Render_pass_main>();
     m_render_pass_shadow_map = make_unique<Render_pass_shadow_map>();
@@ -220,6 +236,35 @@ void MeshRenderer::draw_meshes()
 
         auto&& index_count = mesh_buffer->m_mesh_location.index_count;
         command_list()->DrawIndexedInstanced(index_count, 1, 0, 0, 0);
+    }
+
+    auto&& mesh_instancing_tech_handle = m_mesh_instancing_technique_instance->get_technique();
+    auto&& mesh_instancing_pso         = m_engine.shader_mgr().get_pso(mesh_instancing_tech_handle, rt_fmt, ds_fmt);
+    if (mesh_instancing_pso && mesh_buffer) {
+
+        m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "View", &m_camera.view(), sizeof(m_camera.view()));
+        m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "Projection", &m_camera.projection(), sizeof(m_camera.projection()));
+
+        m_mesh_instancing_technique_instance->set_cbv("Light_cb", "Receive_shadow", 0);
+
+        auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
+        m_mesh_instancing_technique_instance->set_srv("Diffuse_srv", tex);
+
+        // update instance data
+        m_engine.resource_mgr().update_dynamic_buffer(m_instance_data_buffer_name, m_instance_data.data(), sizeof(Instance_data) * m_instance_data.size());
+
+        command_list()->SetPipelineState(mesh_instancing_pso.Get());
+        m_mesh_instancing_technique_instance->set_root_signature_parameters(*command_list());
+
+        std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vb_views = {
+            mesh_buffer->vertex_buffer_view(), m_engine.resource_mgr().request_instance_buffer_view(m_instance_data_buffer_name, sizeof(Instance_data))};
+
+        command_list()->IASetVertexBuffers(0, vb_views.size(), vb_views.data());
+        command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
+        command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        auto&& index_count = mesh_buffer->m_mesh_location.index_count;
+        command_list()->DrawIndexedInstanced(index_count, m_instance_data.size(), 0, 0, 0);
     }
 
     auto&& grid_mesh_handle      = m_engine.resource_mgr().request_mesh_buffer(m_grid_mesh);
@@ -362,5 +407,12 @@ void MeshRenderer::update_camera()
 
         m_light.m_view       = view;
         m_light.m_projection = proj;
+    }
+
+    // instances
+    for (int i = 0; i < m_num_instances; ++i) {
+        float    phase = i * XM_2PI / m_num_instances;
+        XMVECTOR pos   = XMVectorSet(4.0f * sin(phase), 4.0f + sin(phase + t * 1.5f), 4.0f * cos(phase), 0.0f);
+        XMStoreFloat4(&m_instance_data[i].pos_world, pos);
     }
 }

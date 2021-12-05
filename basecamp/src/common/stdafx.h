@@ -1,22 +1,22 @@
 #pragma once
 
-
 #include <memory>
-#include <string>
 #include <sstream>
-#include <vector>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
+#include <algorithm>
 #include <assert.h>
-#include <windows.h>
 #include <atltypes.h>
+#include <windows.h>
 
-// d3d12 
+// d3d12
 #include <wrl.h>
 
 // directx math
-#include <DirectXMath.h>
 #include <DirectXColors.h>
+#include <DirectXMath.h>
 #include <DirectXPackedVector.h>
 
 using namespace std;

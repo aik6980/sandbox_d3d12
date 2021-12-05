@@ -210,4 +210,91 @@ std::shared_ptr<Sampler> Resource_manager::create_sampler(const string& name, co
     return sampler;
 }
 
+std::shared_ptr<Dynamic_buffer> Resource_manager::create_instance_buffer(const string& str_id, uint32_t byte_size)
+{
+    auto&& create_buffer_func = [&](const string& str_id, uint32_t byte_size) -> std::shared_ptr<Buffer> {
+        D3D12MA::ALLOCATION_DESC allocation_desc = {};
+        allocation_desc.HeapType                 = D3D12_HEAP_TYPE_UPLOAD;
+
+        D3D12_RESOURCE_DESC desc;
+        desc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
+        desc.Alignment          = 0;
+        desc.Width              = byte_size;
+        desc.Height             = 1;
+        desc.DepthOrArraySize   = 1;
+        desc.MipLevels          = 1;
+        desc.Format             = DXGI_FORMAT_UNKNOWN;
+        desc.SampleDesc.Count   = 1;
+        desc.SampleDesc.Quality = 0;
+        desc.Layout             = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+        desc.Flags              = D3D12_RESOURCE_FLAG_NONE;
+
+        auto&& buffer = std::make_shared<Buffer>();
+        DBG::throw_hr(m_device.m_allocator->CreateResource(
+            &allocation_desc, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer)));
+
+        auto&& w_name = wstring(str_id.begin(), str_id.end());
+        buffer->m_buffer->SetName(w_name.c_str());
+
+        buffer->m_d3d_desc = desc;
+
+        return buffer;
+    };
+
+    auto&& dynamic_buffer = std::make_shared<Dynamic_buffer>();
+
+    for (auto&& frame_resource : m_device.m_frame_resource_list) {
+        auto&& buffer = create_buffer_func(str_id, byte_size);
+        // buffer owned by frame resource
+        frame_resource->m_dynamic_buffer.emplace_back(buffer);
+
+        // this is dynamic buffer, so expecting CPU WRITE. Let persistent mapping
+        static const CD3DX12_RANGE empty_range(0u, 0u);
+        void*                      data = nullptr;
+        buffer->m_buffer->Map(0, &empty_range, &data);
+
+        dynamic_buffer->m_data.emplace_back(data);
+        dynamic_buffer->m_buffer.emplace_back(buffer);
+    }
+
+    // register resource
+    register_resource(m_dynamic_buffers, str_id, dynamic_buffer);
+
+    return dynamic_buffer;
+}
+
+D3D12_VERTEX_BUFFER_VIEW Resource_manager::request_instance_buffer_view(const string& str_id, uint32_t instance_data_byte_size)
+{
+    auto&& handle = request_resource(m_dynamic_buffers, str_id);
+    if (auto&& dyn_buffer = handle.lock()) {
+        auto&& buffer_handle = dyn_buffer->m_buffer[m_device.m_curr_frame_resource_index];
+
+        if (auto&& buffer = buffer_handle.lock()) {
+            D3D12_VERTEX_BUFFER_VIEW view = {};
+            view.BufferLocation           = buffer->m_buffer->GetGPUVirtualAddress();
+            view.SizeInBytes              = buffer->m_d3d_desc.Width;
+            view.StrideInBytes            = instance_data_byte_size;
+
+            return view;
+        }
+    }
+
+    return {};
+}
+
+bool Resource_manager::update_dynamic_buffer(const string& str_id, const void* data, uint32_t byte_size)
+{
+    auto&& handle = request_resource(m_dynamic_buffers, str_id);
+    if (auto&& buffer = handle.lock()) {
+        auto&& dest = buffer->m_data[m_device.m_curr_frame_resource_index];
+
+        // update
+        memcpy(dest, data, byte_size);
+
+        return true;
+    }
+
+    return false;
+}
+
 } // namespace D3D12

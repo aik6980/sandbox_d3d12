@@ -19,7 +19,8 @@ class Resource_manager {
     void create_dsv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& info);
 
     std::weak_ptr<MESH_BUFFER> request_mesh_buffer(const string& str_id);
-    bool                       register_mesh_buffer(const string& str_id, const std::shared_ptr<MESH_BUFFER> mesh_buffer);
+
+    bool register_mesh_buffer(const string& str_id, const std::shared_ptr<MESH_BUFFER> mesh_buffer);
 
     std::weak_ptr<Buffer>  request_buffer(const string& str_id) { return request_resource(m_static_buffers, str_id); }
     std::weak_ptr<Sampler> request_sampler(const string& str_id) { return request_resource(m_samplers, str_id); }
@@ -31,6 +32,10 @@ class Resource_manager {
 
     std::shared_ptr<Sampler> create_sampler(const string& name, const D3d12x_sampler_desc& desc);
     bool register_sampler(const string& str_id, const std::shared_ptr<Sampler> sampler) { return register_resource(m_samplers, str_id, sampler); }
+
+    std::shared_ptr<Dynamic_buffer> create_instance_buffer(const string& str_id, uint32_t byte_size);
+    D3D12_VERTEX_BUFFER_VIEW        request_instance_buffer_view(const string& str_id, uint32_t instance_data_byte_size);
+    bool                            update_dynamic_buffer(const string& str_id, const void* data, uint32_t byte_size);
 
   private:
     template <class T>
@@ -68,8 +73,9 @@ class Resource_manager {
     // parent
     Device& m_device;
 
-    unordered_map<string, std::shared_ptr<MESH_BUFFER>> m_mesh_buffer_list;
-    unordered_map<string, std::shared_ptr<Buffer>>      m_static_buffers;
-    unordered_map<string, std::shared_ptr<Sampler>>     m_samplers;
+    unordered_map<string, std::shared_ptr<MESH_BUFFER>>    m_mesh_buffer_list;
+    unordered_map<string, std::shared_ptr<Buffer>>         m_static_buffers;
+    unordered_map<string, std::shared_ptr<Dynamic_buffer>> m_dynamic_buffers;
+    unordered_map<string, std::shared_ptr<Sampler>>        m_samplers;
 };
 } // namespace D3D12

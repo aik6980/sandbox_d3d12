@@ -15,6 +15,7 @@
 
 #include <codecvt>
 
+#include "common/common.h"
 #include "engine_graphic/engine_graphic.h"
 
 // directx math

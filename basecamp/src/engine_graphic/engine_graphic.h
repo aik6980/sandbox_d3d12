@@ -48,6 +48,7 @@ class Resource_manager;
 class Shader_manager;
 class MESH_BUFFER;
 struct Buffer;
+struct Dynamic_buffer;
 struct Sampler;
 
 class Technique;
