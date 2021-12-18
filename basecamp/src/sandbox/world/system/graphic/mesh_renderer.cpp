@@ -378,7 +378,7 @@ void MeshRenderer::update_camera()
     auto&& t = App::get_duration_app();
 
     // XMVECTOR cam_pos    = XMVectorSet(0.0f, 6.0f, -8.0f, 0.0f);
-    XMVECTOR cam_pos    = XMVectorSet(8.0f * sin(t * 0.5f), 6.0f, 8.0f * cos(t * 0.5f), 0.0f);
+    XMVECTOR cam_pos    = XMVectorSet(12.0f * sin(t * 0.5f), 8.0f, 12.0f * cos(t * 0.5f), 0.0f);
     XMVECTOR cam_target = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
     XMVECTOR cam_up     = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 

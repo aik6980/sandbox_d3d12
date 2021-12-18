@@ -11,10 +11,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${CMAKE_SOURCE
 ADD_DEFINITIONS(-DUNICODE -DNOMINMAX)
 ADD_DEFINITIONS(-D_UNICODE)
 
-if (MSVC)
-	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "/Yustdafx.h")
-	set_source_files_properties(stdafx.cpp PROPERTIES COMPILE_FLAGS "/Ycstdafx.h")
-	
+if (MSVC)	
 	set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif(MSVC)
 

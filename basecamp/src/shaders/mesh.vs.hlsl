@@ -11,6 +11,7 @@ cbuffer Object_cb
 {
 	float4x4 World;
 };
+//ConstantBuffer<Object_struct> Object_cb;
 
 VS_OUTPUT main(VS_INPUT input)
 {

@@ -106,6 +106,33 @@ void ShaderReflection::get_reflection(ComPtr<ID3DBlob> buffer)
     generate_output_parameter_desc();
 }
 
+void ShaderReflection::get_lib_reflection(ComPtr<ID3DBlob> buffer)
+{
+    // using DXC as our shader compiler
+    ComPtr<IDxcContainerReflection> dxc_reflection;
+    DxcCreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(&dxc_reflection));
+    DBG::throw_hr(dxc_reflection->Load((IDxcBlob*)buffer.Get()));
+
+    uint32_t part_index;
+    auto&&   dxil_fourcc = make_four_cc('D', 'X', 'I', 'L');
+    DBG::throw_hr(dxc_reflection->FindFirstPartKind(dxil_fourcc, &part_index));
+
+    ComPtr<ID3D12LibraryReflection> reflection;
+    DBG::throw_hr(dxc_reflection->GetPartReflection(part_index, IID_PPV_ARGS(&reflection)));
+
+    m_lib_reflection = reflection;
+    m_lib_reflection->GetDesc(&m_lib_desc);
+
+    for (int i = 0; i < m_lib_desc.FunctionCount; ++i) {
+        auto&& func_reflection = m_lib_reflection->GetFunctionByIndex(i);
+
+        D3D12_FUNCTION_DESC func_desc;
+        func_reflection->GetDesc(&func_desc);
+
+        // func_desc.Name =
+    }
+}
+
 void ShaderReflection::generate_input_layout_desc()
 {
     auto&& num_input_parameters = m_shader_desc.InputParameters;
