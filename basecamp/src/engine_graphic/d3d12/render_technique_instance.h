@@ -18,10 +18,13 @@ class Technique {
 
     const CBUFFER_VARIABLE_INFO* get_cbuffer_var_info(const string& cbuffer_name, const string& var_name);
     const INPUT_LAYOUT_DESC*     get_input_layout_desc();
+
     Graphics_pipeline_state_desc get_graphic_pipeline_state_desc();
+    Compute_pipeline_state_desc  get_compute_pipeline_state_desc();
 
     string m_vs;
     string m_ps;
+    string m_cs;
 
     ComPtr<ID3D12RootSignature> m_root_signature;
 
@@ -52,6 +55,7 @@ class TechniqueInstance {
 
     void set_cbv(const string& cbuffer_name, const string& var_name, void* data, uint32_t data_size);
     void set_srv(const string& var_name, weak_ptr<Buffer> buffer);
+    void set_uav(const string& var_name, weak_ptr<Buffer> buffer);
     void set_sampler(const string& var_name, weak_ptr<Sampler> resource);
 
     void set_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
@@ -66,6 +70,7 @@ class TechniqueInstance {
 
     unordered_map<string, shared_ptr<Dynamic_buffer>> m_cbuffer;
     unordered_map<string, weak_ptr<Buffer>>           m_srv;
+    unordered_map<string, weak_ptr<Buffer>>           m_uav;
     unordered_map<string, weak_ptr<Sampler>>          m_samplers;
 };
 } // namespace D3D12

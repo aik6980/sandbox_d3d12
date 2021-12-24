@@ -20,6 +20,7 @@ class Shader_manager {
     ComPtr<ID3D12PipelineState> get_pso(weak_ptr<Technique> tech_handle, DXGI_FORMAT rt, DXGI_FORMAT ds);
 
     void register_technique(const string& name, const TechniqueInit& init_data);
+    void register_lib_ray_technique(const string& name, const string& lib_ray);
 
   private:
     void build_root_signature(Technique& t);

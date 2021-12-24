@@ -44,7 +44,15 @@ Shader* Shader_manager::get_shader(const string& name)
 
     shader_obj->m_buffer = load_from_objfile(file_path);
     auto&& reflection    = std::make_unique<ShaderReflection>();
-    reflection->get_reflection(shader_obj->m_buffer);
+
+    if (Case_insensitive_find_substr(name, string(".ray")) != -1) {
+        auto&& lib_ray_reflection = std::make_unique<Shader_lib_reflection>();
+        lib_ray_reflection->get_reflection(shader_obj->m_buffer);
+    }
+    else {
+        reflection->get_reflection(shader_obj->m_buffer);
+    }
+
     shader_obj->m_reflection = std::move(reflection);
 
     m_shader_list[name] = std::move(shader_obj);
@@ -74,13 +82,23 @@ ComPtr<ID3D12PipelineState> Shader_manager::get_pso(weak_ptr<Technique> tech_han
             return result->second;
         }
 
-        auto&& pso_desc           = tech->get_graphic_pipeline_state_desc();
-        pso_desc.NumRenderTargets = (rt != DXGI_FORMAT_UNKNOWN) ? 1 : 0;
-        pso_desc.RTVFormats[0]    = rt;
-        pso_desc.DSVFormat        = ds;
-
         ComPtr<ID3D12PipelineState> pso;
-        DBG::throw_hr(m_device.device()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
+        if (!tech->m_vs.empty()) {
+            auto&& pso_desc           = tech->get_graphic_pipeline_state_desc();
+            pso_desc.NumRenderTargets = (rt != DXGI_FORMAT_UNKNOWN) ? 1 : 0;
+            pso_desc.RTVFormats[0]    = rt;
+            pso_desc.DSVFormat        = ds;
+
+            DBG::throw_hr(m_device.device()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
+        }
+        else if (!tech->m_cs.empty()) {
+            auto&& pso_desc = tech->get_compute_pipeline_state_desc();
+
+            DBG::throw_hr(m_device.device()->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
+        }
+        else {
+            throw;
+        }
 
         m_pso_list[key] = pso;
         return pso;
@@ -94,14 +112,25 @@ void Shader_manager::register_technique(const string& name, const TechniqueInit&
     auto&& t = std::make_shared<Technique>(*this);
     t->m_vs  = init_data.m_vs;
     t->m_ps  = init_data.m_ps;
+    t->m_cs  = init_data.m_cs;
 
     build_root_signature(*t);
 
     m_render_technique_list[name] = t;
 }
 
+void Shader_manager::register_lib_ray_technique(const string& name, const string& lib_ray)
+{
+    auto&& t = std::make_shared<Technique>(*this);
+    // t->m_lib_ray = lib_ray;
+    // build_root_signature(*t);
+
+    // m_render_technique_list[name] = t;
+}
+
 // need refactoring
-void append_root_parameter_slot(vector<CD3DX12_ROOT_PARAMETER>& root_parameter_slots, vector<unique_ptr<CD3DX12_DESCRIPTOR_RANGE>>& descriptor_ranges, vector<string>& descriptor_table_names, const D3D12::ShaderReflection& reflection, D3D12_SHADER_VISIBILITY visibility)
+void append_root_parameter_slot(vector<CD3DX12_ROOT_PARAMETER>& root_parameter_slots, vector<unique_ptr<CD3DX12_DESCRIPTOR_RANGE>>& descriptor_ranges,
+    vector<string>& descriptor_table_names, const D3D12::ShaderReflection& reflection, D3D12_SHADER_VISIBILITY visibility)
 {
     auto&& sh       = reflection;
     auto&& sh_state = visibility;
@@ -111,7 +140,8 @@ void append_root_parameter_slot(vector<CD3DX12_ROOT_PARAMETER>& root_parameter_s
     auto&& num_uav     = sh.uav_binding_desc().size();
     auto&& num_sampler = sh.sampler_binding_desc().size();
 
-    auto append_root_parameter_func = [&root_parameter_slots, &descriptor_ranges, &descriptor_table_names](int id, const string& name, D3D12_DESCRIPTOR_RANGE_TYPE range_type, D3D12_SHADER_VISIBILITY shader_visibility) {
+    auto append_root_parameter_func = [&root_parameter_slots, &descriptor_ranges, &descriptor_table_names](
+                                          int id, const string& name, D3D12_DESCRIPTOR_RANGE_TYPE range_type, D3D12_SHADER_VISIBILITY shader_visibility) {
         auto&& tbl_item = std::make_unique<CD3DX12_DESCRIPTOR_RANGE>();
         tbl_item->Init(range_type, 1, id);
 
@@ -148,19 +178,26 @@ void Shader_manager::build_root_signature(Technique& t)
 {
     auto&& vs = get_shader(t.m_vs);
     auto&& ps = get_shader(t.m_ps);
+    auto&& cs = get_shader(t.m_cs);
 
     auto&& root_parameter_slots   = t.m_root_parameter_slots;
     auto&& descriptor_ranges      = t.m_descriptor_ranges;
     auto&& descriptor_table_names = t.m_descriptor_table_names;
 
-    append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, *(vs->m_reflection), D3D12_SHADER_VISIBILITY_VERTEX);
-
+    if (vs) {
+        append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, *(vs->m_reflection), D3D12_SHADER_VISIBILITY_VERTEX);
+    }
     if (ps) {
         append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, *(ps->m_reflection), D3D12_SHADER_VISIBILITY_PIXEL);
     }
+    if (cs) {
+        append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, *(cs->m_reflection), D3D12_SHADER_VISIBILITY_ALL);
+    }
 
     // A root signature is an array of root parameters.
-    CD3DX12_ROOT_SIGNATURE_DESC root_sig_desc((UINT)root_parameter_slots.size(), root_parameter_slots.data(), 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+    auto&& flags = cs ? D3D12_ROOT_SIGNATURE_FLAG_NONE : D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+    CD3DX12_ROOT_SIGNATURE_DESC root_sig_desc((UINT)root_parameter_slots.size(), root_parameter_slots.data(), 0, nullptr, flags);
 
     ComPtr<ID3DBlob> serialized_root_sig = nullptr;
     ComPtr<ID3DBlob> error_blob          = nullptr;
@@ -171,7 +208,8 @@ void Shader_manager::build_root_signature(Technique& t)
     }
 
     auto&& render_device = m_device;
-    DBG::throw_hr(render_device.device()->CreateRootSignature(0, serialized_root_sig->GetBufferPointer(), serialized_root_sig->GetBufferSize(), IID_PPV_ARGS(&t.m_root_signature)));
+    DBG::throw_hr(render_device.device()->CreateRootSignature(
+        0, serialized_root_sig->GetBufferPointer(), serialized_root_sig->GetBufferSize(), IID_PPV_ARGS(&t.m_root_signature)));
 
     // validation
     validation(t);

@@ -57,6 +57,7 @@ class TechniqueInstance;
 struct TechniqueInit {
     string m_vs;
     string m_ps;
+    string m_cs;
 };
 
 } // namespace D3D12

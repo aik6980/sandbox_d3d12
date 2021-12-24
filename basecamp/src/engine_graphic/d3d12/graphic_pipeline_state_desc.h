@@ -27,4 +27,14 @@ struct Graphics_pipeline_state_desc : public D3D12_GRAPHICS_PIPELINE_STATE_DESC 
         PS.BytecodeLength  = bytecode ? bytecode->GetBufferSize() : 0;
     }
 };
+
+struct Compute_pipeline_state_desc : public D3D12_COMPUTE_PIPELINE_STATE_DESC {
+    Compute_pipeline_state_desc() { ZeroMemory(this, sizeof(Compute_pipeline_state_desc)); }
+
+    void set_shader(ID3DBlob* bytecode)
+    {
+        CS.pShaderBytecode = bytecode->GetBufferPointer();
+        CS.BytecodeLength  = bytecode->GetBufferSize();
+    }
+};
 } // namespace D3D12

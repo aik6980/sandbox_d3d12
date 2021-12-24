@@ -341,6 +341,17 @@ std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_gpu_descriptor_handl
     return std::make_tuple(false, CD3DX12_GPU_DESCRIPTOR_HANDLE());
 }
 
+std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_uav_gpu_descriptor_handle(weak_ptr<Buffer> buffer_handle)
+{
+    auto&& buffer = buffer_handle.lock();
+    if (buffer) {
+        auto&& descriptor_handle_id = buffer->m_uav_handle_id;
+        return std::make_tuple(true, m_srv_heap.get_gpu_descriptor(descriptor_handle_id));
+    }
+
+    return std::make_tuple(false, CD3DX12_GPU_DESCRIPTOR_HANDLE());
+}
+
 std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_gpu_descriptor_handle(weak_ptr<Sampler> handle)
 {
     auto&& resource = handle.lock();
@@ -350,6 +361,17 @@ std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_gpu_descriptor_handl
     }
 
     return std::make_tuple(false, CD3DX12_GPU_DESCRIPTOR_HANDLE());
+}
+
+std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> Device::get_rtv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle)
+{
+    auto&& buffer = buffer_handle.lock();
+    if (buffer) {
+        auto&& descriptor_handle_id = buffer->m_rtv_handle_id;
+        return std::make_tuple(true, m_rtv_heap.get_cpu_descriptor(descriptor_handle_id));
+    }
+
+    return std::make_tuple(false, CD3DX12_CPU_DESCRIPTOR_HANDLE());
 }
 
 std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> Device::get_dsv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle)
@@ -366,6 +388,20 @@ std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> Device::get_dsv_cpu_descriptor_h
 void Device::buffer_state_transition(Buffer& buffer, D3D12_RESOURCE_STATES state_before, D3D12_RESOURCE_STATES state_after)
 {
     m_commandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.m_buffer.Get(), state_before, state_after));
+}
+
+void Device::transfer_to_back_buffer(Buffer& buffer, D3D12_RESOURCE_STATES state_before)
+{
+    buffer_state_transition(buffer, state_before, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    m_commandList()->ResourceBarrier(
+        1, &CD3DX12_RESOURCE_BARRIER::Transition(&curr_backbuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_DEST));
+
+    // copy resource
+    m_commandList()->CopyResource(&curr_backbuffer(), buffer.m_buffer.Get());
+
+    buffer_state_transition(buffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_GENERIC_READ);
+    m_commandList()->ResourceBarrier(
+        1, &CD3DX12_RESOURCE_BARRIER::Transition(&curr_backbuffer(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET));
 }
 
 void Device::reset_current_command_allocator()
@@ -540,7 +576,7 @@ void Device::CreateCommandObjects()
     // We can only reset when the associated command lists have finished execution on the GPU.
     DBG::throw_hr(cmd_list_allocator->Reset());
 
-    ComPtr<ID3D12GraphicsCommandList> d3d12_command_list;
+    ComPtr<ID3D12GraphicsCommandList4> d3d12_command_list;
     DBG::throw_hr(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmd_list_allocator.Get(), nullptr, IID_PPV_ARGS(&d3d12_command_list)));
 
     // Start off in a closed state.  This is because the first time we refer

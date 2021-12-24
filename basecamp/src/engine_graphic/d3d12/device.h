@@ -34,7 +34,7 @@ class Device {
 
     /// low level
     ID3D12Device*  device() { return m_device.Get(); }
-    COMMAND_LIST&  commmand_list() { return m_commandList; }
+    Command_list&  commmand_list() { return m_commandList; }
     FrameResource& frame_resource() { return *m_frame_resource_list[m_curr_frame_resource_index]; }
 
     ID3D12Resource&             curr_backbuffer() const { return *m_swap_chain_buffer[m_curr_swap_chain_buffer].Get(); }
@@ -57,10 +57,13 @@ class Device {
 
     std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(const Dynamic_buffer& buffer);
     std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
+    std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_uav_gpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
     std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(weak_ptr<Sampler> handle);
+    std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> get_rtv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
     std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> get_dsv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
 
     void buffer_state_transition(Buffer& buffer, D3D12_RESOURCE_STATES state_before, D3D12_RESOURCE_STATES state_after);
+    void transfer_to_back_buffer(Buffer& buffer, D3D12_RESOURCE_STATES state_before);
 
     void imgui_init();
     void imgui_begin_frame();
@@ -113,13 +116,15 @@ class Device {
     ComPtr<IDXGIFactory4> m_dxgiFactory;
     /// pipeline state
     ComPtr<IDXGIAdapter1> m_adapter;
-    ComPtr<ID3D12Device>  m_device;
+    // DirectX Raytracing (DXR) attributes
+    // ComPtr<ID3D12Device5> m_dxrDevice;
+    ComPtr<ID3D12Device5> m_device;
 
     // memory manager
     D3D12MA::Allocator* m_allocator;
 
     ComPtr<ID3D12CommandQueue> m_commandQueue;
-    COMMAND_LIST               m_commandList;
+    Command_list               m_commandList;
 
     ComPtr<IDXGISwapChain3> m_swapChain;
     UINT                    m_curr_swap_chain_buffer = 0;

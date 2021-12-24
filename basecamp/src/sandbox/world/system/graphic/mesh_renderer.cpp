@@ -106,6 +106,18 @@ void MeshRenderer::load_resource()
         m_mesh_instancing_technique_instance->init(technique_name);
     }
 
+    {
+        string technique_name = "compute_post";
+
+        D3D12::TechniqueInit t;
+        t.m_cs = "simple_compute.cs";
+
+        m_engine.shader_mgr().register_technique(technique_name, t);
+
+        m_compute_post_technique_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
+        m_compute_post_technique_instance->init(technique_name);
+    }
+
     // build a mesh
     build_quad_mesh();
     build_cube_mesh();
@@ -120,7 +132,8 @@ void MeshRenderer::load_resource()
     m_instance_data.resize(m_num_instances);
     m_engine.resource_mgr().create_instance_buffer(m_instance_data_buffer_name, sizeof(Instance_data) * m_num_instances);
 
-    m_render_pass_main       = make_unique<Render_pass_main>();
+    m_render_pass_main = make_unique<Render_pass_main>();
+    m_render_pass_main->load_resource();
     m_render_pass_shadow_map = make_unique<Render_pass_shadow_map>();
     m_render_pass_shadow_map->load_resource();
 }
@@ -303,6 +316,48 @@ void MeshRenderer::draw_meshes()
     }
 }
 
+void MeshRenderer::process_post()
+{
+    auto&& render_device = m_engine.render_device();
+    auto&& command_list  = m_engine.render_device().commmand_list();
+
+    auto&& rt_buffer_handle = m_render_pass_main->render_target_buffer();
+    auto&& rt_buffer        = rt_buffer_handle.lock();
+
+    auto&& rt_fmt = m_render_pass_main->render_target_format();
+    auto&& ds_fmt = DXGI_FORMAT_UNKNOWN;
+
+    render_device.buffer_state_transition(*rt_buffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+    auto&& tech_instance = m_compute_post_technique_instance;
+    auto&& tech_handle   = tech_instance->get_technique();
+    auto&& pso           = m_engine.shader_mgr().get_pso(tech_handle, rt_fmt, ds_fmt);
+    if (pso) {
+
+        tech_instance->set_uav("Texture_uav", rt_buffer);
+
+        command_list()->SetPipelineState(pso.Get());
+        // set compute root signature
+        tech_instance->set_root_signature_parameters(*command_list());
+
+        static uint32_t threadgroup_size = 32;
+
+        auto dispatch_x = ceilf(rt_buffer->m_d3d_desc.Width / (float)threadgroup_size);
+        auto dispatch_y = ceilf(rt_buffer->m_d3d_desc.Height / (float)threadgroup_size);
+        command_list()->Dispatch(dispatch_x, dispatch_y, 1);
+    }
+}
+
+void MeshRenderer::copy_to_backbuffer()
+{
+    auto&& render_device = m_engine.render_device();
+
+    auto&& rt_buffer_handle = m_render_pass_main->render_target_buffer();
+    auto&& rt_buffer        = rt_buffer_handle.lock();
+
+    render_device.transfer_to_back_buffer(*rt_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+}
+
 void MeshRenderer::draw()
 {
     // update camera
@@ -313,6 +368,11 @@ void MeshRenderer::draw()
     m_render_pass_shadow_map->end_render();
     m_render_pass_main->begin_render();
     draw_meshes();
+
+    // compute post
+    process_post();
+    // transfer to back buffer
+    copy_to_backbuffer();
 }
 
 // void MESH_RENDERER::build_pso_mesh_technique()

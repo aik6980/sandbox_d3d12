@@ -15,8 +15,10 @@ class Resource_manager {
     std::shared_ptr<Buffer> create_static_buffer(const string& name, uint32_t byte_size, const void* init_data);
     std::shared_ptr<Buffer> create_texture(
         const string& name, const CD3DX12_RESOURCE_DESC& info, const CD3DX12_CLEAR_VALUE* clear_val, const TextureData* init_data);
-    void create_srv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& info);
-    void create_dsv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& info);
+    void create_srv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
+    void create_uav(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
+    void create_rtv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
+    void create_dsv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
 
     std::weak_ptr<MESH_BUFFER> request_mesh_buffer(const string& str_id);
 

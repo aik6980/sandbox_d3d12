@@ -9,6 +9,12 @@ class Render_pass_main {
 
     DXGI_FORMAT render_target_format();
     DXGI_FORMAT depth_stencil_format();
+
+    weak_ptr<D3D12::Buffer> render_target_buffer();
+
+  private:
+    string              m_main_colour_buffer_id = "main_colour_buffer";
+    CD3DX12_CLEAR_VALUE m_main_colour_buffer_clear_val;
 };
 
 class Render_pass_shadow_map {

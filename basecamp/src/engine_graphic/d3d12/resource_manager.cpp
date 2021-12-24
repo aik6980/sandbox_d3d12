@@ -81,6 +81,7 @@ std::shared_ptr<Buffer> Resource_manager::create_texture(
     {
         auto&& w_name = wstring(name.begin(), name.end());
         buffer->m_buffer->SetName(w_name.c_str());
+        buffer->m_d3d_desc = resource_desc;
     }
 
     m_static_buffers.insert(std::make_pair(name, buffer));
@@ -147,6 +148,39 @@ void Resource_manager::create_srv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& d
     m_device.m_device->CreateShaderResourceView(buffer.m_buffer.Get(), &view_desc, handle);
 
     buffer.m_cbv_srv_handle_id = id;
+}
+
+void Resource_manager::create_uav(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc)
+{
+    auto id     = m_device.m_srv_heap.get_next_decriptor_id();
+    auto handle = m_device.m_srv_heap.get_cpu_descriptor(id);
+
+    auto&& mapped_fmt = format_to_view_mapping(desc.Format, true);
+
+    D3D12_UNORDERED_ACCESS_VIEW_DESC view_desc = {};
+    view_desc.Format                           = mapped_fmt;
+    view_desc.ViewDimension                    = D3D12_UAV_DIMENSION_TEXTURE2D;
+    view_desc.Texture2D.MipSlice               = 0;
+
+    m_device.m_device->CreateUnorderedAccessView(buffer.m_buffer.Get(), nullptr, &view_desc, handle);
+
+    buffer.m_uav_handle_id = id;
+}
+
+void Resource_manager::create_rtv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc)
+{
+    auto id     = m_device.m_rtv_heap.get_next_decriptor_id();
+    auto handle = m_device.m_rtv_heap.get_cpu_descriptor(id);
+
+    auto&& mapped_fmt = format_to_view_mapping(desc.Format, false);
+
+    D3D12_RENDER_TARGET_VIEW_DESC view_desc = {};
+    view_desc.ViewDimension                 = D3D12_RTV_DIMENSION_TEXTURE2D;
+    view_desc.Format                        = mapped_fmt;
+
+    m_device.m_device->CreateRenderTargetView(buffer.m_buffer.Get(), &view_desc, handle);
+
+    buffer.m_rtv_handle_id = id;
 }
 
 void Resource_manager::create_dsv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc)
