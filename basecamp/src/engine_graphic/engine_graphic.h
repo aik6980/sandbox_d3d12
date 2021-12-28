@@ -4,6 +4,7 @@
 #include <atltypes.h>
 #include <windows.h>
 
+#include <array>
 #include <chrono>
 #include <codecvt>
 #include <memory>
@@ -46,7 +47,7 @@ class Device;
 class FrameResource;
 class Resource_manager;
 class Shader_manager;
-class MESH_BUFFER;
+class Mesh_buffer;
 struct Buffer;
 struct Dynamic_buffer;
 struct Sampler;
@@ -62,7 +63,7 @@ struct TechniqueInit {
 
 } // namespace D3D12
 
-class EngineClient {
+class Engine_client {
   public:
     virtual void load_resource() = 0;
     virtual void update()        = 0;

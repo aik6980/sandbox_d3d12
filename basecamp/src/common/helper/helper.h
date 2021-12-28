@@ -32,3 +32,9 @@ int Case_insensitive_find_substr(const T& str1, const T& str2, const std::locale
         return -1; // not found
     }
 }
+
+template <typename T>
+inline constexpr T Align_up(T val, T align)
+{
+    return (val + align - 1) / align * align;
+}

@@ -20,7 +20,7 @@ class Engine {
     void update();
     void draw();
 
-    void register_client(unique_ptr<EngineClient> client);
+    void register_client(unique_ptr<Engine_client> client);
 
     D3D12::Device&           render_device() { return *m_render_device; };
     D3D12::Resource_manager& resource_mgr();
@@ -32,5 +32,5 @@ class Engine {
     unique_ptr<D3D12::Shader_manager> m_shader_mgr;
 
     // client
-    unordered_map<string, unique_ptr<EngineClient>> m_engine_client_list;
+    unordered_map<string, unique_ptr<Engine_client>> m_engine_client_list;
 };

@@ -73,7 +73,7 @@ void Engine::draw()
     m_render_device->imgui_post_render();
 }
 
-void Engine::register_client(unique_ptr<EngineClient> client)
+void Engine::register_client(unique_ptr<Engine_client> client)
 {
     m_engine_client_list.try_emplace(client->m_name, std::move(client));
 }

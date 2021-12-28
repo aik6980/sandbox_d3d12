@@ -144,8 +144,10 @@ string to_string(LPCSTR cstr)
 
 void ShaderReflection::generate_cbuffer_desc()
 {
-    for (uint32_t i = 0; i < m_cbuffer_desc.size(); ++i) {
-        auto&& name                       = m_cbuffer_desc[i].Name;
+    auto&& cbuffer_desc = m_infos.m_shader_input_descs[Sit_cbuffer];
+
+    for (uint32_t i = 0; i < cbuffer_desc.size(); ++i) {
+        auto&& name                       = cbuffer_desc[i].Name;
         auto&& constant_buffer_reflection = m_shader_reflection->GetConstantBufferByName(name);
 
         CBUFFER_INFO cbuffer_info;
@@ -162,7 +164,7 @@ void ShaderReflection::generate_cbuffer_desc()
             cbuffer_info.m_variable_infos.emplace(std::make_pair(var_info.m_name, var_info));
         }
 
-        m_cbuffer_infos.emplace(std::make_pair(cbuffer_info.m_name, cbuffer_info));
+        m_infos.m_cbuffer_infos.emplace(std::make_pair(cbuffer_info.m_name, cbuffer_info));
     }
 }
 
@@ -174,28 +176,20 @@ void ShaderReflection::generate_bound_resource_desc()
         D3D12_SHADER_INPUT_BIND_DESC desc;
         m_shader_reflection->GetResourceBindingDesc(i, &desc);
 
-        switch (desc.Type) {
-        case D3D_SIT_CBUFFER:
-            m_cbuffer_desc.emplace_back(desc);
-            break;
-        case D3D_SIT_TEXTURE:
-            m_srv_desc.emplace_back(desc);
-            break;
-        case D3D_SIT_UAV_RWTYPED:
-        case D3D_SIT_UAV_RWSTRUCTURED:
-            m_uav_desc.emplace_back(desc);
-            break;
-        case D3D_SIT_SAMPLER:
-            m_sampler_desc.emplace_back(desc);
-            break;
-        default:
-            throw;
-            break;
-        }
+        m_infos.generate_bound_resource_desc(desc);
     }
 }
 
-void Shader_lib_reflection::get_reflection(ComPtr<ID3DBlob> buffer)
+Lib_ray_reflection::Lib_ray_reflection()
+{
+    m_raygen_entry    = "raygen_entry";
+    m_miss_entry      = "miss_entry";
+    m_closethit_entry = "closethit_entry";
+
+    m_hitgroup = "hitgroup";
+}
+
+void Lib_ray_reflection::get_reflection(ComPtr<ID3DBlob> buffer)
 {
     // using DXC as our shader compiler
     ComPtr<IDxcContainerReflection> dxc_reflection;
@@ -221,7 +215,7 @@ void Shader_lib_reflection::get_reflection(ComPtr<ID3DBlob> buffer)
         string name = func_desc.Name;
     }
 }
-void Shader_lib_reflection::generate_bound_resource_desc(const shared_ptr<ID3D12FunctionReflection> func_reflection, uint32_t func_idx)
+void Lib_ray_reflection::generate_bound_resource_desc(const shared_ptr<ID3D12FunctionReflection> func_reflection, uint32_t func_idx)
 {
     D3D12_FUNCTION_DESC func_desc;
     func_reflection->GetDesc(&func_desc);
@@ -231,24 +225,32 @@ void Shader_lib_reflection::generate_bound_resource_desc(const shared_ptr<ID3D12
         D3D12_SHADER_INPUT_BIND_DESC desc;
         func_reflection->GetResourceBindingDesc(i, &desc);
 
-        switch (desc.Type) {
-        case D3D_SIT_CBUFFER:
-            m_infos[func_idx].m_cbuffer_desc.emplace_back(desc);
-            break;
-        case D3D_SIT_TEXTURE:
-            m_infos[func_idx].m_srv_desc.emplace_back(desc);
-            break;
-        case D3D_SIT_UAV_RWTYPED:
-        case D3D_SIT_UAV_RWSTRUCTURED:
-            m_infos[func_idx].m_uav_desc.emplace_back(desc);
-            break;
-        case D3D_SIT_SAMPLER:
-            m_infos[func_idx].m_sampler_desc.emplace_back(desc);
-            break;
-        default:
-            throw;
-            break;
-        }
+        m_infos[i].generate_bound_resource_desc(desc);
+    }
+}
+
+// [Note]
+// D3D_SIT_RTACCELERATIONSTRUCTURE will be used as an SRV
+void Shader_reflection_info::generate_bound_resource_desc(const D3D12_SHADER_INPUT_BIND_DESC& desc)
+{
+    switch (desc.Type) {
+    case D3D_SIT_CBUFFER:
+        m_shader_input_descs[Sit_cbuffer].emplace_back(desc);
+        break;
+    case D3D_SIT_TEXTURE:
+    case D3D_SIT_RTACCELERATIONSTRUCTURE:
+        m_shader_input_descs[Sit_srv].emplace_back(desc);
+        break;
+    case D3D_SIT_UAV_RWTYPED:
+    case D3D_SIT_UAV_RWSTRUCTURED:
+        m_shader_input_descs[Sit_uav].emplace_back(desc);
+        break;
+    case D3D_SIT_SAMPLER:
+        m_shader_input_descs[Sit_sampler].emplace_back(desc);
+        break;
+    default:
+        throw;
+        break;
     }
 }
 } // namespace D3D12

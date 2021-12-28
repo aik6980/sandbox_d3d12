@@ -127,20 +127,28 @@ void TechniqueInstance::set_sampler(const string& var_name, weak_ptr<Sampler> re
     m_samplers[var_name] = resource;
 }
 
-// refactor this function to fit Compute better!
 void TechniqueInstance::set_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
 {
     auto&& technique = m_technique_handle.lock();
     if (technique) {
         if (!technique->m_vs.empty()) {
-            command_list.SetGraphicsRootSignature(technique->m_root_signature.Get());
+            set_raster_root_signature_parameters(command_list);
         }
         else if (!technique->m_cs.empty()) {
-            command_list.SetComputeRootSignature(technique->m_root_signature.Get());
+            set_compute_root_signature_parameters(command_list);
         }
         else {
             throw;
         }
+    }
+}
+
+void TechniqueInstance::set_raster_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
+{
+    auto&& technique = m_technique_handle.lock();
+    if (technique) {
+
+        command_list.SetGraphicsRootSignature(technique->m_root_signature.Get());
 
         for (uint32_t i = 0; i < technique->m_descriptor_ranges.size(); ++i) {
             auto&& name = technique->m_descriptor_table_names[i];
@@ -165,13 +173,7 @@ void TechniqueInstance::set_root_signature_parameters(ID3D12GraphicsCommandList&
             if (found_uav_data != m_uav.end()) {
                 auto&& gpu_descriptor_handle = m_device.get_uav_gpu_descriptor_handle(found_uav_data->second);
                 if (std::get<bool>(gpu_descriptor_handle)) {
-
-                    if (!technique->m_cs.empty()) {
-                        command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
-                    }
-                    else {
-                        command_list.SetGraphicsRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
-                    }
+                    command_list.SetGraphicsRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
                 }
             }
 
@@ -180,6 +182,51 @@ void TechniqueInstance::set_root_signature_parameters(ID3D12GraphicsCommandList&
                 auto&& gpu_descriptor_handle = m_device.get_gpu_descriptor_handle(found_sampler_data->second);
                 if (std::get<bool>(gpu_descriptor_handle)) {
                     command_list.SetGraphicsRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+                }
+            }
+        }
+    }
+}
+
+void TechniqueInstance::set_compute_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
+{
+    auto&& technique = m_technique_handle.lock();
+    if (technique) {
+
+        command_list.SetComputeRootSignature(technique->m_root_signature.Get());
+
+        for (uint32_t i = 0; i < technique->m_descriptor_ranges.size(); ++i) {
+            auto&& name = technique->m_descriptor_table_names[i];
+
+            auto&& found_cbuffer_data = m_cbuffer.find(name);
+            if (found_cbuffer_data != m_cbuffer.end()) {
+                auto&& gpu_descriptor_handle = m_device.get_gpu_descriptor_handle(*found_cbuffer_data->second);
+                if (std::get<bool>(gpu_descriptor_handle)) {
+                    command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+                }
+            }
+
+            auto&& found_srv_data = m_srv.find(name);
+            if (found_srv_data != m_srv.end()) {
+                auto&& gpu_descriptor_handle = m_device.get_gpu_descriptor_handle(found_srv_data->second);
+                if (std::get<bool>(gpu_descriptor_handle)) {
+                    command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+                }
+            }
+
+            auto&& found_uav_data = m_uav.find(name);
+            if (found_uav_data != m_uav.end()) {
+                auto&& gpu_descriptor_handle = m_device.get_uav_gpu_descriptor_handle(found_uav_data->second);
+                if (std::get<bool>(gpu_descriptor_handle)) {
+                    command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+                }
+            }
+
+            auto&& found_sampler_data = m_samplers.find(name);
+            if (found_sampler_data != m_samplers.end()) {
+                auto&& gpu_descriptor_handle = m_device.get_gpu_descriptor_handle(found_sampler_data->second);
+                if (std::get<bool>(gpu_descriptor_handle)) {
+                    command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
                 }
             }
         }

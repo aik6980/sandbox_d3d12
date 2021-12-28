@@ -22,7 +22,7 @@ string build_mesh(const vector<T>& mesh_verts, const MeshIndexArray& mesh_indice
     auto&& idx_size = mesh_indices.m_indices32.size() * sizeof(mesh_indices.m_indices32[0]);
     auto&& ib       = engine.resource_mgr().create_static_buffer(name + " ib", idx_size, idx_data);
 
-    auto&& mesh_buffer                  = std::make_shared<D3D12::MESH_BUFFER>();
+    auto&& mesh_buffer                  = std::make_shared<D3D12::Mesh_buffer>();
     mesh_buffer->m_vertex_buffer_handle = vb;
     mesh_buffer->m_index_buffer_handle  = ib;
 
@@ -185,7 +185,7 @@ void MeshRenderer::draw_meshes()
 
     auto&& duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
 
-    float vec[2] = {0.25 * sinf(duration.count() * 0.001f), 0.0};
+    float vec[2] = {0.25f * sinf(duration.count() * 0.001f), 0.0f};
     m_render_technique_instance->set_cbv("cb_vs", "offset", vec, sizeof(vec));
 
     float scale[2] = {1.0, 1.0};
@@ -342,8 +342,8 @@ void MeshRenderer::process_post()
 
         static uint32_t threadgroup_size = 32;
 
-        auto dispatch_x = ceilf(rt_buffer->m_d3d_desc.Width / (float)threadgroup_size);
-        auto dispatch_y = ceilf(rt_buffer->m_d3d_desc.Height / (float)threadgroup_size);
+        uint32_t dispatch_x = ceilf(rt_buffer->m_d3d_desc.Width / (float)threadgroup_size);
+        uint32_t dispatch_y = ceilf(rt_buffer->m_d3d_desc.Height / (float)threadgroup_size);
         command_list()->Dispatch(dispatch_x, dispatch_y, 1);
     }
 }

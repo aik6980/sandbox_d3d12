@@ -4,6 +4,7 @@
 #include "common/common.cpp.h"
 #include "device.h"
 #include "graphic_pipeline_state_desc.h"
+#include "lib_ray_technique_instance.h"
 #include "render_technique_instance.h"
 #include "shader.h"
 #include "shader_reflection.h"
@@ -45,19 +46,48 @@ Shader* Shader_manager::get_shader(const string& name)
     shader_obj->m_buffer = load_from_objfile(file_path);
     auto&& reflection    = std::make_unique<ShaderReflection>();
 
-    if (Case_insensitive_find_substr(name, string(".ray")) != -1) {
-        auto&& lib_ray_reflection = std::make_unique<Shader_lib_reflection>();
-        lib_ray_reflection->get_reflection(shader_obj->m_buffer);
-    }
-    else {
-        reflection->get_reflection(shader_obj->m_buffer);
-    }
+    reflection->get_reflection(shader_obj->m_buffer);
 
     shader_obj->m_reflection = std::move(reflection);
 
     m_shader_list[name] = std::move(shader_obj);
 
     return m_shader_list[name].get();
+}
+
+Lib_ray_shader* Shader_manager::get_lib_shader(const string& name)
+{
+    if (name == "") {
+        return nullptr;
+    }
+
+    auto&& found = m_lib_shader_list.find(name);
+    if (found != m_lib_shader_list.end()) {
+        return found->second.get();
+    }
+
+    // Example converting string <=> wstring
+    // std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    // std::string narrow = converter.to_bytes(wide_utf16_source_string);
+    // std::wstring wide = converter.from_bytes(narrow_utf8_source_string);
+
+    wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+    wstring w_name    = converter.from_bytes(name);
+    wstring file_path = L"shader_hlsl/" + w_name + L".obj";
+
+    auto&& shader_obj = std::make_unique<Lib_ray_shader>();
+
+    shader_obj->m_buffer = load_from_objfile(file_path);
+    auto&& reflection    = std::make_unique<Lib_ray_reflection>();
+
+    reflection->get_reflection(shader_obj->m_buffer);
+
+    shader_obj->m_reflection = std::move(reflection);
+
+    m_lib_shader_list[name] = std::move(shader_obj);
+
+    return m_lib_shader_list[name].get();
 }
 
 weak_ptr<Technique> Shader_manager::get_render_technique(const string& name)
@@ -89,12 +119,12 @@ ComPtr<ID3D12PipelineState> Shader_manager::get_pso(weak_ptr<Technique> tech_han
             pso_desc.RTVFormats[0]    = rt;
             pso_desc.DSVFormat        = ds;
 
-            DBG::throw_hr(m_device.device()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
+            DBG::throw_hr(m_device.d3d_device()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
         }
         else if (!tech->m_cs.empty()) {
             auto&& pso_desc = tech->get_compute_pipeline_state_desc();
 
-            DBG::throw_hr(m_device.device()->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
+            DBG::throw_hr(m_device.d3d_device()->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
         }
         else {
             throw;
@@ -105,6 +135,16 @@ ComPtr<ID3D12PipelineState> Shader_manager::get_pso(weak_ptr<Technique> tech_han
     }
 
     return nullptr;
+}
+
+weak_ptr<Lib_ray_technique> Shader_manager::get_lib_ray_technique(const string& name)
+{
+    auto&& found = m_lib_ray_technique_list.find(name);
+    if (found != m_lib_ray_technique_list.end()) {
+        return found->second;
+    }
+
+    return weak_ptr<Lib_ray_technique>();
 }
 
 void Shader_manager::register_technique(const string& name, const TechniqueInit& init_data)
@@ -121,11 +161,13 @@ void Shader_manager::register_technique(const string& name, const TechniqueInit&
 
 void Shader_manager::register_lib_ray_technique(const string& name, const string& lib_ray)
 {
-    auto&& t = std::make_shared<Technique>(*this);
-    // t->m_lib_ray = lib_ray;
-    // build_root_signature(*t);
+    auto&& t = std::make_shared<Lib_ray_technique>(*this);
+    t->m_lib = lib_ray;
 
-    // m_render_technique_list[name] = t;
+    t->create_ray_tracing_pipeline_state_object();
+    t->create_shader_table();
+
+    m_lib_ray_technique_list[name] = t;
 }
 
 // need refactoring
@@ -208,11 +250,41 @@ void Shader_manager::build_root_signature(Technique& t)
     }
 
     auto&& render_device = m_device;
-    DBG::throw_hr(render_device.device()->CreateRootSignature(
+    DBG::throw_hr(render_device.d3d_device()->CreateRootSignature(
         0, serialized_root_sig->GetBufferPointer(), serialized_root_sig->GetBufferSize(), IID_PPV_ARGS(&t.m_root_signature)));
 
     // validation
     validation(t);
+}
+
+void Shader_manager::build_root_signature(Lib_ray_sub_technique& t, const Shader_reflection_info& reflection)
+{
+    auto&& root_parameter_slots   = t.m_root_parameter_slots;
+    auto&& descriptor_ranges      = t.m_descriptor_ranges;
+    auto&& descriptor_table_names = t.m_descriptor_table_names;
+
+    append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, reflection, D3D12_SHADER_VISIBILITY_ALL);
+
+    // A root signature is an array of root parameters.
+    // auto&& flags = cs ? D3D12_ROOT_SIGNATURE_FLAG_NONE : D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+    auto&& flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+    CD3DX12_ROOT_SIGNATURE_DESC root_sig_desc((UINT)root_parameter_slots.size(), root_parameter_slots.data(), 0, nullptr, flags);
+
+    ComPtr<ID3DBlob> serialized_root_sig = nullptr;
+    ComPtr<ID3DBlob> error_blob          = nullptr;
+    DBG::test_hr(D3D12SerializeRootSignature(&root_sig_desc, D3D_ROOT_SIGNATURE_VERSION_1, &serialized_root_sig, &error_blob));
+
+    if (error_blob != nullptr) {
+        DBG::OutputString((char*)error_blob->GetBufferPointer());
+    }
+
+    auto&& render_device = m_device;
+    DBG::throw_hr(render_device.d3d_device()->CreateRootSignature(
+        0, serialized_root_sig->GetBufferPointer(), serialized_root_sig->GetBufferSize(), IID_PPV_ARGS(&t.m_root_signature)));
+
+    // validation
+    // validation(t);
 }
 
 void Shader_manager::validation(Technique& t)

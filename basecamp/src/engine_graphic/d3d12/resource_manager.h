@@ -13,16 +13,20 @@ class Resource_manager {
     ~Resource_manager() {}
 
     std::shared_ptr<Buffer> create_static_buffer(const string& name, uint32_t byte_size, const void* init_data);
+    std::shared_ptr<Buffer> create_upload_buffer(const string& name, uint32_t byte_size, const void* init_data);
+
     std::shared_ptr<Buffer> create_texture(
         const string& name, const CD3DX12_RESOURCE_DESC& info, const CD3DX12_CLEAR_VALUE* clear_val, const TextureData* init_data);
+
+    // views
     void create_srv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
     void create_uav(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
     void create_rtv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
     void create_dsv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
 
-    std::weak_ptr<MESH_BUFFER> request_mesh_buffer(const string& str_id);
+    std::weak_ptr<Mesh_buffer> request_mesh_buffer(const string& str_id);
 
-    bool register_mesh_buffer(const string& str_id, const std::shared_ptr<MESH_BUFFER> mesh_buffer);
+    bool register_mesh_buffer(const string& str_id, const std::shared_ptr<Mesh_buffer> mesh_buffer);
 
     std::weak_ptr<Buffer>  request_buffer(const string& str_id) { return request_resource(m_static_buffers, str_id); }
     std::weak_ptr<Sampler> request_sampler(const string& str_id) { return request_resource(m_samplers, str_id); }
@@ -38,6 +42,9 @@ class Resource_manager {
     std::shared_ptr<Dynamic_buffer> create_instance_buffer(const string& str_id, uint32_t byte_size);
     D3D12_VERTEX_BUFFER_VIEW        request_instance_buffer_view(const string& str_id, uint32_t instance_data_byte_size);
     bool                            update_dynamic_buffer(const string& str_id, const void* data, uint32_t byte_size);
+
+    // dxr
+    void create_acceleration_structure(const string& name, const Mesh_buffer& mesh_buffer);
 
   private:
     template <class T>
@@ -75,7 +82,7 @@ class Resource_manager {
     // parent
     Device& m_device;
 
-    unordered_map<string, std::shared_ptr<MESH_BUFFER>>    m_mesh_buffer_list;
+    unordered_map<string, std::shared_ptr<Mesh_buffer>>    m_mesh_buffer_list;
     unordered_map<string, std::shared_ptr<Buffer>>         m_static_buffers;
     unordered_map<string, std::shared_ptr<Dynamic_buffer>> m_dynamic_buffers;
     unordered_map<string, std::shared_ptr<Sampler>>        m_samplers;

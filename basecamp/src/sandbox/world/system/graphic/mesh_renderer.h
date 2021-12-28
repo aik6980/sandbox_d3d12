@@ -6,7 +6,7 @@
 
 class Engine;
 
-class MeshRenderer : public EngineClient {
+class MeshRenderer : public Engine_client {
   public:
     MeshRenderer(Engine& engine);
 

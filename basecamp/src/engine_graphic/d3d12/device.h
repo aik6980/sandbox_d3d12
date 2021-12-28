@@ -33,7 +33,7 @@ class Device {
     CD3DX12_RECT   get_window_rect() const;
 
     /// low level
-    ID3D12Device*  device() { return m_device.Get(); }
+    ID3D12Device5* d3d_device() { return m_device.Get(); }
     Command_list&  commmand_list() { return m_commandList; }
     FrameResource& frame_resource() { return *m_frame_resource_list[m_curr_frame_resource_index]; }
 

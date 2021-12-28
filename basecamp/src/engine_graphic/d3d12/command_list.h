@@ -5,7 +5,8 @@ using Microsoft::WRL::ComPtr;
 namespace D3D12 {
 class Command_list {
   public:
-    ID3D12GraphicsCommandList* operator()() { return m_obj.Get(); }
+    // ID3D12GraphicsCommandList4 for dxr
+    ID3D12GraphicsCommandList4* operator()() { return m_obj.Get(); }
 
     void init(ComPtr<ID3D12GraphicsCommandList4> com_ptr);
     void reset(ID3D12CommandAllocator* command_allocator, ID3D12PipelineState* pipeline_state);

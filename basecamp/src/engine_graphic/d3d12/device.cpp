@@ -255,12 +255,6 @@ void Device::flush_command_queue()
     }
 }
 
-template <typename T>
-inline constexpr T align_up(T val, T align)
-{
-    return (val + align - 1) / align * align;
-}
-
 shared_ptr<Buffer> Device::create_cbuffer(uint32_t size, const string& name)
 {
     D3D12MA::ALLOCATION_DESC allocation_desc = {};
@@ -269,7 +263,7 @@ shared_ptr<Buffer> Device::create_cbuffer(uint32_t size, const string& name)
     D3D12_RESOURCE_DESC desc;
     desc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
     desc.Alignment          = 0;
-    desc.Width              = align_up(size, (uint32_t)D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+    desc.Width              = Align_up(size, (uint32_t)D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
     desc.Height             = 1;
     desc.DepthOrArraySize   = 1;
     desc.MipLevels          = 1;

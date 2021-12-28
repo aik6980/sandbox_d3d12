@@ -8,6 +8,7 @@
 #include "world/component/components.h"
 #include "world/entity/entity.h"
 #include "world/system/graphic/mesh_renderer.h"
+#include "world/system/graphic/raytrace_renderer.h"
 #include "world/system/systems.h"
 
 std::unique_ptr<Engine>        App::m_engine;
@@ -34,9 +35,14 @@ void App::on_init(HINSTANCE hInstance, HWND hWnd)
     init_data.HWnd = hWnd;
     m_engine->init(init_data);
 
-    unique_ptr<EngineClient> mesh_renderer(new MeshRenderer(*m_engine));
-    mesh_renderer->m_name = "mesh_renderer";
-    m_engine->register_client(std::move(mesh_renderer));
+    // raster renderer
+    // unique_ptr<Engine_client> mesh_renderer(new MeshRenderer(*m_engine));
+    // mesh_renderer->m_name = "mesh_renderer";
+    // m_engine->register_client(std::move(mesh_renderer));
+
+    unique_ptr<Engine_client> renderer(new Raytrace_renderer(*m_engine));
+    renderer->m_name = "raytrace_renderer";
+    m_engine->register_client(std::move(renderer));
 
     m_engine->load_resource();
 

@@ -61,6 +61,9 @@ class TechniqueInstance {
     void set_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
 
   private:
+    void set_raster_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
+    void set_compute_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
+
     void init_dynamic_cbuffer(const string& shader_name);
 
     Device&         m_device;
