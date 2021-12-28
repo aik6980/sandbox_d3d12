@@ -5,7 +5,7 @@
 namespace D3D12 {
 class Device;
 class Shader_manager;
-struct CBUFFER_INFO;
+struct Cbuffer_info;
 struct CBUFFER_VARIABLE_INFO;
 struct Buffer;
 struct Sampler;
@@ -33,7 +33,7 @@ class Technique {
     vector<string>                               m_descriptor_table_names;
 
   private:
-    const CBUFFER_INFO*          get_cbuffer_info(const string& shader_name, const string& cbuffer_name);
+    const Cbuffer_info*          get_cbuffer_info(const string& shader_name, const string& cbuffer_name);
     const CBUFFER_VARIABLE_INFO* get_cbuffer_var_info(const string& shader_name, const string& cbuffer_name, const string& var_name);
 
     Shader_manager& m_shader_mgr;

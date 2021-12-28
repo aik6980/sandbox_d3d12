@@ -6,7 +6,9 @@
 #include "shader.h"
 #include "shader_manager.h"
 
-void D3D12::Lib_ray_technique::create_ray_tracing_pipeline_state_object()
+namespace D3D12 {
+
+void Lib_ray_technique::create_ray_tracing_pipeline_state_object()
 {
     // Create 7 subobjects that combine into a RTPSO:
     // Subobjects need to be associated with DXIL exports (i.e. shaders) either by way of default or explicit associations.
@@ -36,11 +38,11 @@ void D3D12::Lib_ray_technique::create_ray_tracing_pipeline_state_object()
 
     wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
-    wstring w_raygen_entry    = converter.from_bytes(reflection->raygen_entry());
-    wstring w_miss_entry      = converter.from_bytes(reflection->miss_entry());
-    wstring w_closethit_entry = converter.from_bytes(reflection->closethit_entry());
+    wstring w_raygen_entry    = converter.from_bytes(reflection->raygen_entry);
+    wstring w_miss_entry      = converter.from_bytes(reflection->miss_entry);
+    wstring w_closethit_entry = converter.from_bytes(reflection->closethit_entry);
 
-    wstring w_hit_group = converter.from_bytes(reflection->hitgroup());
+    wstring w_hit_group = converter.from_bytes(reflection->hitgroup);
     // Define which shader exports to surface from the library.
     // If no shader exports are defined for a DXIL library subobject, all shaders will be surfaced.
     // In this sample, this could be omitted for convenience since the sample uses all shaders in the library.
@@ -69,6 +71,9 @@ void D3D12::Lib_ray_technique::create_ray_tracing_pipeline_state_object()
     // Local root signature and shader association
     // This is a root signature that enables a shader to have unique arguments that come from shader tables.
     // CreateLocalRootSignatureSubobjects(&raytracingPipeline);
+    create_root_signature_subobject(m_raygen_sub_technique, raytrace_pso, *reflection, reflection->raygen_entry);
+    create_root_signature_subobject(m_miss_sub_technique, raytrace_pso, *reflection, reflection->miss_entry);
+    create_root_signature_subobject(m_closethit_sub_technique, raytrace_pso, *reflection, reflection->closethit_entry);
 
     // [Note] I don't think i can get this information from reflections
     // Global root signature
@@ -91,7 +96,7 @@ void D3D12::Lib_ray_technique::create_ray_tracing_pipeline_state_object()
 
 // Build shader tables.
 // This encapsulates all shader records - shaders and the arguments for their local root signatures.
-void D3D12::Lib_ray_technique::create_shader_table()
+void Lib_ray_technique::create_shader_table()
 {
     auto&& lib_shader      = m_shader_mgr.get_lib_shader(m_lib);
     auto&& lib_shader_blob = lib_shader->m_buffer;
@@ -99,11 +104,11 @@ void D3D12::Lib_ray_technique::create_shader_table()
 
     wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
-    wstring w_raygen_entry    = converter.from_bytes(reflection->raygen_entry());
-    wstring w_miss_entry      = converter.from_bytes(reflection->miss_entry());
-    wstring w_closethit_entry = converter.from_bytes(reflection->closethit_entry());
+    wstring w_raygen_entry    = converter.from_bytes(reflection->raygen_entry);
+    wstring w_miss_entry      = converter.from_bytes(reflection->miss_entry);
+    wstring w_closethit_entry = converter.from_bytes(reflection->closethit_entry);
 
-    wstring w_hit_group = converter.from_bytes(reflection->hitgroup());
+    wstring w_hit_group = converter.from_bytes(reflection->hitgroup);
 
     void* raygen_shader_identifier    = nullptr;
     void* miss_shader_identifier      = nullptr;
@@ -137,8 +142,9 @@ void D3D12::Lib_ray_technique::create_shader_table()
         Shader_table raygen_table;
         raygen_table.m_shader_records.push_back(Shader_record(raygen_shader_identifier, shader_identifier_size));
 
-        auto&& blob                = raygen_table.generate_data();
-        auto&& shader_table_buffer = resource_mgr.create_upload_buffer(m_raygen_shader_table_buffer, blob.size(), blob.data());
+        m_raygen_shader_table_buffer = m_lib + "_raygen_table";
+        auto&& blob                  = raygen_table.generate_data();
+        auto&& shader_table_buffer   = resource_mgr.create_upload_buffer(m_raygen_shader_table_buffer, blob.size(), blob.data());
     }
 
     // Miss shader table
@@ -152,6 +158,7 @@ void D3D12::Lib_ray_technique::create_shader_table()
         Shader_table shader_table;
         shader_table.m_shader_records.push_back(Shader_record(miss_shader_identifier, shader_identifier_size));
 
+        m_miss_shader_table_buffer = m_lib + "_miss_table";
         auto&& blob                = shader_table.generate_data();
         auto&& shader_table_buffer = resource_mgr.create_upload_buffer(m_miss_shader_table_buffer, blob.size(), blob.data());
     }
@@ -167,7 +174,168 @@ void D3D12::Lib_ray_technique::create_shader_table()
         Shader_table shader_table;
         shader_table.m_shader_records.push_back(Shader_record(hit_group_shader_identifier, shader_identifier_size));
 
-        auto&& blob                = shader_table.generate_data();
-        auto&& shader_table_buffer = resource_mgr.create_upload_buffer(m_hitgroup_shader_table_buffer, blob.size(), blob.data());
+        m_hitgroup_shader_table_buffer = m_lib + "_hitgroup_table";
+        auto&& blob                    = shader_table.generate_data();
+        auto&& shader_table_buffer     = resource_mgr.create_upload_buffer(m_hitgroup_shader_table_buffer, blob.size(), blob.data());
     }
 }
+
+void Lib_ray_technique::create_root_signature_subobject(
+    Lib_ray_sub_technique& sub_technique, CD3DX12_STATE_OBJECT_DESC& raytrace_pso, Lib_ray_reflection& reflection, const string& name)
+{
+    // build root signature
+    auto&& sub_shader = reflection.get_sub_shader_info(name);
+    if (!sub_shader) {
+        return;
+    }
+
+    m_shader_mgr.build_local_root_signature(sub_technique, sub_shader->m_func_input_info);
+
+    // Local root signature to be used this callable shader
+    {
+        auto&& localRootSignature = raytrace_pso.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+        localRootSignature->SetRootSignature(sub_technique.m_root_signature.Get());
+        // Shader association
+        auto root_signature_association = raytrace_pso.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+        root_signature_association->SetSubobjectToAssociate(*localRootSignature);
+
+        wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+        wstring w_name = converter.from_bytes(sub_shader->m_name);
+        root_signature_association->AddExport(w_name.c_str());
+    }
+}
+
+void Lib_ray_technique_instance::init(const string& technique_name)
+{
+    m_technique_handle = m_shader_mgr.get_lib_ray_technique(technique_name);
+    if (auto&& technique = m_technique_handle.lock()) {
+        init_dynamic_cbuffer(technique->m_lib, Lib_ray_reflection::raygen_entry);
+        init_dynamic_cbuffer(technique->m_lib, Lib_ray_reflection::miss_entry);
+        init_dynamic_cbuffer(technique->m_lib, Lib_ray_reflection::closethit_entry);
+    }
+}
+
+void Lib_ray_technique_instance::set_cbv(const string& cbuffer_name, const string& var_name, void* data, uint32_t data_size)
+{
+    auto&& found_cbuffer_data = m_cbuffer.find(cbuffer_name);
+    if (found_cbuffer_data != m_cbuffer.end()) {
+        // validate variable info
+        auto&& var_info = get_cbuffer_var_info(cbuffer_name, var_name);
+        if (var_info) {
+            if (var_info->m_desc.Size == data_size) {
+                auto&& mapped_buffer_data = m_device.get_mapped_data(*found_cbuffer_data->second);
+                auto&& dest_data          = (char*)mapped_buffer_data + var_info->m_desc.StartOffset;
+
+                memcpy(dest_data, data, data_size);
+            }
+            else {
+                throw;
+            }
+        }
+    }
+}
+
+void Lib_ray_technique_instance::set_srv(const string& var_name, weak_ptr<Buffer> buffer)
+{
+    m_srv[var_name] = buffer;
+}
+
+void Lib_ray_technique_instance::set_uav(const string& var_name, weak_ptr<Buffer> buffer)
+{
+    m_uav[var_name] = buffer;
+}
+
+void Lib_ray_technique_instance::set_sampler(const string& var_name, weak_ptr<Sampler> resource)
+{
+    m_samplers[var_name] = resource;
+}
+
+void Lib_ray_technique_instance::set_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
+{
+    auto&& technique = m_technique_handle.lock();
+    if (technique) {
+        set_root_signature_parameters(command_list, technique->m_raygen_sub_technique);
+        set_root_signature_parameters(command_list, technique->m_miss_sub_technique);
+        set_root_signature_parameters(command_list, technique->m_closethit_sub_technique);
+    }
+}
+
+void Lib_ray_technique_instance::init_dynamic_cbuffer(const string& lib_name, const string& sub_shader_name)
+{
+    auto&& shader = m_shader_mgr.get_lib_shader(lib_name);
+    if (!shader) {
+        return;
+    }
+
+    auto&& shader_info     = shader->m_reflection;
+    auto&& sub_shader_info = shader_info->get_sub_shader_info(sub_shader_name);
+
+    auto&& cbuffer_bindings = sub_shader_info->m_func_input_info.cbuffer_binding_desc();
+    for (auto&& cbuffer_binding : cbuffer_bindings) {
+        string name         = cbuffer_binding.Name;
+        auto&& cbuffer_desc = sub_shader_info->m_func_input_info.get_cbuffer_desc(name);
+        if (cbuffer_desc) {
+            // only add if it is not in the list
+            if (m_cbuffer.find(name) == m_cbuffer.end()) {
+                auto&& cbuffer_data = m_device.create_dynamic_cbuffer(cbuffer_desc->m_desc.Size, name);
+                m_cbuffer.insert(std::make_pair(name, cbuffer_data));
+                m_cbuffer_infos.insert(std::make_pair(name, cbuffer_desc));
+            }
+        }
+    }
+}
+const CBUFFER_VARIABLE_INFO* Lib_ray_technique_instance::get_cbuffer_var_info(const string& cbuffer_name, const string& var_name)
+{
+    auto&& found_cbuffer_info = m_cbuffer_infos.find(cbuffer_name);
+    if (found_cbuffer_info != m_cbuffer_infos.end()) {
+
+        auto&& cbuffer_desc = found_cbuffer_info->second;
+
+        auto&& found_var = cbuffer_desc->m_variable_infos.find(var_name);
+        if (found_var != cbuffer_desc->m_variable_infos.end()) {
+            return &found_var->second;
+        }
+    }
+
+    return nullptr;
+}
+void Lib_ray_technique_instance::set_root_signature_parameters(ID3D12GraphicsCommandList& command_list, const Lib_ray_sub_technique& sub_technique)
+{
+    for (uint32_t i = 0; i < sub_technique.m_descriptor_ranges.size(); ++i) {
+        auto&& name = sub_technique.m_descriptor_table_names[i];
+
+        auto&& found_cbuffer_data = m_cbuffer.find(name);
+        if (found_cbuffer_data != m_cbuffer.end()) {
+            auto&& gpu_descriptor_handle = m_device.get_gpu_descriptor_handle(*found_cbuffer_data->second);
+            if (std::get<bool>(gpu_descriptor_handle)) {
+                command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+            }
+        }
+
+        auto&& found_srv_data = m_srv.find(name);
+        if (found_srv_data != m_srv.end()) {
+            auto&& gpu_descriptor_handle = m_device.get_gpu_descriptor_handle(found_srv_data->second);
+            if (std::get<bool>(gpu_descriptor_handle)) {
+                command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+            }
+        }
+
+        auto&& found_uav_data = m_uav.find(name);
+        if (found_uav_data != m_uav.end()) {
+            auto&& gpu_descriptor_handle = m_device.get_uav_gpu_descriptor_handle(found_uav_data->second);
+            if (std::get<bool>(gpu_descriptor_handle)) {
+                command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+            }
+        }
+
+        auto&& found_sampler_data = m_samplers.find(name);
+        if (found_sampler_data != m_samplers.end()) {
+            auto&& gpu_descriptor_handle = m_device.get_gpu_descriptor_handle(found_sampler_data->second);
+            if (std::get<bool>(gpu_descriptor_handle)) {
+                command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+            }
+        }
+    }
+}
+} // namespace D3D12

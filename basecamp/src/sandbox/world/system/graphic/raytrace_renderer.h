@@ -18,5 +18,7 @@ class Raytrace_renderer : public Engine_client {
   private:
     unique_ptr<Render_pass_main> m_render_pass_main;
 
+    shared_ptr<D3D12::Lib_ray_technique_instance> m_raytrace_technique_instance;
+
     Engine& m_engine;
 };

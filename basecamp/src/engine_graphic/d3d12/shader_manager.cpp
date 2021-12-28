@@ -172,7 +172,7 @@ void Shader_manager::register_lib_ray_technique(const string& name, const string
 
 // need refactoring
 void append_root_parameter_slot(vector<CD3DX12_ROOT_PARAMETER>& root_parameter_slots, vector<unique_ptr<CD3DX12_DESCRIPTOR_RANGE>>& descriptor_ranges,
-    vector<string>& descriptor_table_names, const D3D12::ShaderReflection& reflection, D3D12_SHADER_VISIBILITY visibility)
+    vector<string>& descriptor_table_names, const D3D12::Shader_reflection_info& reflection, D3D12_SHADER_VISIBILITY visibility)
 {
     auto&& sh       = reflection;
     auto&& sh_state = visibility;
@@ -227,13 +227,15 @@ void Shader_manager::build_root_signature(Technique& t)
     auto&& descriptor_table_names = t.m_descriptor_table_names;
 
     if (vs) {
-        append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, *(vs->m_reflection), D3D12_SHADER_VISIBILITY_VERTEX);
+        append_root_parameter_slot(
+            root_parameter_slots, descriptor_ranges, descriptor_table_names, vs->m_reflection->get_infos(), D3D12_SHADER_VISIBILITY_VERTEX);
     }
     if (ps) {
-        append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, *(ps->m_reflection), D3D12_SHADER_VISIBILITY_PIXEL);
+        append_root_parameter_slot(
+            root_parameter_slots, descriptor_ranges, descriptor_table_names, ps->m_reflection->get_infos(), D3D12_SHADER_VISIBILITY_PIXEL);
     }
     if (cs) {
-        append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, *(cs->m_reflection), D3D12_SHADER_VISIBILITY_ALL);
+        append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, cs->m_reflection->get_infos(), D3D12_SHADER_VISIBILITY_ALL);
     }
 
     // A root signature is an array of root parameters.
@@ -257,7 +259,7 @@ void Shader_manager::build_root_signature(Technique& t)
     validation(t);
 }
 
-void Shader_manager::build_root_signature(Lib_ray_sub_technique& t, const Shader_reflection_info& reflection)
+void Shader_manager::build_local_root_signature(Lib_ray_sub_technique& t, const Shader_reflection_info& reflection)
 {
     auto&& root_parameter_slots   = t.m_root_parameter_slots;
     auto&& descriptor_ranges      = t.m_descriptor_ranges;
@@ -267,7 +269,7 @@ void Shader_manager::build_root_signature(Lib_ray_sub_technique& t, const Shader
 
     // A root signature is an array of root parameters.
     // auto&& flags = cs ? D3D12_ROOT_SIGNATURE_FLAG_NONE : D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-    auto&& flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+    auto&& flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
 
     CD3DX12_ROOT_SIGNATURE_DESC root_sig_desc((UINT)root_parameter_slots.size(), root_parameter_slots.data(), 0, nullptr, flags);
 

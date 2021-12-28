@@ -19,6 +19,7 @@ std::shared_ptr<Buffer> Resource_manager::create_static_buffer(const string& nam
     {
         auto&& w_name = wstring(name.begin(), name.end());
         buffer->m_buffer->SetName(w_name.c_str());
+        buffer->m_d3d_desc = resource_desc;
     }
 
     m_static_buffers.insert(std::make_pair(name, buffer));
@@ -76,10 +77,11 @@ std::shared_ptr<Buffer> Resource_manager::create_upload_buffer(const string& nam
 
     auto&& buffer = std::make_shared<Buffer>();
     m_device.m_allocator->CreateResource(
-        &allocation_desc, &resource_desc, D3D12_RESOURCE_STATE_COMMON, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer));
+        &allocation_desc, &resource_desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer));
     {
         auto&& w_name = wstring(name.begin(), name.end());
         buffer->m_buffer->SetName(w_name.c_str());
+        buffer->m_d3d_desc = resource_desc;
     }
 
     m_static_buffers.insert(std::make_pair(name, buffer));
@@ -87,14 +89,11 @@ std::shared_ptr<Buffer> Resource_manager::create_upload_buffer(const string& nam
     auto&& command_list = m_device.commmand_list()();
     // optional, if we want to upload an initial_data
     if (init_data) {
-        void* p_data;
-        (buffer->m_buffer)->Map(0, nullptr, &p_data);
+        void* p_data = nullptr;
+        DBG::throw_hr((buffer->m_buffer)->Map(0, nullptr, &p_data));
         memcpy(p_data, init_data, byte_size);
         (buffer->m_buffer)->Unmap(0, nullptr);
     }
-
-    command_list->ResourceBarrier(
-        1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_GENERIC_READ));
 
     return buffer;
 }

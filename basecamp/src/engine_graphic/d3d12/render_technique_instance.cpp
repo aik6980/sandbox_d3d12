@@ -59,12 +59,12 @@ Compute_pipeline_state_desc Technique::get_compute_pipeline_state_desc()
     return pso_desc;
 }
 
-const CBUFFER_INFO* Technique::get_cbuffer_info(const string& shader_name, const string& cbuffer_name)
+const Cbuffer_info* Technique::get_cbuffer_info(const string& shader_name, const string& cbuffer_name)
 {
     auto&& shader_vs   = m_shader_mgr.get_shader(shader_name);
     auto&& shader_info = shader_vs->m_reflection;
 
-    auto&& cbuffer_desc = shader_info->get_cbuffer_desc(cbuffer_name);
+    auto&& cbuffer_desc = shader_info->get_infos().get_cbuffer_desc(cbuffer_name);
     return cbuffer_desc;
 }
 
@@ -81,7 +81,7 @@ const CBUFFER_VARIABLE_INFO* Technique::get_cbuffer_var_info(const string& shade
     return nullptr;
 }
 
-void D3D12::TechniqueInstance::init(const string& technique_name)
+void TechniqueInstance::init(const string& technique_name)
 {
     m_technique_handle = m_shader_mgr.get_render_technique(technique_name);
     if (auto&& technique = m_technique_handle.lock()) {
@@ -90,7 +90,7 @@ void D3D12::TechniqueInstance::init(const string& technique_name)
     }
 }
 
-void D3D12::TechniqueInstance::set_cbv(const string& cbuffer_name, const string& var_name, void* data, uint32_t data_size)
+void TechniqueInstance::set_cbv(const string& cbuffer_name, const string& var_name, void* data, uint32_t data_size)
 {
     auto&& found_cbuffer_data = m_cbuffer.find(cbuffer_name);
     if (auto&& technique = m_technique_handle.lock()) {
@@ -242,10 +242,10 @@ void TechniqueInstance::init_dynamic_cbuffer(const string& shader_name)
 
     auto&& shader_info = shader->m_reflection;
 
-    auto&& cbuffer_bindings = shader_info->cbuffer_binding_desc();
+    auto&& cbuffer_bindings = shader_info->get_infos().cbuffer_binding_desc();
     for (auto&& cbuffer_binding : cbuffer_bindings) {
         string name         = cbuffer_binding.Name;
-        auto&& cbuffer_desc = shader_info->get_cbuffer_desc(name);
+        auto&& cbuffer_desc = shader_info->get_infos().get_cbuffer_desc(name);
         if (cbuffer_desc) {
             // only add if it is not in the list
             if (m_cbuffer.find(name) == m_cbuffer.end()) {

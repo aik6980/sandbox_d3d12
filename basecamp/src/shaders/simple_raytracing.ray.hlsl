@@ -1,7 +1,11 @@
-RaytracingAccelerationStructure Scene;
-RWTexture2D<float4> Output;
+// [Note] current compile for Raytracing ONLY
+// each resources need to have register(xx) <- otherwise it will generate garbage in HLSL asm
 
-cbuffer Raygen_cb
+
+RaytracingAccelerationStructure Scene : register(t0);
+RWTexture2D<float4> Output : register(u0);
+
+cbuffer Raygen_cb : register(b0)
 {
 	float4 Main_vp;
 	float4 Stencil_vp;
@@ -29,6 +33,11 @@ void raygen_entry()
 {
 	uint3 launch_index = DispatchRaysIndex();
 	float2 lerp_val = launch_index.xy / (float2)DispatchRaysDimensions();
+
+    float3 col = float3(0.4, 0.1, 0.2);
+    Output[launch_index.xy] = float4(col, 1.0);
+
+    return;
 
 	// viewport
     float left	= Main_vp.x;

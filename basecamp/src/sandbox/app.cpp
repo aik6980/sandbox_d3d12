@@ -36,8 +36,8 @@ void App::on_init(HINSTANCE hInstance, HWND hWnd)
     m_engine->init(init_data);
 
     // raster renderer
-    // unique_ptr<Engine_client> mesh_renderer(new MeshRenderer(*m_engine));
-    // mesh_renderer->m_name = "mesh_renderer";
+    unique_ptr<Engine_client> mesh_renderer(new MeshRenderer(*m_engine));
+    mesh_renderer->m_name = "mesh_renderer";
     // m_engine->register_client(std::move(mesh_renderer));
 
     unique_ptr<Engine_client> renderer(new Raytrace_renderer(*m_engine));

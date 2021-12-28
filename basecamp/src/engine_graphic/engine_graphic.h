@@ -54,6 +54,8 @@ struct Sampler;
 
 class Technique;
 class TechniqueInstance;
+class Lib_ray_technique;
+class Lib_ray_technique_instance;
 
 struct TechniqueInit {
     string m_vs;

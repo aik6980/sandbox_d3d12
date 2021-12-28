@@ -150,7 +150,7 @@ void ShaderReflection::generate_cbuffer_desc()
         auto&& name                       = cbuffer_desc[i].Name;
         auto&& constant_buffer_reflection = m_shader_reflection->GetConstantBufferByName(name);
 
-        CBUFFER_INFO cbuffer_info;
+        Cbuffer_info cbuffer_info;
         constant_buffer_reflection->GetDesc(&cbuffer_info.m_desc);
         cbuffer_info.m_name = to_string(cbuffer_info.m_desc.Name);
 
@@ -180,14 +180,7 @@ void ShaderReflection::generate_bound_resource_desc()
     }
 }
 
-Lib_ray_reflection::Lib_ray_reflection()
-{
-    m_raygen_entry    = "raygen_entry";
-    m_miss_entry      = "miss_entry";
-    m_closethit_entry = "closethit_entry";
-
-    m_hitgroup = "hitgroup";
-}
+Lib_ray_reflection::Lib_ray_reflection() {}
 
 void Lib_ray_reflection::get_reflection(ComPtr<ID3DBlob> buffer)
 {
@@ -206,26 +199,80 @@ void Lib_ray_reflection::get_reflection(ComPtr<ID3DBlob> buffer)
     m_lib_reflection = reflection;
     m_lib_reflection->GetDesc(&m_lib_desc);
 
-    for (int i = 0; i < m_lib_desc.FunctionCount; ++i) {
-        auto&& func_reflection = m_lib_reflection->GetFunctionByIndex(i);
+    // allocate sub objects
+    m_sub_shaders.resize(m_lib_desc.FunctionCount);
 
+    for (int i = 0; i < m_lib_desc.FunctionCount; ++i) {
+        auto&&              func_reflection = m_lib_reflection->GetFunctionByIndex(i);
         D3D12_FUNCTION_DESC func_desc;
         func_reflection->GetDesc(&func_desc);
 
-        string name = func_desc.Name;
+        m_sub_shaders[i].m_func_reflection = func_reflection;
+        m_sub_shaders[i].m_func_desc       = func_desc;
+
+        // get function name from mangling text eg. "/x1?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z"
+        string mangling_name = func_desc.Name;
+        auto&& beg_pos       = mangling_name.find("?");
+        // exclude the token itself
+        beg_pos += 1;
+        auto&& end_pos          = mangling_name.find("@@");
+        auto&& func_name        = mangling_name.substr(beg_pos, end_pos - beg_pos);
+        m_sub_shaders[i].m_name = func_name;
+
+        generate_bound_resource_desc(m_sub_shaders[i]);
+        generate_cbuffer_desc(m_sub_shaders[i]);
     }
 }
-void Lib_ray_reflection::generate_bound_resource_desc(const shared_ptr<ID3D12FunctionReflection> func_reflection, uint32_t func_idx)
+const Lib_ray_sub_shader* Lib_ray_reflection::get_sub_shader_info(const string& name)
 {
-    D3D12_FUNCTION_DESC func_desc;
-    func_reflection->GetDesc(&func_desc);
-    auto&& num_items = func_desc.BoundResources;
+    auto matched_name_func = [&name](const Lib_ray_sub_shader& sub_shader) { return sub_shader.m_name == name; };
+
+    auto found = std::find_if(m_sub_shaders.cbegin(), m_sub_shaders.cend(), matched_name_func);
+    if (found != m_sub_shaders.end()) {
+        return &(*found);
+    }
+
+    return nullptr;
+}
+void Lib_ray_reflection::generate_bound_resource_desc(Lib_ray_sub_shader& sub_shader)
+{
+    D3D12_FUNCTION_DESC& func_desc = sub_shader.m_func_desc;
+    auto&&               num_items = func_desc.BoundResources;
 
     for (uint32_t i = 0; i < num_items; ++i) {
         D3D12_SHADER_INPUT_BIND_DESC desc;
-        func_reflection->GetResourceBindingDesc(i, &desc);
+        sub_shader.m_func_reflection->GetResourceBindingDesc(i, &desc);
 
-        m_infos[i].generate_bound_resource_desc(desc);
+        sub_shader.m_func_input_info.generate_bound_resource_desc(desc);
+    }
+}
+
+void Lib_ray_reflection::generate_cbuffer_desc(Lib_ray_sub_shader& sub_shader)
+{
+    auto&& var_infos       = sub_shader.m_func_input_info;
+    auto&& func_reflection = sub_shader.m_func_reflection;
+
+    auto&& cbuffer_desc = var_infos.m_shader_input_descs[Sit_cbuffer];
+
+    for (uint32_t i = 0; i < cbuffer_desc.size(); ++i) {
+        auto&& name                       = cbuffer_desc[i].Name;
+        auto&& constant_buffer_reflection = func_reflection->GetConstantBufferByName(name);
+
+        Cbuffer_info cbuffer_info;
+        constant_buffer_reflection->GetDesc(&cbuffer_info.m_desc);
+        cbuffer_info.m_name = to_string(cbuffer_info.m_desc.Name);
+
+        for (uint32_t j = 0; j < cbuffer_info.m_desc.Variables; ++j) {
+            CBUFFER_VARIABLE_INFO var_info;
+            auto&&                d3d_var_info = constant_buffer_reflection->GetVariableByIndex(j);
+
+            d3d_var_info->GetDesc(&var_info.m_desc);
+            var_info.m_name = to_string(var_info.m_desc.Name);
+
+            cbuffer_info.m_variable_infos.emplace(std::make_pair(var_info.m_name, var_info));
+        }
+
+        var_infos.m_cbuffer_infos.emplace(std::make_pair(cbuffer_info.m_name, cbuffer_info));
     }
 }
 

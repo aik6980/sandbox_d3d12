@@ -7,6 +7,7 @@ namespace D3D12 {
 struct Shader;
 class Technique;
 class Lib_ray_technique;
+struct Lib_ray_sub_technique;
 
 class Shader_manager {
   public:
@@ -28,9 +29,10 @@ class Shader_manager {
     void register_technique(const string& name, const TechniqueInit& init_data);
     void register_lib_ray_technique(const string& name, const string& lib_ray);
 
+    void build_local_root_signature(Lib_ray_sub_technique& t, const Shader_reflection_info& reflection);
+
   private:
     void build_root_signature(Technique& t);
-    void build_root_signature(Lib_ray_sub_technique& t, const Shader_reflection_info& reflection);
 
     void validation(Technique& t);
 
