@@ -15,7 +15,7 @@ class App {
         return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_time_begin_app).count() * 1e-6f;
     }
 
-    static float get_duration_frame() { return m_duration_frame.count() * 1e-6; }
+    static float get_duration_frame() { return m_duration_frame.count() * (float)1e-6; }
 
     void on_init(HINSTANCE hInstance, HWND hWnd);
     void on_update();

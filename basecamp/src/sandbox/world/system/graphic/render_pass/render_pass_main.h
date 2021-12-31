@@ -33,3 +33,12 @@ class Render_pass_shadow_map {
     string              m_depth_buffer_id        = "shadowmap_depth_buffer";
     CD3DX12_CLEAR_VALUE m_depth_buffer_clear_val = CD3DX12_CLEAR_VALUE(DXGI_FORMAT_D32_FLOAT, 1.0f, 0);
 };
+
+class Render_pass_raytrace_main {
+  public:
+    void                    load_resource();
+    weak_ptr<D3D12::Buffer> render_target_buffer();
+
+  private:
+    string m_raytrace_colour_buffer_id = "raytrace_colour_buffer";
+};

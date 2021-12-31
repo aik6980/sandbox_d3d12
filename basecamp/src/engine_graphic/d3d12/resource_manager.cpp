@@ -99,7 +99,7 @@ std::shared_ptr<Buffer> Resource_manager::create_upload_buffer(const string& nam
 }
 
 std::shared_ptr<Buffer> Resource_manager::create_texture(
-    const string& name, const CD3DX12_RESOURCE_DESC& info, const CD3DX12_CLEAR_VALUE* clear_val, const TextureData* init_data)
+    const string& name, const CD3DX12_RESOURCE_DESC& info, const CD3DX12_CLEAR_VALUE* clear_val, const TextureData* init_data, D3D12_RESOURCE_STATES init_state)
 {
     auto&& resource_desc = info;
 
@@ -107,8 +107,7 @@ std::shared_ptr<Buffer> Resource_manager::create_texture(
     allocation_desc.HeapType                 = D3D12_HEAP_TYPE_DEFAULT;
 
     auto&& buffer = std::make_shared<Buffer>();
-    m_device.m_allocator->CreateResource(
-        &allocation_desc, &resource_desc, D3D12_RESOURCE_STATE_COMMON, clear_val, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer));
+    m_device.m_allocator->CreateResource(&allocation_desc, &resource_desc, init_state, clear_val, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer));
     {
         auto&& w_name = wstring(name.begin(), name.end());
         buffer->m_buffer->SetName(w_name.c_str());
@@ -143,21 +142,15 @@ std::shared_ptr<Buffer> Resource_manager::create_texture(
         // Schedule to copy the data to the default buffer resource.  At a high level, the helper function UpdateSubresources
         // will copy the CPU memory into the intermediate upload heap.  Then, using ID3D12CommandList::CopySubresourceRegion,
         // the intermediate upload heap data will be copied to mBuffer.
-        command_list->ResourceBarrier(
-            1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
+        command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), init_state, D3D12_RESOURCE_STATE_COPY_DEST));
 
         // [note] this function is not at the lowest level either,
         // so, still room to learn down there
         UpdateSubresources<1>(command_list, buffer->m_buffer.Get(), staging_buffer->m_buffer.Get(), 0, 0, 1, &sub_resource_data);
 
-        command_list->ResourceBarrier(
-            1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
+        command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, init_state));
 
         m_device.frame_resource().m_staging_buffers.emplace_back(staging_buffer);
-    }
-    else {
-        command_list->ResourceBarrier(
-            1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_GENERIC_READ));
     }
 
     return buffer;
@@ -337,7 +330,7 @@ D3D12_VERTEX_BUFFER_VIEW Resource_manager::request_instance_buffer_view(const st
         if (auto&& buffer = buffer_handle.lock()) {
             D3D12_VERTEX_BUFFER_VIEW view = {};
             view.BufferLocation           = buffer->m_buffer->GetGPUVirtualAddress();
-            view.SizeInBytes              = buffer->m_d3d_desc.Width;
+            view.SizeInBytes              = (uint32_t)buffer->m_d3d_desc.Width;
             view.StrideInBytes            = instance_data_byte_size;
 
             return view;
@@ -371,13 +364,14 @@ void Resource_manager::create_acceleration_structure(const string& name, const M
         return;
     }
 
-    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc       = {};
-    geometry_desc.Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    geometry_desc.Triangles.IndexBuffer                = index_buffer->m_buffer->GetGPUVirtualAddress();
-    geometry_desc.Triangles.IndexCount                 = mesh_buffer.m_mesh_location.index_count;
-    geometry_desc.Triangles.IndexFormat                = mesh_buffer.idx_format;
-    geometry_desc.Triangles.Transform3x4               = 0;
-    geometry_desc.Triangles.VertexFormat               = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
+    geometry_desc.Type                           = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+    geometry_desc.Triangles.IndexBuffer          = index_buffer->m_buffer->GetGPUVirtualAddress();
+    geometry_desc.Triangles.IndexCount           = mesh_buffer.m_mesh_location.index_count;
+    geometry_desc.Triangles.IndexFormat          = mesh_buffer.idx_format;
+    geometry_desc.Triangles.Transform3x4         = 0;
+    // geometry_desc.Triangles.VertexFormat               = DXGI_FORMAT_R32G32B32A32_FLOAT; // D3Derror <- probably not supported//
+    geometry_desc.Triangles.VertexFormat               = DXGI_FORMAT_R32G32B32_FLOAT;
     geometry_desc.Triangles.VertexCount                = mesh_buffer.vb_bytes_size / mesh_buffer.vtx_bytes_stride;
     geometry_desc.Triangles.VertexBuffer.StartAddress  = vertex_buffer->m_buffer->GetGPUVirtualAddress();
     geometry_desc.Triangles.VertexBuffer.StrideInBytes = mesh_buffer.vtx_bytes_stride;
@@ -441,21 +435,22 @@ void Resource_manager::create_acceleration_structure(const string& name, const M
 
         auto&& tlas_resource_name = name + "_tlas";
         auto&& tlas_resource_desc = CD3DX12_RESOURCE_DESC::Buffer(top_level_prebuild_info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-        tlas_buffer               = create_texture(tlas_resource_name, tlas_resource_desc, nullptr, nullptr);
-        m_device.buffer_state_transition(*tlas_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+        tlas_buffer = create_texture(tlas_resource_name, tlas_resource_desc, nullptr, nullptr, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+        // m_device.buffer_state_transition(*tlas_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 
         auto&& blas_resource_name = name + "_blas";
         auto&& blas_resource_desc =
             CD3DX12_RESOURCE_DESC::Buffer(bottom_level_prebuild_info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-        blas_buffer = create_texture(blas_resource_name, blas_resource_desc, nullptr, nullptr);
-        m_device.buffer_state_transition(*blas_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+        blas_buffer = create_texture(blas_resource_name, blas_resource_desc, nullptr, nullptr, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+        // m_device.buffer_state_transition(*blas_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
     }
 
     // Create an instance desc for the bottom-level acceleration structure.
     D3D12_RAYTRACING_INSTANCE_DESC instance_desc = {};
     instance_desc.Transform[0][0] = instance_desc.Transform[1][1] = instance_desc.Transform[2][2] = 1;
-    instance_desc.InstanceMask                                                                    = 1;
-    instance_desc.AccelerationStructure                                                           = blas_buffer->m_buffer->GetGPUVirtualAddress();
+    instance_desc.Transform[2][3]       = 5.0f; // push this instance back a little so ray can intersec!
+    instance_desc.InstanceMask          = 1;
+    instance_desc.AccelerationStructure = blas_buffer->m_buffer->GetGPUVirtualAddress();
     // ComPtr<ID3D12Resource> instanceDescs;
     // AllocateUploadBuffer(device, &instanceDesc, sizeof(instanceDesc), &instanceDescs, L"InstanceDescs");
     auto&& instance_buffer_name = name + "_instance";
@@ -475,7 +470,7 @@ void Resource_manager::create_acceleration_structure(const string& name, const M
         top_level_inputs.InstanceDescs                        = instance_buffer->m_buffer->GetGPUVirtualAddress();
         top_level_build_desc.Inputs                           = top_level_inputs;
         top_level_build_desc.ScratchAccelerationStructureData = scratch_buffer->m_buffer->GetGPUVirtualAddress();
-        top_level_build_desc.DestAccelerationStructureData    = instance_buffer->m_buffer->GetGPUVirtualAddress();
+        top_level_build_desc.DestAccelerationStructureData    = tlas_buffer->m_buffer->GetGPUVirtualAddress();
     }
 
     // Build acceleration structure.
@@ -484,6 +479,21 @@ void Resource_manager::create_acceleration_structure(const string& name, const M
     // note, I don't think we need this because I am using only one command list
     command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(blas_buffer->m_buffer.Get()));
     command_list->BuildRaytracingAccelerationStructure(&top_level_build_desc, 0, nullptr);
+
+    // -------------------------
+    // create srv for tlas
+    auto id     = m_device.m_srv_heap.get_next_decriptor_id();
+    auto handle = m_device.m_srv_heap.get_cpu_descriptor(id);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC view_desc          = {};
+    view_desc.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    view_desc.Format                                   = DXGI_FORMAT_UNKNOWN;
+    view_desc.ViewDimension                            = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+    view_desc.RaytracingAccelerationStructure.Location = tlas_buffer->m_buffer->GetGPUVirtualAddress();
+
+    m_device.m_device->CreateShaderResourceView(nullptr, &view_desc, handle);
+
+    tlas_buffer->m_cbv_srv_handle_id = id;
 }
 
 } // namespace D3D12

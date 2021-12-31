@@ -71,9 +71,10 @@ void Render_pass_shadow_map::load_resource()
 {
     auto&& device = App::engine().render_device();
 
-    auto&& desc          = device.get_swap_chain_desc();
-    auto&& resource_desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, desc.BufferDesc.Width, desc.BufferDesc.Height);
-    resource_desc.Flags  = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    auto&& desc             = device.get_swap_chain_desc();
+    auto&& resource_desc    = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, desc.BufferDesc.Width, desc.BufferDesc.Height);
+    resource_desc.MipLevels = 1;
+    resource_desc.Flags     = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
     auto&& resource_mgr = App::engine().resource_mgr();
     auto&& buffer       = resource_mgr.create_texture(m_depth_buffer_id, resource_desc, &m_depth_buffer_clear_val, nullptr);
@@ -123,4 +124,28 @@ weak_ptr<D3D12::Buffer> Render_pass_shadow_map::depth_stencil_buffer()
     auto&& depth_buffer = resource_mgr.request_buffer(m_depth_buffer_id);
 
     return depth_buffer;
+}
+
+void Render_pass_raytrace_main::load_resource()
+{
+    auto&& device = App::engine().render_device();
+
+    auto&& desc             = device.get_swap_chain_desc();
+    auto&& resource_desc    = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, desc.BufferDesc.Width, desc.BufferDesc.Height);
+    resource_desc.MipLevels = 1;
+    resource_desc.Flags     = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+    auto&& resource_mgr = App::engine().resource_mgr();
+
+    auto&& buffer = resource_mgr.create_texture(m_raytrace_colour_buffer_id, resource_desc, nullptr, nullptr);
+    resource_mgr.create_uav(*buffer, resource_desc);
+    resource_mgr.create_srv(*buffer, resource_desc);
+}
+
+weak_ptr<D3D12::Buffer> Render_pass_raytrace_main::render_target_buffer()
+{
+    auto&& resource_mgr = App::engine().resource_mgr();
+    auto&& buffer       = resource_mgr.request_buffer(m_raytrace_colour_buffer_id);
+
+    return buffer;
 }

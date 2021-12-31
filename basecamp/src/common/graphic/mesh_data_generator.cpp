@@ -191,6 +191,17 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_grid(float widt
     return tuple(vertices, indices);
 }
 
+vector<RtInputLayout> MeshDataGenerator::to_rt(MeshVertexArray& vertex_array)
+{
+    vector<RtInputLayout> output;
+    output.resize(vertex_array.m_position.size());
+    for (uint32_t i = 0; i < vertex_array.m_position.size(); ++i) {
+        XMStoreFloat3(&output[i].m_position, XMLoadFloat3(&vertex_array.m_position[i]));
+    }
+
+    return output;
+}
+
 vector<P1InputLayout> MeshDataGenerator::to_p1(MeshVertexArray& vertex_array)
 {
     vector<P1InputLayout> output;

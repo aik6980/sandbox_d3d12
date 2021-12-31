@@ -5,20 +5,23 @@
 #include "world/component/camera.h"
 
 class Engine;
+class Frame_pipeline;
 
-class Raytrace_renderer : public Engine_client {
+class Raytrace_renderer {
   public:
-    Raytrace_renderer(Engine& engine) : m_engine(engine) {}
+    Raytrace_renderer(Engine& engine, Frame_pipeline& frame_pipeline) : m_engine(engine), m_frame_pipeline(frame_pipeline) {}
 
-    void         init();
-    virtual void load_resource() override;
-    virtual void update() override{};
-    virtual void draw() override;
+    void init();
+    void load_resource();
+    void update();
+    void draw();
 
   private:
-    unique_ptr<Render_pass_main> m_render_pass_main;
-
     shared_ptr<D3D12::Lib_ray_technique_instance> m_raytrace_technique_instance;
 
-    Engine& m_engine;
+    string m_rtaccel_structure_buffer_handle;
+    string m_unit_quad_name;
+
+    Engine&         m_engine;
+    Frame_pipeline& m_frame_pipeline;
 };

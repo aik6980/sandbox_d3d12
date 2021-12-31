@@ -259,6 +259,37 @@ void Shader_manager::build_root_signature(Technique& t)
     validation(t);
 }
 
+// [Note] global and local function are exactly the same, please refactoring this!
+void Shader_manager::build_global_root_signature(Lib_ray_technique& t, const Shader_reflection_info& reflection)
+{
+    auto&& root_parameter_slots   = t.m_root_parameter_slots;
+    auto&& descriptor_ranges      = t.m_descriptor_ranges;
+    auto&& descriptor_table_names = t.m_descriptor_table_names;
+
+    append_root_parameter_slot(root_parameter_slots, descriptor_ranges, descriptor_table_names, reflection, D3D12_SHADER_VISIBILITY_ALL);
+
+    // A root signature is an array of root parameters.
+    // auto&& flags = cs ? D3D12_ROOT_SIGNATURE_FLAG_NONE : D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+    auto&& flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+    CD3DX12_ROOT_SIGNATURE_DESC root_sig_desc((UINT)root_parameter_slots.size(), root_parameter_slots.data(), 0, nullptr, flags);
+
+    ComPtr<ID3DBlob> serialized_root_sig = nullptr;
+    ComPtr<ID3DBlob> error_blob          = nullptr;
+    DBG::test_hr(D3D12SerializeRootSignature(&root_sig_desc, D3D_ROOT_SIGNATURE_VERSION_1, &serialized_root_sig, &error_blob));
+
+    if (error_blob != nullptr) {
+        DBG::OutputString((char*)error_blob->GetBufferPointer());
+    }
+
+    auto&& render_device = m_device;
+    DBG::throw_hr(render_device.d3d_device()->CreateRootSignature(
+        0, serialized_root_sig->GetBufferPointer(), serialized_root_sig->GetBufferSize(), IID_PPV_ARGS(&t.m_root_signature)));
+
+    // validation
+    // validation(t);
+}
+
 void Shader_manager::build_local_root_signature(Lib_ray_sub_technique& t, const Shader_reflection_info& reflection)
 {
     auto&& root_parameter_slots   = t.m_root_parameter_slots;

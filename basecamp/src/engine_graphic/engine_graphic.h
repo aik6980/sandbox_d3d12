@@ -40,6 +40,8 @@ using Microsoft::WRL::ComPtr;
 #include "imgui/imgui.h"
 
 // Forward Declaration
+class Engine;
+
 namespace D3D12 {
 struct MESH_LOCATION;
 

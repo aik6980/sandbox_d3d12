@@ -4,18 +4,16 @@
 #include "render_pass/render_pass_main.h"
 #include "world/component/camera.h"
 
-class Engine;
+class Frame_pipeline;
 
-class MeshRenderer : public Engine_client {
+class Mesh_renderer {
   public:
-    MeshRenderer(Engine& engine);
+    Mesh_renderer(Engine& engine, Frame_pipeline& frame_pipeline) : m_engine(engine), m_frame_pipeline(frame_pipeline) {}
 
-    void         init();
-    virtual void load_resource() override;
-    virtual void update() override{};
-    virtual void draw() override;
+    void load_resource();
+    void update();
+    void draw();
 
-  private:
     struct Instance_data {
         XMFLOAT4 pos_world;
         XMFLOAT4 orient_world;
@@ -25,8 +23,6 @@ class MeshRenderer : public Engine_client {
 
     void draw_meshes_shadow_map();
     void draw_meshes();
-    void process_post();
-    void copy_to_backbuffer();
 
     void build_quad_mesh();
     void build_cube_mesh();
@@ -35,7 +31,8 @@ class MeshRenderer : public Engine_client {
 
     void update_camera();
 
-    Engine& m_engine;
+    Engine&         m_engine;
+    Frame_pipeline& m_frame_pipeline;
 
     string m_unit_quad_name;
     string m_unit_cube_name;
@@ -57,9 +54,17 @@ class MeshRenderer : public Engine_client {
     shared_ptr<D3D12::TechniqueInstance> m_shadow_map_technique_instance;
 
     shared_ptr<D3D12::TechniqueInstance> m_mesh_instancing_technique_instance;
+};
+
+class Post_renderer {
+  public:
+    Post_renderer(Engine& engine, Frame_pipeline& frame_pipeline) : m_engine(engine), m_frame_pipeline(frame_pipeline) {}
+
+    void load_resource();
+    void draw();
+
+    Engine&         m_engine;
+    Frame_pipeline& m_frame_pipeline;
 
     shared_ptr<D3D12::TechniqueInstance> m_compute_post_technique_instance;
-
-    unique_ptr<Render_pass_main>       m_render_pass_main;
-    unique_ptr<Render_pass_shadow_map> m_render_pass_shadow_map;
 };

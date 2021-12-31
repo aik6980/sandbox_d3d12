@@ -67,19 +67,19 @@ void Lib_ray_technique::create_ray_tracing_pipeline_state_object()
     UINT attribute_size = sizeof(XMFLOAT2); // float2 barycentrics
     shader_config->Config(payload_size, attribute_size);
 
-    // [Note] these, I can simply get from the function reflections
+    // [Note] use global root signature, not local
+    // A littel tricky, but we can get all the info from each sub shader from Lib reflection
+    //
     // Local root signature and shader association
     // This is a root signature that enables a shader to have unique arguments that come from shader tables.
-    // CreateLocalRootSignatureSubobjects(&raytracingPipeline);
-    create_root_signature_subobject(m_raygen_sub_technique, raytrace_pso, *reflection, reflection->raygen_entry);
-    create_root_signature_subobject(m_miss_sub_technique, raytrace_pso, *reflection, reflection->miss_entry);
-    create_root_signature_subobject(m_closethit_sub_technique, raytrace_pso, *reflection, reflection->closethit_entry);
+    // create_root_signature_subobject(m_raygen_sub_technique, raytrace_pso, *reflection, reflection->raygen_entry);
+    // create_root_signature_subobject(m_miss_sub_technique, raytrace_pso, *reflection, reflection->miss_entry);
+    // create_root_signature_subobject(m_closethit_sub_technique, raytrace_pso, *reflection, reflection->closethit_entry);
 
-    // [Note] I don't think i can get this information from reflections
+    // [Note] build global root signature from combined information from func desc
     // Global root signature
     // This is a root signature that is shared across all raytracing shaders invoked during a DispatchRays() call.
-    // auto globalRootSignature = raytracingPipeline.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
-    // globalRootSignature->SetRootSignature(m_raytracingGlobalRootSignature.Get());
+    create_root_signature(raytrace_pso, *reflection);
 
     // Pipeline config
     // Defines the maximum TraceRay() recursion depth.
@@ -144,7 +144,7 @@ void Lib_ray_technique::create_shader_table()
 
         m_raygen_shader_table_buffer = m_lib + "_raygen_table";
         auto&& blob                  = raygen_table.generate_data();
-        auto&& shader_table_buffer   = resource_mgr.create_upload_buffer(m_raygen_shader_table_buffer, blob.size(), blob.data());
+        auto&& shader_table_buffer   = resource_mgr.create_upload_buffer(m_raygen_shader_table_buffer, (uint32_t)blob.size(), blob.data());
     }
 
     // Miss shader table
@@ -160,7 +160,7 @@ void Lib_ray_technique::create_shader_table()
 
         m_miss_shader_table_buffer = m_lib + "_miss_table";
         auto&& blob                = shader_table.generate_data();
-        auto&& shader_table_buffer = resource_mgr.create_upload_buffer(m_miss_shader_table_buffer, blob.size(), blob.data());
+        auto&& shader_table_buffer = resource_mgr.create_upload_buffer(m_miss_shader_table_buffer, (uint32_t)blob.size(), blob.data());
     }
 
     // Hit group shader table
@@ -176,8 +176,16 @@ void Lib_ray_technique::create_shader_table()
 
         m_hitgroup_shader_table_buffer = m_lib + "_hitgroup_table";
         auto&& blob                    = shader_table.generate_data();
-        auto&& shader_table_buffer     = resource_mgr.create_upload_buffer(m_hitgroup_shader_table_buffer, blob.size(), blob.data());
+        auto&& shader_table_buffer     = resource_mgr.create_upload_buffer(m_hitgroup_shader_table_buffer, (uint32_t)blob.size(), blob.data());
     }
+}
+
+void Lib_ray_technique::create_root_signature(CD3DX12_STATE_OBJECT_DESC& raytrace_pso, Lib_ray_reflection& reflection)
+{
+    m_shader_mgr.build_global_root_signature(*this, reflection.get_global_input_desc());
+
+    auto global_root_signature = raytrace_pso.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
+    global_root_signature->SetRootSignature(m_root_signature.Get());
 }
 
 void Lib_ray_technique::create_root_signature_subobject(
@@ -210,9 +218,7 @@ void Lib_ray_technique_instance::init(const string& technique_name)
 {
     m_technique_handle = m_shader_mgr.get_lib_ray_technique(technique_name);
     if (auto&& technique = m_technique_handle.lock()) {
-        init_dynamic_cbuffer(technique->m_lib, Lib_ray_reflection::raygen_entry);
-        init_dynamic_cbuffer(technique->m_lib, Lib_ray_reflection::miss_entry);
-        init_dynamic_cbuffer(technique->m_lib, Lib_ray_reflection::closethit_entry);
+        init_dynamic_cbuffer(technique->m_lib);
     }
 }
 
@@ -255,26 +261,25 @@ void Lib_ray_technique_instance::set_root_signature_parameters(ID3D12GraphicsCom
 {
     auto&& technique = m_technique_handle.lock();
     if (technique) {
-        set_root_signature_parameters(command_list, technique->m_raygen_sub_technique);
-        set_root_signature_parameters(command_list, technique->m_miss_sub_technique);
-        set_root_signature_parameters(command_list, technique->m_closethit_sub_technique);
+
+        command_list.SetComputeRootSignature(technique->m_root_signature.Get());
+        set_root_signature_parameters(command_list, *technique);
     }
 }
 
-void Lib_ray_technique_instance::init_dynamic_cbuffer(const string& lib_name, const string& sub_shader_name)
+void Lib_ray_technique_instance::init_dynamic_cbuffer(const string& name)
 {
-    auto&& shader = m_shader_mgr.get_lib_shader(lib_name);
+    auto&& shader = m_shader_mgr.get_lib_shader(name);
     if (!shader) {
         return;
     }
 
-    auto&& shader_info     = shader->m_reflection;
-    auto&& sub_shader_info = shader_info->get_sub_shader_info(sub_shader_name);
+    auto&& shader_info = shader->m_reflection;
 
-    auto&& cbuffer_bindings = sub_shader_info->m_func_input_info.cbuffer_binding_desc();
+    auto&& cbuffer_bindings = shader_info->get_global_input_desc().cbuffer_binding_desc();
     for (auto&& cbuffer_binding : cbuffer_bindings) {
         string name         = cbuffer_binding.Name;
-        auto&& cbuffer_desc = sub_shader_info->m_func_input_info.get_cbuffer_desc(name);
+        auto&& cbuffer_desc = shader_info->get_global_input_desc().get_cbuffer_desc(name);
         if (cbuffer_desc) {
             // only add if it is not in the list
             if (m_cbuffer.find(name) == m_cbuffer.end()) {
@@ -300,10 +305,10 @@ const CBUFFER_VARIABLE_INFO* Lib_ray_technique_instance::get_cbuffer_var_info(co
 
     return nullptr;
 }
-void Lib_ray_technique_instance::set_root_signature_parameters(ID3D12GraphicsCommandList& command_list, const Lib_ray_sub_technique& sub_technique)
+void Lib_ray_technique_instance::set_root_signature_parameters(ID3D12GraphicsCommandList& command_list, Lib_ray_technique& technique)
 {
-    for (uint32_t i = 0; i < sub_technique.m_descriptor_ranges.size(); ++i) {
-        auto&& name = sub_technique.m_descriptor_table_names[i];
+    for (uint32_t i = 0; i < technique.m_descriptor_ranges.size(); ++i) {
+        auto&& name = technique.m_descriptor_table_names[i];
 
         auto&& found_cbuffer_data = m_cbuffer.find(name);
         if (found_cbuffer_data != m_cbuffer.end()) {

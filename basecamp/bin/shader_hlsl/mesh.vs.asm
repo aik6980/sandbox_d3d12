@@ -16,7 +16,7 @@
 ; Texcoord                 0   xyzw        2     NONE   float       
 ; Texcoord                 1   xyzw        3     NONE   float   xyzw
 ;
-; shader hash: 48b5ed912a70dcf6288ab36ef43eac10
+; shader hash: 0563cf6b1a6264209a5df37bdb3357db
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -45,7 +45,7 @@
 ; cbuffer Light_cb
 ; {
 ;
-;   struct dx.alignment.legacy.Light_cb
+;   struct hostlayout.Light_cb
 ;   {
 ;
 ;       row_major float4x4 Light_view;                ; Offset:    0
@@ -59,7 +59,7 @@
 ; cbuffer Camera_cb
 ; {
 ;
-;   struct dx.alignment.legacy.Camera_cb
+;   struct hostlayout.Camera_cb
 ;   {
 ;
 ;       row_major float4x4 View;                      ; Offset:    0
@@ -72,7 +72,7 @@
 ; cbuffer Object_cb
 ; {
 ;
-;   struct dx.alignment.legacy.Object_cb
+;   struct hostlayout.Object_cb
 ;   {
 ;
 ;       row_major float4x4 World;                     ; Offset:    0
@@ -113,9 +113,9 @@ target triple = "dxil-ms-dx"
 
 %dx.types.Handle = type { i8* }
 %dx.types.CBufRet.f32 = type { float, float, float, float }
-%dx.alignment.legacy.Light_cb = type { [4 x <4 x float>], [4 x <4 x float>], i32 }
-%dx.alignment.legacy.Camera_cb = type { [4 x <4 x float>], [4 x <4 x float>] }
-%dx.alignment.legacy.Object_cb = type { [4 x <4 x float>] }
+%hostlayout.Light_cb = type { [4 x <4 x float>], [4 x <4 x float>], i32 }
+%hostlayout.Camera_cb = type { [4 x <4 x float>], [4 x <4 x float>] }
+%hostlayout.Object_cb = type { [4 x <4 x float>] }
 
 @dx.nothing.a = internal constant [1 x i32] zeroinitializer
 
@@ -405,9 +405,9 @@ attributes #2 = { nounwind readonly }
 !3 = !{!"vs", i32 6, i32 0}
 !4 = !{null, null, !5, null}
 !5 = !{!6, !7, !8}
-!6 = !{i32 0, %dx.alignment.legacy.Light_cb* undef, !"", i32 0, i32 0, i32 1, i32 132, null}
-!7 = !{i32 1, %dx.alignment.legacy.Camera_cb* undef, !"", i32 0, i32 1, i32 1, i32 128, null}
-!8 = !{i32 2, %dx.alignment.legacy.Object_cb* undef, !"", i32 0, i32 2, i32 1, i32 64, null}
+!6 = !{i32 0, %hostlayout.Light_cb* undef, !"", i32 0, i32 0, i32 1, i32 132, null}
+!7 = !{i32 1, %hostlayout.Camera_cb* undef, !"", i32 0, i32 1, i32 1, i32 128, null}
+!8 = !{i32 2, %hostlayout.Object_cb* undef, !"", i32 0, i32 2, i32 1, i32 64, null}
 !9 = !{[9 x i32] [i32 7, i32 16, i32 61455, i32 61455, i32 61455, i32 0, i32 16, i32 32, i32 64]}
 !10 = !{void ()* @main, !"main", !11, !4, !24}
 !11 = !{!12, !17, null}

@@ -92,11 +92,16 @@ class Lib_ray_reflection {
     inline static const string closethit_entry = "closethit_entry";
     inline static const string hitgroup        = "hitgroup";
 
-    const Lib_ray_sub_shader* get_sub_shader_info(const string& name);
+    const Shader_reflection_info& get_global_input_desc() { return m_global_inputs; }
+    const Lib_ray_sub_shader*     get_sub_shader_info(const string& name);
 
   private:
     void generate_bound_resource_desc(Lib_ray_sub_shader& sub_shader);
     void generate_cbuffer_desc(Lib_ray_sub_shader& sub_shader);
+
+    void generate_global_input();
+
+    Shader_reflection_info m_global_inputs;
 
     ComPtr<ID3D12LibraryReflection> m_lib_reflection;
     D3D12_LIBRARY_DESC              m_lib_desc;

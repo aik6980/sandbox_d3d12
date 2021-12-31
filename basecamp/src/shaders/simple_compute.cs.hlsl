@@ -1,4 +1,7 @@
+
 RWTexture2D<float4> Texture_uav;
+
+Texture2D Texture_srv;
 
 [numthreads(32, 32, 1)]
 void main(uint3 Gid : SV_GroupID,
@@ -16,6 +19,8 @@ void main(uint3 Gid : SV_GroupID,
 
     if (DTid.x > w * 0.5)
     {
+        float4 col = Texture_srv.Load(int3(DTid.xy, 0));
+        Texture_uav[DTid.xy] = col;
         return;
     }
 

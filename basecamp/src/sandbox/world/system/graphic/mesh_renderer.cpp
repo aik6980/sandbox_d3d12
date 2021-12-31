@@ -6,48 +6,11 @@
 #include "common/common.cpp.h"
 #include "engine_graphic/engine.h"
 #include "engine_graphic/engine_graphic_cpp.h"
+#include "frame_pipeline.h"
+#include "global.h"
 #include "world/component/camera.h"
 
-static std::chrono::time_point<std::chrono::steady_clock> start_time;
-
-template <class T>
-string build_mesh(const vector<T>& mesh_verts, const MeshIndexArray& mesh_indices, const string& name, Engine& engine)
-{
-    // upload data to the GPU
-    auto&& vtx_data = mesh_verts.data();
-    auto&& vtx_size = mesh_verts.size() * sizeof(mesh_verts[0]);
-    auto&& vb       = engine.resource_mgr().create_static_buffer(name + " vb", vtx_size, vtx_data);
-
-    auto&& idx_data = mesh_indices.m_indices32.data();
-    auto&& idx_size = mesh_indices.m_indices32.size() * sizeof(mesh_indices.m_indices32[0]);
-    auto&& ib       = engine.resource_mgr().create_static_buffer(name + " ib", idx_size, idx_data);
-
-    auto&& mesh_buffer                  = std::make_shared<D3D12::Mesh_buffer>();
-    mesh_buffer->m_vertex_buffer_handle = vb;
-    mesh_buffer->m_index_buffer_handle  = ib;
-
-    mesh_buffer->ib_bytes_size    = (uint32_t)idx_size;
-    mesh_buffer->idx_format       = DXGI_FORMAT_R32_UINT;
-    mesh_buffer->vb_bytes_size    = (uint32_t)vtx_size;
-    mesh_buffer->vtx_bytes_stride = sizeof(mesh_verts[0]);
-
-    D3D12::MESH_LOCATION loc;
-    loc.index_count              = (uint32_t)mesh_indices.m_indices32.size();
-    mesh_buffer->m_mesh_location = loc;
-
-    engine.resource_mgr().register_mesh_buffer(name, mesh_buffer);
-
-    return name;
-}
-
-MeshRenderer::MeshRenderer(Engine& engine) : m_engine(engine) {}
-
-void MeshRenderer::init()
-{
-    start_time = std::chrono::steady_clock::now();
-}
-
-void MeshRenderer::load_resource()
+void Mesh_renderer::load_resource()
 {
     auto&& device         = m_engine.render_device();
     auto&& shader_manager = m_engine.shader_mgr();
@@ -106,18 +69,6 @@ void MeshRenderer::load_resource()
         m_mesh_instancing_technique_instance->init(technique_name);
     }
 
-    {
-        string technique_name = "compute_post";
-
-        D3D12::TechniqueInit t;
-        t.m_cs = "simple_compute.cs";
-
-        m_engine.shader_mgr().register_technique(technique_name, t);
-
-        m_compute_post_technique_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
-        m_compute_post_technique_instance->init(technique_name);
-    }
-
     // build a mesh
     build_quad_mesh();
     build_cube_mesh();
@@ -131,21 +82,16 @@ void MeshRenderer::load_resource()
     // create an instance buffer
     m_instance_data.resize(m_num_instances);
     m_engine.resource_mgr().create_instance_buffer(m_instance_data_buffer_name, sizeof(Instance_data) * m_num_instances);
-
-    m_render_pass_main = make_unique<Render_pass_main>();
-    m_render_pass_main->load_resource();
-    m_render_pass_shadow_map = make_unique<Render_pass_shadow_map>();
-    m_render_pass_shadow_map->load_resource();
 }
 
 float key_i = 1.0f;
 
-void MeshRenderer::draw_meshes_shadow_map()
+void Mesh_renderer::draw_meshes_shadow_map()
 {
     auto&& camera = m_light;
 
-    auto&& rt_fmt = m_render_pass_shadow_map->render_target_format();
-    auto&& ds_fmt = m_render_pass_shadow_map->depth_stencil_format();
+    auto&& rt_fmt = m_frame_pipeline.m_render_pass_shadow_map->render_target_format();
+    auto&& ds_fmt = m_frame_pipeline.m_render_pass_shadow_map->depth_stencil_format();
 
     auto&& command_list = m_engine.render_device().commmand_list();
 
@@ -176,27 +122,25 @@ void MeshRenderer::draw_meshes_shadow_map()
     }
 }
 
-void MeshRenderer::draw_meshes()
+void Mesh_renderer::draw_meshes()
 {
-    auto&& rt_fmt = m_render_pass_main->render_target_format();
-    auto&& ds_fmt = m_render_pass_main->depth_stencil_format();
+    auto&& rt_fmt = m_frame_pipeline.m_render_pass_main->render_target_format();
+    auto&& ds_fmt = m_frame_pipeline.m_render_pass_main->depth_stencil_format();
 
     m_render_technique_instance->set_cbv("key", "key_i", &key_i, sizeof(key_i));
 
-    auto&& duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
-
-    float vec[2] = {0.25f * sinf(duration.count() * 0.001f), 0.0f};
+    float vec[2] = {0.25f * sinf(0.001f), 0.0f};
     m_render_technique_instance->set_cbv("cb_vs", "offset", vec, sizeof(vec));
 
     float scale[2] = {1.0, 1.0};
     m_render_technique_instance->set_cbv("cb_vs", "scale", scale, sizeof(scale));
-    scale[0] = scale[1] = 0.25;
+    scale[0] = scale[1] = 0.25f;
     m_render_technique_instance1->set_cbv("cb_vs", "scale", scale, sizeof(scale));
 
     float colour[4] = {0.9f, 0.1f, 0.9f, 1.0f};
     m_render_technique_instance->set_cbv("cb_ps", "colour", colour, sizeof(colour));
 
-    float offsety = 0.25 * sinf(duration.count() * 0.001f);
+    float offsety = 0.25f * sinf(0.001f);
     m_render_technique_instance1->set_cbv("cb_vs", "offsety", &offsety, sizeof(offsety));
 
     // begine gpu work this frame
@@ -264,7 +208,8 @@ void MeshRenderer::draw_meshes()
         m_mesh_instancing_technique_instance->set_srv("Diffuse_srv", tex);
 
         // update instance data
-        m_engine.resource_mgr().update_dynamic_buffer(m_instance_data_buffer_name, m_instance_data.data(), sizeof(Instance_data) * m_instance_data.size());
+        m_engine.resource_mgr().update_dynamic_buffer(
+            m_instance_data_buffer_name, m_instance_data.data(), sizeof(Instance_data) * (uint32_t)m_instance_data.size());
 
         command_list()->SetPipelineState(mesh_instancing_pso.Get());
         m_mesh_instancing_technique_instance->set_root_signature_parameters(*command_list());
@@ -272,7 +217,7 @@ void MeshRenderer::draw_meshes()
         std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vb_views = {
             mesh_buffer->vertex_buffer_view(), m_engine.resource_mgr().request_instance_buffer_view(m_instance_data_buffer_name, sizeof(Instance_data))};
 
-        command_list()->IASetVertexBuffers(0, vb_views.size(), vb_views.data());
+        command_list()->IASetVertexBuffers(0, (uint32_t)vb_views.size(), vb_views.data());
         command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
         command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -292,7 +237,7 @@ void MeshRenderer::draw_meshes()
         m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Receive_shadow", 1);
         m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Light_view", &m_light.view(), sizeof(m_light.view()));
         m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Light_projection", &m_light.projection(), sizeof(m_light.projection()));
-        auto&& shadow_map_tex = m_render_pass_shadow_map->depth_stencil_buffer();
+        auto&& shadow_map_tex = m_frame_pipeline.m_render_pass_shadow_map->depth_stencil_buffer();
         m_render_technique_grid_mesh_instance->set_srv("Shadow_map_srv", shadow_map_tex);
 
         auto&& sampler = m_engine.resource_mgr().request_sampler(m_point_sampler);
@@ -315,87 +260,19 @@ void MeshRenderer::draw_meshes()
         command_list()->DrawIndexedInstanced(index_count, 1, 0, 0, 0);
     }
 }
-
-void MeshRenderer::process_post()
-{
-    auto&& render_device = m_engine.render_device();
-    auto&& command_list  = m_engine.render_device().commmand_list();
-
-    auto&& rt_buffer_handle = m_render_pass_main->render_target_buffer();
-    auto&& rt_buffer        = rt_buffer_handle.lock();
-
-    auto&& rt_fmt = m_render_pass_main->render_target_format();
-    auto&& ds_fmt = DXGI_FORMAT_UNKNOWN;
-
-    render_device.buffer_state_transition(*rt_buffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-
-    auto&& tech_instance = m_compute_post_technique_instance;
-    auto&& tech_handle   = tech_instance->get_technique();
-    auto&& pso           = m_engine.shader_mgr().get_pso(tech_handle, rt_fmt, ds_fmt);
-    if (pso) {
-
-        tech_instance->set_uav("Texture_uav", rt_buffer);
-
-        command_list()->SetPipelineState(pso.Get());
-        // set compute root signature
-        tech_instance->set_root_signature_parameters(*command_list());
-
-        static uint32_t threadgroup_size = 32;
-
-        uint32_t dispatch_x = ceilf(rt_buffer->m_d3d_desc.Width / (float)threadgroup_size);
-        uint32_t dispatch_y = ceilf(rt_buffer->m_d3d_desc.Height / (float)threadgroup_size);
-        command_list()->Dispatch(dispatch_x, dispatch_y, 1);
-    }
-}
-
-void MeshRenderer::copy_to_backbuffer()
-{
-    auto&& render_device = m_engine.render_device();
-
-    auto&& rt_buffer_handle = m_render_pass_main->render_target_buffer();
-    auto&& rt_buffer        = rt_buffer_handle.lock();
-
-    render_device.transfer_to_back_buffer(*rt_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-}
-
-void MeshRenderer::draw()
+void Mesh_renderer::draw()
 {
     // update camera
     update_camera();
 
-    m_render_pass_shadow_map->begin_render();
+    m_frame_pipeline.m_render_pass_shadow_map->begin_render();
     draw_meshes_shadow_map();
-    m_render_pass_shadow_map->end_render();
-    m_render_pass_main->begin_render();
+    m_frame_pipeline.m_render_pass_shadow_map->end_render();
+    m_frame_pipeline.m_render_pass_main->begin_render();
     draw_meshes();
-
-    // compute post
-    process_post();
-    // transfer to back buffer
-    copy_to_backbuffer();
 }
 
-// void MESH_RENDERER::build_pso_mesh_technique()
-//{
-//	D3D12::Graphics_pipeline_state_desc pso_desc;
-//	pso_desc.NumRenderTargets = 1;
-//	pso_desc.RTVFormats[0] = m_engine.render_device().get_swap_chain_desc().BufferDesc.Format;
-//	pso_desc.DSVFormat = m_engine.render_device().get_depth_stencil_format();
-//
-//	pso_desc.set_vertex_shader(m_shader_list["mesh.vs"].Get());
-//	pso_desc.set_pixel_shader(m_shader_list["default.ps"].Get());
-//
-//	// create input_layout here
-//	m_input_layout_desc.add_layout_element(string(D3D12::semantic_name_position));
-//	//////////////////////////////////////////////////////////////////////////
-//	pso_desc.InputLayout = m_input_layout_desc.as_d3d12_input_layout_desc();
-//	pso_desc.pRootSignature = m_root_signature.Get();
-//
-//	DBG::throw_hr(m_engine.render_device().
-//		device()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&m_pso_list["mesh"])));
-// }
-
-void MeshRenderer::build_quad_mesh()
+void Mesh_renderer::build_quad_mesh()
 {
     MeshVertexArray verts;
     MeshIndexArray  indices;
@@ -406,7 +283,7 @@ void MeshRenderer::build_quad_mesh()
     m_unit_quad_name = build_mesh(mesh_verts, indices, "unit_quad", m_engine);
 }
 
-void MeshRenderer::build_cube_mesh()
+void Mesh_renderer::build_cube_mesh()
 {
     MeshVertexArray verts;
     MeshIndexArray  indices;
@@ -417,7 +294,7 @@ void MeshRenderer::build_cube_mesh()
     m_unit_cube_name = build_mesh(mesh_verts, indices, "unit_cube", m_engine);
 }
 
-void MeshRenderer::build_texture()
+void Mesh_renderer::build_texture()
 {
     const auto width        = 256;
     auto&&     texture_data = TextureDataGenerator::create_checkerboard_texture(width);
@@ -433,7 +310,7 @@ void MeshRenderer::build_texture()
     m_engine.resource_mgr().register_sampler(m_point_sampler, sampler);
 }
 
-void MeshRenderer::update_camera()
+void Mesh_renderer::update_camera()
 {
     auto&& t = App::get_duration_app();
 
@@ -475,4 +352,65 @@ void MeshRenderer::update_camera()
         XMVECTOR pos   = XMVectorSet(4.0f * sin(phase), 4.0f + sin(phase + t * 1.5f), 4.0f * cos(phase), 0.0f);
         XMStoreFloat4(&m_instance_data[i].pos_world, pos);
     }
+}
+
+void Post_renderer::load_resource()
+{
+    auto&& device         = m_engine.render_device();
+    auto&& shader_manager = m_engine.shader_mgr();
+
+    {
+        string technique_name = "compute_post";
+
+        D3D12::TechniqueInit t;
+        t.m_cs = "simple_compute.cs";
+
+        m_engine.shader_mgr().register_technique(technique_name, t);
+
+        m_compute_post_technique_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
+        m_compute_post_technique_instance->init(technique_name);
+    }
+}
+
+void Post_renderer::draw()
+{
+    // post processing
+    auto&& render_device = m_engine.render_device();
+    auto&& command_list  = m_engine.render_device().commmand_list();
+
+    auto&& rt_buffer_handle = m_frame_pipeline.m_render_pass_main->render_target_buffer();
+    auto&& rt_buffer        = rt_buffer_handle.lock();
+
+    auto&& rt_fmt = m_frame_pipeline.m_render_pass_main->render_target_format();
+    auto&& ds_fmt = DXGI_FORMAT_UNKNOWN;
+
+    render_device.buffer_state_transition(*rt_buffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+    auto&& tech_instance = m_compute_post_technique_instance;
+    auto&& tech_handle   = tech_instance->get_technique();
+    auto&& pso           = m_engine.shader_mgr().get_pso(tech_handle, rt_fmt, ds_fmt);
+    if (pso) {
+
+        tech_instance->set_uav("Texture_uav", rt_buffer);
+
+        // set srv
+        auto&& raytrace_buffer = m_frame_pipeline.m_render_pass_raytrace_main->render_target_buffer().lock();
+        if (raytrace_buffer) {
+            render_device.buffer_state_transition(*raytrace_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+            tech_instance->set_srv("Texture_srv", raytrace_buffer);
+        }
+
+        command_list()->SetPipelineState(pso.Get());
+        // set compute root signature
+        tech_instance->set_root_signature_parameters(*command_list());
+
+        static uint32_t threadgroup_size = 32;
+
+        uint32_t dispatch_x = ceilf(rt_buffer->m_d3d_desc.Width / (float)threadgroup_size);
+        uint32_t dispatch_y = ceilf(rt_buffer->m_d3d_desc.Height / (float)threadgroup_size);
+        command_list()->Dispatch(dispatch_x, dispatch_y, 1);
+    }
+
+    // copy to back buffer
+    render_device.transfer_to_back_buffer(*rt_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 }

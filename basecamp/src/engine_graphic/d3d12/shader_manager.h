@@ -29,6 +29,7 @@ class Shader_manager {
     void register_technique(const string& name, const TechniqueInit& init_data);
     void register_lib_ray_technique(const string& name, const string& lib_ray);
 
+    void build_global_root_signature(Lib_ray_technique& t, const Shader_reflection_info& reflection);
     void build_local_root_signature(Lib_ray_sub_technique& t, const Shader_reflection_info& reflection);
 
   private:

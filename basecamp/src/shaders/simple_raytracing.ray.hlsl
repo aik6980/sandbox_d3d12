@@ -1,16 +1,23 @@
 // [Note] current compile for Raytracing ONLY
 // each resources need to have register(xx) <- otherwise it will generate garbage in HLSL asm
 
+//RaytracingAccelerationStructure Scene;
+//RWTexture2D<float4> Output;
+//
+//cbuffer Raygen_cb
+//{
+//    float4 Main_vp;
+//    float4 Stencil_vp;
+//};
 
-RaytracingAccelerationStructure Scene : register(t0);
-RWTexture2D<float4> Output : register(u0);
+RaytracingAccelerationStructure Scene_srv : register(t0);
+RWTexture2D<float4> Output_uav : register(u0);
 
 cbuffer Raygen_cb : register(b0)
 {
 	float4 Main_vp;
 	float4 Stencil_vp;
 };
-
 
 bool Is_inside_viewport(float2 pos, float4 vp)
 {
@@ -33,11 +40,6 @@ void raygen_entry()
 {
 	uint3 launch_index = DispatchRaysIndex();
 	float2 lerp_val = launch_index.xy / (float2)DispatchRaysDimensions();
-
-    float3 col = float3(0.4, 0.1, 0.2);
-    Output[launch_index.xy] = float4(col, 1.0);
-
-    return;
 
 	// viewport
     float left	= Main_vp.x;
@@ -64,19 +66,19 @@ void raygen_entry()
 		uint multiplier_for_geometry_contribution_to_shader_index = 1;
 		uint miss_shader_index = 0;
 
-		TraceRay(Scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, instance_inclusion_mask, 
+        TraceRay(Scene_srv, ray_flags, instance_inclusion_mask,
 			ray_contribution_to_hitgroup_index,
 			multiplier_for_geometry_contribution_to_shader_index,
 			miss_shader_index,
 			ray,
 			payload);
 
-		Output[launch_index.xy] = payload.colour;
+		Output_uav[launch_index.xy] = payload.colour;
 	}
     else {
 		float3 col              = float3(0.4, 0.6, 0.2);
-		Output[launch_index.xy] = float4(col, 1.0);
-	}
+        Output_uav[launch_index.xy] = float4(lerp_val, 0.0, 1.0);
+    }
 
 }
 
@@ -92,6 +94,6 @@ void closethit_entry(inout Payload_st payload, in Tri_attributes attr)
 [shader("miss")] 
 void miss_entry(inout Payload_st payload)
 {
-	payload.colour = float4(0,0,0,1);
+    payload.colour = float4(0.0, 0.0, 0.0, 1.0);
 }
 

@@ -222,6 +222,9 @@ void Lib_ray_reflection::get_reflection(ComPtr<ID3DBlob> buffer)
         generate_bound_resource_desc(m_sub_shaders[i]);
         generate_cbuffer_desc(m_sub_shaders[i]);
     }
+
+    // generate global input desc, we will use this to create global root signature
+    generate_global_input();
 }
 const Lib_ray_sub_shader* Lib_ray_reflection::get_sub_shader_info(const string& name)
 {
@@ -273,6 +276,50 @@ void Lib_ray_reflection::generate_cbuffer_desc(Lib_ray_sub_shader& sub_shader)
         }
 
         var_infos.m_cbuffer_infos.emplace(std::make_pair(cbuffer_info.m_name, cbuffer_info));
+    }
+}
+
+void Lib_ray_reflection::generate_global_input()
+{
+    array<uint32_t, Sit_count> shader_input_desc_size = {};
+
+    // calculate size needed
+    for (auto&& sub_shader : m_sub_shaders) {
+
+        for (int i = 0; i < Sit_count; ++i) {
+            shader_input_desc_size[i] += sub_shader.m_func_input_info.m_shader_input_descs[i].size();
+        }
+    }
+
+    // reserve size
+    for (int i = 0; i < Sit_count; ++i) {
+        m_global_inputs.m_shader_input_descs[i].reserve(shader_input_desc_size[i]);
+    }
+
+    // copy into global array
+    for (auto&& sub_shader : m_sub_shaders) {
+
+        for (int i = 0; i < Sit_count; ++i) {
+
+            auto&& dest    = m_global_inputs.m_shader_input_descs[i].end();
+            auto&& src_beg = sub_shader.m_func_input_info.m_shader_input_descs[i].begin();
+            auto&& src_end = sub_shader.m_func_input_info.m_shader_input_descs[i].end();
+
+            m_global_inputs.m_shader_input_descs[i].insert(dest, src_beg, src_end);
+        }
+
+        auto&& src_beg = sub_shader.m_func_input_info.m_cbuffer_infos.begin();
+        auto&& src_end = sub_shader.m_func_input_info.m_cbuffer_infos.end();
+        m_global_inputs.m_cbuffer_infos.insert(src_beg, src_end);
+    }
+
+    // sorting by binding id
+    auto sort_func = [](const D3D12_SHADER_INPUT_BIND_DESC& a, const D3D12_SHADER_INPUT_BIND_DESC& b) { return a.BindPoint < b.BindPoint; };
+    for (int i = 0; i < Sit_count; ++i) {
+        auto&& beg = m_global_inputs.m_shader_input_descs[i].begin();
+        auto&& end = m_global_inputs.m_shader_input_descs[i].end();
+
+        std::sort(beg, end, sort_func);
     }
 }
 

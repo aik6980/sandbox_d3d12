@@ -15,7 +15,7 @@
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; SV_Target                0   xyzw        0   TARGET   float   xyzw
 ;
-; shader hash: f132196579f77622731763bad017c9c1
+; shader hash: 04ee85789e006b890459c63b7912e997
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -44,7 +44,7 @@
 ; cbuffer Light_cb
 ; {
 ;
-;   struct dx.alignment.legacy.Light_cb
+;   struct hostlayout.Light_cb
 ;   {
 ;
 ;       row_major float4x4 Light_view;                ; Offset:    0
@@ -82,7 +82,7 @@ target triple = "dxil-ms-dx"
 %dx.types.ResRet.f32 = type { float, float, float, float, i32 }
 %"class.Texture2D<vector<float, 4> >" = type { <4 x float>, %"class.Texture2D<vector<float, 4> >::mips_type" }
 %"class.Texture2D<vector<float, 4> >::mips_type" = type { i32 }
-%dx.alignment.legacy.Light_cb = type { [4 x <4 x float>], [4 x <4 x float>], i32 }
+%hostlayout.Light_cb = type { [4 x <4 x float>], [4 x <4 x float>], i32 }
 %struct.SamplerState = type { i32 }
 
 @dx.nothing.a = internal constant [1 x i32] zeroinitializer
@@ -210,7 +210,7 @@ attributes #2 = { nounwind readonly }
 !6 = !{i32 0, %"class.Texture2D<vector<float, 4> >"* undef, !"", i32 0, i32 0, i32 1, i32 2, i32 0, !7}
 !7 = !{i32 0, i32 9}
 !8 = !{!9}
-!9 = !{i32 0, %dx.alignment.legacy.Light_cb* undef, !"", i32 0, i32 0, i32 1, i32 132, null}
+!9 = !{i32 0, %hostlayout.Light_cb* undef, !"", i32 0, i32 0, i32 1, i32 132, null}
 !10 = !{!11}
 !11 = !{i32 0, %struct.SamplerState* undef, !"", i32 0, i32 0, i32 1, i32 0, null}
 !12 = !{[18 x i32] [i32 16, i32 4, i32 0, i32 0, i32 0, i32 0, i32 1, i32 2, i32 4, i32 0, i32 0, i32 0, i32 0, i32 0, i32 7, i32 7, i32 7, i32 7]}

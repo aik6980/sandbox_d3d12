@@ -47,7 +47,7 @@ endmacro()
 Dxc_compile("${VS_FILES}" "vs_6_0")
 Dxc_compile("${PS_FILES}" "ps_6_0")
 Dxc_compile("${CS_FILES}" "cs_6_0")
-Dxc_compile("${RAY_FILES}" "lib_6_3")
+Dxc_compile("${RAY_FILES}" "lib_6_5")
 
 set(PROJECT_NAME shader_spirv)
 project(${PROJECT_NAME})

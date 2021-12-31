@@ -11,7 +11,7 @@ struct Buffer;
 struct Sampler;
 struct Dynamic_buffer;
 struct INPUT_LAYOUT_DESC;
-struct Lib_ray_reflection;
+class Lib_ray_reflection;
 
 struct Lib_ray_sub_technique {
     ComPtr<ID3D12RootSignature> m_root_signature;
@@ -30,6 +30,8 @@ class Lib_ray_technique {
     // create pipeline object
     void create_ray_tracing_pipeline_state_object();
     void create_shader_table();
+
+    void create_root_signature(CD3DX12_STATE_OBJECT_DESC& raytrace_pso, Lib_ray_reflection& reflection);
     void create_root_signature_subobject(
         Lib_ray_sub_technique& sub_technique, CD3DX12_STATE_OBJECT_DESC& raytrace_pso, Lib_ray_reflection& reflection, const string& name);
 
@@ -40,7 +42,13 @@ class Lib_ray_technique {
     string m_miss_shader_table_buffer;
     string m_hitgroup_shader_table_buffer;
 
-    // sub object
+    // global
+    ComPtr<ID3D12RootSignature>                  m_root_signature;
+    vector<CD3DX12_ROOT_PARAMETER>               m_root_parameter_slots;
+    vector<unique_ptr<CD3DX12_DESCRIPTOR_RANGE>> m_descriptor_ranges;
+    vector<string>                               m_descriptor_table_names;
+
+    // sub object (Local root signature)
     Lib_ray_sub_technique m_raygen_sub_technique;
     Lib_ray_sub_technique m_miss_sub_technique;
     Lib_ray_sub_technique m_closethit_sub_technique;
@@ -71,10 +79,10 @@ class Lib_ray_technique_instance {
     void set_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
 
   private:
-    void init_dynamic_cbuffer(const string& lib_name, const string& sub_shader_name);
+    void init_dynamic_cbuffer(const string& name);
 
     const CBUFFER_VARIABLE_INFO* get_cbuffer_var_info(const string& cbuffer_name, const string& var_name);
-    void                         set_root_signature_parameters(ID3D12GraphicsCommandList& command_list, const Lib_ray_sub_technique& sub_technique);
+    void                         set_root_signature_parameters(ID3D12GraphicsCommandList& command_list, Lib_ray_technique& technique);
 
     Device&         m_device;
     Shader_manager& m_shader_mgr;

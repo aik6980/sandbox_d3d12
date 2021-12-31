@@ -4,6 +4,8 @@
 
 #include "engine_graphic_cpp.h"
 
+//#define USING_IMGUI
+
 void Engine::init(const InitData& initData)
 {
     m_render_device = make_unique<D3D12::Device>();
@@ -31,19 +33,22 @@ void Engine::destroy()
 
 void Engine::update()
 {
+#ifdef USING_IMGUI
     m_render_device->imgui_begin_frame();
+    ImGui::ShowDemoWindow();
+#endif
 
     for (auto&& [key, client] : m_engine_client_list) {
         client->update();
     }
-
-    ImGui::ShowDemoWindow();
 }
 
 void Engine::draw()
 {
     // Rendering
+#ifdef USING_IMGUI
     ImGui::Render();
+#endif
 
     m_render_device->begin_frame();
 
@@ -61,8 +66,9 @@ void Engine::draw()
         client->draw();
     }
 
+#ifdef USING_IMGUI
     m_render_device->imgui_render();
-
+#endif
     // Indicate a state transition on the resource usage.
     m_render_device->commmand_list()()->ResourceBarrier(
         1, &CD3DX12_RESOURCE_BARRIER::Transition(&m_render_device->curr_backbuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -70,7 +76,9 @@ void Engine::draw()
     m_render_device->end_frame();
 
     // Post render
+#ifdef USING_IMGUI
     m_render_device->imgui_post_render();
+#endif
 }
 
 void Engine::register_client(unique_ptr<Engine_client> client)
