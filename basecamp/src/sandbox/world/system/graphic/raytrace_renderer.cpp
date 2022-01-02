@@ -13,8 +13,8 @@ void Raytrace_renderer::load_resource()
     auto&& resource_mgr   = device.resource_manager();
 
     {
-        string technique_name = "simple_raytracing";
-        m_engine.shader_mgr().register_lib_ray_technique(technique_name, "simple_raytracing.ray");
+        string technique_name = "raytrace_simplelighting";
+        m_engine.shader_mgr().register_lib_ray_technique(technique_name, "raytrace_simplelighting.ray");
 
         m_raytrace_technique_instance = std::make_shared<D3D12::Lib_ray_technique_instance>(device, shader_manager);
         m_raytrace_technique_instance->init(technique_name);
@@ -24,17 +24,21 @@ void Raytrace_renderer::load_resource()
     m_frame_pipeline.m_render_pass_raytrace_main->load_resource();
 
     // build geometry
-    MeshVertexArray verts;
-    MeshIndexArray  indices;
+    // MeshVertexArray verts;
+    // MeshIndexArray  indices;
 
-    MeshDataGenerator::create_unit_cube(verts, indices);
-    vector<RtInputLayout> mesh_verts = MeshDataGenerator::to_rt(verts);
+    // MeshDataGenerator::create_unit_cube(verts, indices);
+    // vector<RtInputLayout> mesh_verts = MeshDataGenerator::to_rt(verts);
 
-    m_unit_quad_name   = build_mesh(mesh_verts, indices, "unit_quad_2", m_engine);
-    auto&& mesh_buffer = m_engine.resource_mgr().request_mesh_buffer(m_unit_quad_name).lock();
-    // build scene
-    resource_mgr.create_acceleration_structure("rtaccel_structure_buffer", *mesh_buffer);
-    m_rtaccel_structure_buffer_handle = "rtaccel_structure_buffer_tlas";
+    // m_unit_quad_name   = build_mesh(mesh_verts, indices, "unit_quad_rt", m_engine);
+    // auto&& mesh_buffer = m_engine.resource_mgr().request_mesh_buffer(m_unit_quad_name).lock();
+    //  build scene
+    //  resource_mgr.create_acceleration_structure("rtaccel_structure_buffer", *mesh_buffer, true);
+    //  m_rtaccel_structure_buffer_handle = "rtaccel_structure_buffer_tlas";
+
+    auto&& mesh_data  = MeshDataGenerator::create_grid(25.0, 25.0, 10, 10);
+    auto&& mesh_verts = MeshDataGenerator::to_rt(get<MeshVertexArray>(mesh_data));
+    m_grid_mesh       = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), "grid_mesh", m_engine);
 }
 
 void Raytrace_renderer::draw()
@@ -43,19 +47,28 @@ void Raytrace_renderer::draw()
     auto&& resource_mgr  = render_device.resource_manager();
     auto&& command_list  = render_device.commmand_list();
 
+    // re-build acceleration struture
+    auto&& mesh_buffer    = m_engine.resource_mgr().request_mesh_buffer(m_grid_mesh).lock();
+    auto&& rtaccel_buffer = resource_mgr.create_acceleration_structure("rtaccel_structure_buffer", *mesh_buffer, false);
+    // m_rtaccel_structure_buffer_handle = "rtaccel_structure_buffer_tlas";
+
     auto&& main_colour_buffer = m_frame_pipeline.m_render_pass_raytrace_main->render_target_buffer().lock();
     render_device.buffer_state_transition(*main_colour_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    auto&& technique = m_engine.shader_mgr().get_lib_ray_technique("simple_raytracing").lock();
+    auto&& technique = m_engine.shader_mgr().get_lib_ray_technique("raytrace_simplelighting").lock();
     if (technique) {
 
         auto&& raygen_tbl   = resource_mgr.request_buffer(technique->m_raygen_shader_table_buffer).lock();
         auto&& miss_tbl     = resource_mgr.request_buffer(technique->m_miss_shader_table_buffer).lock();
         auto&& hitgroup_tbl = resource_mgr.request_buffer(technique->m_hitgroup_shader_table_buffer).lock();
 
-        auto&& rtaccel_buffer = resource_mgr.request_buffer(m_rtaccel_structure_buffer_handle).lock();
+        // auto&& rtaccel_buffer = resource_mgr.request_buffer(m_rtaccel_structure_buffer_handle).lock();
 
         if (raygen_tbl && miss_tbl && hitgroup_tbl) {
+
+            auto&& cam = m_frame_pipeline.m_camera;
+            m_raytrace_technique_instance->set_cbv("Camera_cb", "Camera_projection_to_world", cam.projection_to_world());
+            m_raytrace_technique_instance->set_cbv("Camera_cb", "Camera_world_pos", cam.position());
 
             m_raytrace_technique_instance->set_uav("Output_uav", main_colour_buffer);
             m_raytrace_technique_instance->set_srv("Scene_srv", rtaccel_buffer);

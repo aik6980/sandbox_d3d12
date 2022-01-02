@@ -18,6 +18,9 @@ class Resource_manager {
     std::shared_ptr<Buffer> create_texture(const string& name, const CD3DX12_RESOURCE_DESC& info, const CD3DX12_CLEAR_VALUE* clear_val,
         const TextureData* init_data, D3D12_RESOURCE_STATES init_state = D3D12_RESOURCE_STATE_GENERIC_READ);
 
+    std::weak_ptr<Buffer> create_buffer(
+        const string& name, const Buffer_request& info, const void* init_data, D3D12_RESOURCE_STATES init_state = D3D12_RESOURCE_STATE_GENERIC_READ);
+
     // views
     CD3DX12_GPU_DESCRIPTOR_HANDLE create_cbv(Buffer& buffer);
     CD3DX12_GPU_DESCRIPTOR_HANDLE create_srv(Buffer& buffer);
@@ -45,7 +48,7 @@ class Resource_manager {
     bool                            update_dynamic_buffer(const string& str_id, const void* data, uint32_t byte_size);
 
     // dxr
-    void create_acceleration_structure(const string& name, const Mesh_buffer& mesh_buffer);
+    std::shared_ptr<Buffer> create_acceleration_structure(const string& name, const Mesh_buffer& mesh_buffer, bool persistent);
 
   private:
     template <class T>

@@ -20,17 +20,17 @@ class FrameResource {
 
     void begin_frame()
     {
-        clear_staging_resources();
+        clear_per_frame_resources();
         m_srv_heap.reset();
     }
 
-    void clear_staging_resources()
+    void clear_per_frame_resources()
     {
-        for (auto&& buffer : m_staging_buffers) {
+        for (auto&& buffer : m_per_frame_buffers) {
             buffer->destroy();
         }
 
-        m_staging_buffers.clear();
+        m_per_frame_buffers.clear();
     }
 
   public:
@@ -48,6 +48,6 @@ class FrameResource {
     std::vector<shared_ptr<Buffer>> m_dynamic_buffer;
 
     // staging buffers
-    std::list<shared_ptr<Buffer>> m_staging_buffers;
+    std::list<shared_ptr<Buffer>> m_per_frame_buffers;
 };
 } // namespace D3D12

@@ -21,8 +21,8 @@ cbuffer Raygen_cb : register(b0)
 
 cbuffer Camera_cb : register(b1)
 {
-    float4x4 ProjectionToWorld;
-
+    float4x4 Camera_projection_to_world;
+    float3 Camera_world_pos;
 };
 
 bool Is_inside_viewport(float2 pos, float4 vp)
@@ -45,8 +45,11 @@ inline void generate_camera_ray(uint2 index, uint2 dimensions, out float3 origin
     screen_pos.y = -screen_pos.y;
 
 	// unproject the pixel coordinate into a ray
-    //float4 world = mul(float4(screen_pos, 0.0, 1.0), )
+    float4 world_pos = mul(float4(screen_pos, 0.0, 1.0), Camera_projection_to_world);
+    world_pos.xyz /= world_pos.w;
 
+    origin = Camera_world_pos;
+    dir = normalize(world_pos.xyz - origin);
 }
 
 struct Payload_st
@@ -58,7 +61,8 @@ struct Payload_st
 void raygen_entry()
 {
 	uint3 launch_index = DispatchRaysIndex();
-	float2 lerp_val = launch_index.xy / (float2)DispatchRaysDimensions();
+    uint2 dimensions = DispatchRaysDimensions().xy;
+    float2 lerp_val = launch_index.xy / (float2) dimensions;
 
 	// viewport
     float left	= Main_vp.x;
@@ -66,10 +70,14 @@ void raygen_entry()
     float right = Main_vp.z;
     float bottom= Main_vp.w;
 
-	float3 ray_origin = float3(lerp(left, right, lerp_val.x), lerp(top, bottom, lerp_val.y), 0.0);
-	float3 ray_dir = float3(0, 0, 1);
+	float3 vp_pos = float3(lerp(left, right, lerp_val.x), lerp(top, bottom, lerp_val.y), 0.0);
 
-	if (Is_inside_viewport(ray_origin.xy, Stencil_vp)) {
+    if (Is_inside_viewport(vp_pos.xy, Stencil_vp))
+    {
+		// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
+        float3 ray_origin, ray_dir;
+        generate_camera_ray(launch_index.xy, dimensions, ray_origin, ray_dir);
+
         RayDesc ray;
 
         ray.Origin = ray_origin;

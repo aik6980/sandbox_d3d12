@@ -4,6 +4,12 @@
 #include "sampler_desc.h"
 
 namespace D3D12 {
+
+struct Buffer_request {
+    CD3DX12_RESOURCE_DESC desc;
+    bool                  lifetime_persistent = true;
+};
+
 struct Buffer {
     D3D12MA::Allocation*   m_allocation = nullptr;
     ComPtr<ID3D12Resource> m_buffer;

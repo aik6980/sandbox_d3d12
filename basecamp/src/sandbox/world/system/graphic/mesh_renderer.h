@@ -42,7 +42,6 @@ class Mesh_renderer {
     string m_point_sampler             = "point_sampler";
     string m_instance_data_buffer_name = "instance_data_buffer";
 
-    Camera m_camera;
     Camera m_light;
 
     shared_ptr<D3D12::TechniqueInstance> m_render_technique_instance;

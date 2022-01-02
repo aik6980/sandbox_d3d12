@@ -124,6 +124,8 @@ void Mesh_renderer::draw_meshes_shadow_map()
 
 void Mesh_renderer::draw_meshes()
 {
+    auto&& cam = m_frame_pipeline.m_camera;
+
     auto&& rt_fmt = m_frame_pipeline.m_render_pass_main->render_target_format();
     auto&& ds_fmt = m_frame_pipeline.m_render_pass_main->depth_stencil_format();
 
@@ -173,8 +175,8 @@ void Mesh_renderer::draw_meshes()
     auto&& pso              = m_engine.shader_mgr().get_pso(mesh_tech_handle, rt_fmt, ds_fmt);
     if (pso && mesh_buffer) {
 
-        m_render_technique_mesh_instance->set_cbv("Camera_cb", "View", &m_camera.view(), sizeof(m_camera.view()));
-        m_render_technique_mesh_instance->set_cbv("Camera_cb", "Projection", &m_camera.projection(), sizeof(m_camera.projection()));
+        m_render_technique_mesh_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
+        m_render_technique_mesh_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
 
         m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Receive_shadow", 0);
 
@@ -199,8 +201,8 @@ void Mesh_renderer::draw_meshes()
     auto&& mesh_instancing_pso         = m_engine.shader_mgr().get_pso(mesh_instancing_tech_handle, rt_fmt, ds_fmt);
     if (mesh_instancing_pso && mesh_buffer) {
 
-        m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "View", &m_camera.view(), sizeof(m_camera.view()));
-        m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "Projection", &m_camera.projection(), sizeof(m_camera.projection()));
+        m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
+        m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
 
         m_mesh_instancing_technique_instance->set_cbv("Light_cb", "Receive_shadow", 0);
 
@@ -231,8 +233,8 @@ void Mesh_renderer::draw_meshes()
     auto&& pso1                  = m_engine.shader_mgr().get_pso(grid_mesh_tech_handle, rt_fmt, ds_fmt);
     if (grid_mesh_buffer && pso1) {
 
-        m_render_technique_grid_mesh_instance->set_cbv("Camera_cb", "View", &m_camera.view(), sizeof(m_camera.view()));
-        m_render_technique_grid_mesh_instance->set_cbv("Camera_cb", "Projection", &m_camera.projection(), sizeof(m_camera.projection()));
+        m_render_technique_grid_mesh_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
+        m_render_technique_grid_mesh_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
 
         m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Receive_shadow", 1);
         m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Light_view", &m_light.view(), sizeof(m_light.view()));
@@ -311,7 +313,8 @@ void Mesh_renderer::build_texture()
 
 void Mesh_renderer::update_camera()
 {
-    auto&& t = App::get_duration_app();
+    auto&& cam = m_frame_pipeline.m_camera;
+    auto&& t   = App::get_duration_app();
 
     // XMVECTOR cam_pos    = XMVectorSet(0.0f, 6.0f, -8.0f, 0.0f);
     XMVECTOR cam_pos    = XMVectorSet(12.0f * sin(t * 0.5f), 8.0f, 12.0f * cos(t * 0.5f), 0.0f);
@@ -326,8 +329,9 @@ void Mesh_renderer::update_camera()
 
     XMMATRIX projection = XMMatrixPerspectiveFovLH(0.4f * 3.14f, aspect_ratio, 1.0f, 1000.0f);
 
-    m_camera.m_view       = view;
-    m_camera.m_projection = projection;
+    cam.m_position   = cam_pos;
+    cam.m_view       = view;
+    cam.m_projection = projection;
 
     // light
     {

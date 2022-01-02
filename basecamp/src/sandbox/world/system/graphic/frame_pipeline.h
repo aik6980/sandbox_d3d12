@@ -1,5 +1,6 @@
 #pragma once
 #include "engine_graphic/engine_graphic.h"
+#include "world/component/camera.h"
 
 class Mesh_renderer;
 class Raytrace_renderer;
@@ -24,6 +25,8 @@ class Frame_pipeline : public Engine_client {
     unique_ptr<Render_pass_main>          m_render_pass_main;
     unique_ptr<Render_pass_shadow_map>    m_render_pass_shadow_map;
     unique_ptr<Render_pass_raytrace_main> m_render_pass_raytrace_main;
+
+    Camera m_camera;
 
   private:
     Engine& m_engine;

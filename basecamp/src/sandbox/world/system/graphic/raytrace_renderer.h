@@ -20,7 +20,8 @@ class Raytrace_renderer {
     shared_ptr<D3D12::Lib_ray_technique_instance> m_raytrace_technique_instance;
 
     string m_rtaccel_structure_buffer_handle;
-    string m_unit_quad_name;
+    // string m_unit_quad_name;
+    string m_grid_mesh;
 
     Engine&         m_engine;
     Frame_pipeline& m_frame_pipeline;

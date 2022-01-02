@@ -58,7 +58,7 @@ std::shared_ptr<Buffer> Resource_manager::create_static_buffer(const string& nam
         command_list->ResourceBarrier(
             1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
 
-        m_device.frame_resource().m_staging_buffers.emplace_back(staging_buffer);
+        m_device.frame_resource().m_per_frame_buffers.emplace_back(staging_buffer);
     }
     else {
         command_list->ResourceBarrier(
@@ -150,7 +150,70 @@ std::shared_ptr<Buffer> Resource_manager::create_texture(
 
         command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, init_state));
 
-        m_device.frame_resource().m_staging_buffers.emplace_back(staging_buffer);
+        m_device.frame_resource().m_per_frame_buffers.emplace_back(staging_buffer);
+    }
+
+    return buffer;
+}
+
+std::weak_ptr<Buffer> Resource_manager::create_buffer(const string& name, const Buffer_request& info, const void* init_data, D3D12_RESOURCE_STATES init_state)
+{
+    auto&& resource_desc = info.desc;
+
+    D3D12MA::ALLOCATION_DESC allocation_desc = {};
+    allocation_desc.HeapType                 = D3D12_HEAP_TYPE_DEFAULT;
+
+    auto&& buffer = std::make_shared<Buffer>();
+    m_device.m_allocator->CreateResource(&allocation_desc, &resource_desc, init_state, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer));
+    {
+        auto&& w_name = wstring(name.begin(), name.end());
+        buffer->m_buffer->SetName(w_name.c_str());
+        buffer->m_d3d_desc = resource_desc;
+    }
+
+    // lifetime
+    if (info.lifetime_persistent) {
+        m_static_buffers.insert(std::make_pair(name, buffer));
+    }
+    else {
+        m_device.frame_resource().m_per_frame_buffers.emplace_back(buffer);
+    }
+
+    auto&& command_list = m_device.commmand_list()();
+    // optional, if we want to upload an initial_data
+    if (init_data) {
+        D3D12MA::ALLOCATION_DESC staging_allocation_desc = {};
+        allocation_desc.HeapType                         = D3D12_HEAP_TYPE_UPLOAD;
+
+        auto&&       staging_buffer        = std::make_shared<Buffer>();
+        const UINT64 upload_buffer_size    = GetRequiredIntermediateSize(buffer->m_buffer.Get(), 0, 1);
+        auto&&       staging_resource_desc = CD3DX12_RESOURCE_DESC::Buffer(upload_buffer_size);
+        m_device.m_allocator->CreateResource(&allocation_desc, &staging_resource_desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+            &staging_buffer->m_allocation, IID_PPV_ARGS(&staging_buffer->m_buffer));
+
+        {
+            auto&& w_name = wstring(name.begin(), name.end()) + L"_staging";
+            staging_buffer->m_buffer->SetName(w_name.c_str());
+        }
+
+        // Describe the data we want to copy into the default buffer.
+        D3D12_SUBRESOURCE_DATA sub_resource_data = {};
+        sub_resource_data.pData                  = init_data;
+        sub_resource_data.RowPitch               = resource_desc.Width;
+        sub_resource_data.SlicePitch             = resource_desc.Width;
+
+        // Schedule to copy the data to the default buffer resource.  At a high level, the helper function UpdateSubresources
+        // will copy the CPU memory into the intermediate upload heap.  Then, using ID3D12CommandList::CopySubresourceRegion,
+        // the intermediate upload heap data will be copied to mBuffer.
+        command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), init_state, D3D12_RESOURCE_STATE_COPY_DEST));
+
+        // [note] this function is not at the lowest level either,
+        // so, still room to learn down there
+        UpdateSubresources<1>(command_list, buffer->m_buffer.Get(), staging_buffer->m_buffer.Get(), 0, 0, 1, &sub_resource_data);
+
+        command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, init_state));
+
+        m_device.frame_resource().m_per_frame_buffers.emplace_back(staging_buffer);
     }
 
     return buffer;
@@ -322,7 +385,6 @@ std::shared_ptr<Dynamic_buffer> Resource_manager::create_instance_buffer(const s
 
         auto&& w_name = wstring(str_id.begin(), str_id.end());
         buffer->m_buffer->SetName(w_name.c_str());
-
         buffer->m_d3d_desc = desc;
 
         return buffer;
@@ -384,13 +446,13 @@ bool Resource_manager::update_dynamic_buffer(const string& str_id, const void* d
     return false;
 }
 
-void Resource_manager::create_acceleration_structure(const string& name, const Mesh_buffer& mesh_buffer)
+std::shared_ptr<Buffer> Resource_manager::create_acceleration_structure(const string& name, const Mesh_buffer& mesh_buffer, bool persistent)
 {
     auto&& vertex_buffer = mesh_buffer.m_vertex_buffer_handle.lock();
     auto&& index_buffer  = mesh_buffer.m_index_buffer_handle.lock();
 
     if (!vertex_buffer || !index_buffer) {
-        return;
+        return nullptr;
     }
 
     D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
@@ -425,10 +487,11 @@ void Resource_manager::create_acceleration_structure(const string& name, const M
         throw;
     }
 
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottom_level_inputs = top_level_inputs;
+    bottom_level_inputs.Type                                                 = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+    bottom_level_inputs.pGeometryDescs                                       = &geometry_desc;
+
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottom_level_prebuild_info = {};
-    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS  bottom_level_inputs        = top_level_inputs;
-    bottom_level_inputs.Type                                                         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-    bottom_level_inputs.pGeometryDescs                                               = &geometry_desc;
     m_device.d3d_device()->GetRaytracingAccelerationStructurePrebuildInfo(&bottom_level_inputs, &bottom_level_prebuild_info);
 
     if (bottom_level_prebuild_info.ResultDataMaxSizeInBytes == 0) {
@@ -441,10 +504,13 @@ void Resource_manager::create_acceleration_structure(const string& name, const M
 
     auto&& scratch_resource_buffer_size = max(top_level_prebuild_info.ResultDataMaxSizeInBytes, bottom_level_prebuild_info.ResultDataMaxSizeInBytes);
     auto&& scratch_resource_name        = name + "_scratch";
-    auto&& scratch_resource_desc        = CD3DX12_RESOURCE_DESC::Buffer(scratch_resource_buffer_size, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    auto&& scratch_buffer               = create_texture(scratch_resource_name, scratch_resource_desc, nullptr, nullptr);
 
-    m_device.buffer_state_transition(*scratch_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    Buffer_request scratch_resource_req;
+    scratch_resource_req.desc                = CD3DX12_RESOURCE_DESC::Buffer(scratch_resource_buffer_size, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    scratch_resource_req.lifetime_persistent = persistent;
+
+    auto&& scratch_buffer = create_buffer(scratch_resource_name, scratch_resource_req, nullptr, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    // m_device.buffer_state_transition(*scratch_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     // Allocate resources for acceleration structures.
     // Acceleration structures can only be placed in resources that are created in the default heap (or custom heap equivalent).
@@ -453,60 +519,65 @@ void Resource_manager::create_acceleration_structure(const string& name, const M
     // and must have resource flag D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS. The ALLOW_UNORDERED_ACCESS requirement simply acknowledges both:
     //  - the system will be doing this type of access in its implementation of acceleration structure builds behind the scenes.
     //  - from the app point of view, synchronization of writes/reads to acceleration structures is accomplished using UAV barriers.
-    std::shared_ptr<Buffer> tlas_buffer, blas_buffer;
+    std::weak_ptr<Buffer> tlas_buffer, blas_buffer;
     {
         // D3D12_RESOURCE_STATES initialResourceState = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 
         // AllocateUAVBuffer(device, bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes, &m_bottomLevelAccelerationStructure, initialResourceState,
         //     L"BottomLevelAccelerationStructure");
         // AllocateUAVBuffer(
-        //     device, topLevelPrebuildInfo.ResultDataMaxSizeInBytes, &m_topLevelAccelerationStructure, initialResourceState, L"TopLevelAccelerationStructure");
+        //     device, topLevelPrebuildInfo.ResultDataMaxSizeInBytes, &m_topLevelAccelerationStructure, initialResourceState,
+        //     L"TopLevelAccelerationStructure");
 
-        auto&& tlas_resource_name = name + "_tlas";
-        auto&& tlas_resource_desc = CD3DX12_RESOURCE_DESC::Buffer(top_level_prebuild_info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-        tlas_buffer = create_texture(tlas_resource_name, tlas_resource_desc, nullptr, nullptr, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
-        // m_device.buffer_state_transition(*tlas_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+        auto&&         tlas_resource_name = name + "_tlas";
+        Buffer_request tlas_resource_req;
+        tlas_resource_req.desc = CD3DX12_RESOURCE_DESC::Buffer(top_level_prebuild_info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        tlas_resource_req.lifetime_persistent = persistent;
+        tlas_buffer = create_buffer(tlas_resource_name, tlas_resource_req, nullptr, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 
-        auto&& blas_resource_name = name + "_blas";
-        auto&& blas_resource_desc =
-            CD3DX12_RESOURCE_DESC::Buffer(bottom_level_prebuild_info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-        blas_buffer = create_texture(blas_resource_name, blas_resource_desc, nullptr, nullptr, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
-        // m_device.buffer_state_transition(*blas_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+        auto&&         blas_resource_name = name + "_blas";
+        Buffer_request blas_resource_req;
+        blas_resource_req.desc = CD3DX12_RESOURCE_DESC::Buffer(bottom_level_prebuild_info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        blas_resource_req.lifetime_persistent = persistent;
+        blas_buffer = create_buffer(blas_resource_name, blas_resource_req, nullptr, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
     }
 
     // Create an instance desc for the bottom-level acceleration structure.
     D3D12_RAYTRACING_INSTANCE_DESC instance_desc = {};
     instance_desc.Transform[0][0] = instance_desc.Transform[1][1] = instance_desc.Transform[2][2] = 1;
-    instance_desc.Transform[2][3]       = 5.0f; // push this instance back a little so ray can intersec!
+    // instance_desc.Transform[2][3]       = 5.0f; // push this instance back a little so ray can intersec!
     instance_desc.InstanceMask          = 1;
-    instance_desc.AccelerationStructure = blas_buffer->m_buffer->GetGPUVirtualAddress();
+    instance_desc.AccelerationStructure = blas_buffer.lock()->m_buffer->GetGPUVirtualAddress();
     // ComPtr<ID3D12Resource> instanceDescs;
     // AllocateUploadBuffer(device, &instanceDesc, sizeof(instanceDesc), &instanceDescs, L"InstanceDescs");
-    auto&& instance_buffer_name = name + "_instance";
-    auto&& instance_buffer      = create_upload_buffer(instance_buffer_name, sizeof(instance_desc), &instance_desc);
+    auto&&         instance_buffer_name = name + "_instance";
+    Buffer_request instance_resource_req;
+    instance_resource_req.desc                = CD3DX12_RESOURCE_DESC::Buffer(sizeof(instance_desc));
+    instance_resource_req.lifetime_persistent = persistent;
+    auto&& instance_buffer                    = create_buffer(instance_buffer_name, instance_resource_req, &instance_desc);
 
     // Bottom Level Acceleration Structure desc
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC bottom_level_build_desc = {};
     {
         bottom_level_build_desc.Inputs                           = bottom_level_inputs;
-        bottom_level_build_desc.ScratchAccelerationStructureData = scratch_buffer->m_buffer->GetGPUVirtualAddress();
-        bottom_level_build_desc.DestAccelerationStructureData    = blas_buffer->m_buffer->GetGPUVirtualAddress();
+        bottom_level_build_desc.ScratchAccelerationStructureData = scratch_buffer.lock()->m_buffer->GetGPUVirtualAddress();
+        bottom_level_build_desc.DestAccelerationStructureData    = blas_buffer.lock()->m_buffer->GetGPUVirtualAddress();
     }
 
     // Top Level Acceleration Structure desc
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC top_level_build_desc = {};
     {
-        top_level_inputs.InstanceDescs                        = instance_buffer->m_buffer->GetGPUVirtualAddress();
+        top_level_inputs.InstanceDescs                        = instance_buffer.lock()->m_buffer->GetGPUVirtualAddress();
         top_level_build_desc.Inputs                           = top_level_inputs;
-        top_level_build_desc.ScratchAccelerationStructureData = scratch_buffer->m_buffer->GetGPUVirtualAddress();
-        top_level_build_desc.DestAccelerationStructureData    = tlas_buffer->m_buffer->GetGPUVirtualAddress();
+        top_level_build_desc.ScratchAccelerationStructureData = scratch_buffer.lock()->m_buffer->GetGPUVirtualAddress();
+        top_level_build_desc.DestAccelerationStructureData    = tlas_buffer.lock()->m_buffer->GetGPUVirtualAddress();
     }
 
     // Build acceleration structure.
     auto&& command_list = m_device.commmand_list()();
     command_list->BuildRaytracingAccelerationStructure(&bottom_level_build_desc, 0, nullptr);
-    // note, I don't think we need this because I am using only one command list
-    command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(blas_buffer->m_buffer.Get()));
+    // note, this barrier is important, need to make sure blas is finished before building tlas
+    command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(blas_buffer.lock()->m_buffer.Get()));
     command_list->BuildRaytracingAccelerationStructure(&top_level_build_desc, 0, nullptr);
 
     // -------------------------
@@ -523,6 +594,8 @@ void Resource_manager::create_acceleration_structure(const string& name, const M
     // m_device.m_device->CreateShaderResourceView(nullptr, &view_desc, handle);
     //
     // tlas_buffer->m_cbv_srv_handle_id = id;
+
+    return tlas_buffer.lock();
 }
 
 } // namespace D3D12

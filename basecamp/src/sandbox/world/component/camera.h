@@ -15,6 +15,14 @@ struct Camera {
 
     XMMATRIX m_view;
     XMMATRIX m_projection;
+    XMVECTOR m_position;
+
+    XMFLOAT3 position()
+    {
+        XMFLOAT3 result;
+        XMStoreFloat3(&result, m_position);
+        return result;
+    }
 
     XMFLOAT4X4 view()
     {
@@ -27,6 +35,16 @@ struct Camera {
     {
         XMFLOAT4X4 result;
         XMStoreFloat4x4(&result, m_projection);
+        return result;
+    }
+
+    XMFLOAT4X4 projection_to_world()
+    {
+        auto&& view_proj     = m_view * m_projection;
+        auto&& view_proj_inv = XMMatrixInverse(nullptr, view_proj);
+
+        XMFLOAT4X4 result;
+        XMStoreFloat4x4(&result, view_proj_inv);
         return result;
     }
 };

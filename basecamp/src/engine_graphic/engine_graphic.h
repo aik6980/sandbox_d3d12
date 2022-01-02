@@ -50,6 +50,7 @@ class FrameResource;
 class Resource_manager;
 class Shader_manager;
 class Mesh_buffer;
+struct Buffer_request;
 struct Buffer;
 struct Dynamic_buffer;
 struct Sampler;
