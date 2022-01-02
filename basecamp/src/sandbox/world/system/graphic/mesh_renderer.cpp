@@ -301,7 +301,6 @@ void Mesh_renderer::build_texture()
 
     auto&& resource_desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, width, width);
     auto&& buffer        = m_engine.resource_mgr().create_texture(m_texture_name, resource_desc, nullptr, &texture_data);
-    m_engine.resource_mgr().create_srv(*buffer, resource_desc);
 
     m_engine.resource_mgr().register_buffer(m_texture_name, buffer);
 

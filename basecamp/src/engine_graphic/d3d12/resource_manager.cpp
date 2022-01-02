@@ -156,30 +156,58 @@ std::shared_ptr<Buffer> Resource_manager::create_texture(
     return buffer;
 }
 
-void Resource_manager::create_srv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc)
+CD3DX12_GPU_DESCRIPTOR_HANDLE Resource_manager::create_cbv(Buffer& buffer)
 {
-    auto id     = m_device.m_srv_heap.get_next_decriptor_id();
-    auto handle = m_device.m_srv_heap.get_cpu_descriptor(id);
+    auto id     = m_device.frame_resource().m_srv_heap.get_next_decriptor_id();
+    auto handle = m_device.frame_resource().m_srv_heap.get_cpu_descriptor(id);
 
-    auto&& mapped_fmt = format_to_view_mapping(desc.Format, true);
+    D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc;
+    view_desc.BufferLocation = buffer.m_buffer->GetGPUVirtualAddress();
+    view_desc.SizeInBytes    = (uint32_t)buffer.m_d3d_desc.Width;
+    m_device.d3d_device()->CreateConstantBufferView(&view_desc, handle);
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC view_desc = {};
-    view_desc.Shader4ComponentMapping         = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    view_desc.Format                          = mapped_fmt;
-    view_desc.ViewDimension                   = D3D12_SRV_DIMENSION_TEXTURE2D;
-    view_desc.Texture2D.MipLevels             = 1;
-
-    m_device.m_device->CreateShaderResourceView(buffer.m_buffer.Get(), &view_desc, handle);
-
-    buffer.m_cbv_srv_handle_id = id;
+    auto&& gpu_handle = m_device.frame_resource().m_srv_heap.get_gpu_descriptor(id);
+    return gpu_handle;
 }
 
-void Resource_manager::create_uav(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc)
+CD3DX12_GPU_DESCRIPTOR_HANDLE Resource_manager::create_srv(Buffer& buffer)
 {
-    auto id     = m_device.m_srv_heap.get_next_decriptor_id();
-    auto handle = m_device.m_srv_heap.get_cpu_descriptor(id);
+    auto id     = m_device.frame_resource().m_srv_heap.get_next_decriptor_id();
+    auto handle = m_device.frame_resource().m_srv_heap.get_cpu_descriptor(id);
 
-    auto&& mapped_fmt = format_to_view_mapping(desc.Format, true);
+    // raytrace acceleration structure using DXGI_FORMAT_UNKNOWN
+    bool is_rtaccel_structure = (buffer.m_d3d_desc.Format == DXGI_FORMAT_UNKNOWN);
+
+    if (is_rtaccel_structure) {
+        D3D12_SHADER_RESOURCE_VIEW_DESC view_desc          = {};
+        view_desc.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        view_desc.Format                                   = DXGI_FORMAT_UNKNOWN;
+        view_desc.ViewDimension                            = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+        view_desc.RaytracingAccelerationStructure.Location = buffer.m_buffer->GetGPUVirtualAddress();
+
+        m_device.m_device->CreateShaderResourceView(nullptr, &view_desc, handle);
+    }
+    else {
+        auto&&                          mapped_fmt = format_to_view_mapping(buffer.m_d3d_desc.Format, true);
+        D3D12_SHADER_RESOURCE_VIEW_DESC view_desc  = {};
+        view_desc.Shader4ComponentMapping          = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        view_desc.Format                           = mapped_fmt;
+        view_desc.ViewDimension                    = D3D12_SRV_DIMENSION_TEXTURE2D;
+        view_desc.Texture2D.MipLevels              = 1;
+
+        m_device.m_device->CreateShaderResourceView(buffer.m_buffer.Get(), &view_desc, handle);
+    }
+
+    auto&& gpu_handle = m_device.frame_resource().m_srv_heap.get_gpu_descriptor(id);
+    return gpu_handle;
+}
+
+CD3DX12_GPU_DESCRIPTOR_HANDLE Resource_manager::create_uav(Buffer& buffer)
+{
+    auto id     = m_device.frame_resource().m_srv_heap.get_next_decriptor_id();
+    auto handle = m_device.frame_resource().m_srv_heap.get_cpu_descriptor(id);
+
+    auto&& mapped_fmt = format_to_view_mapping(buffer.m_d3d_desc.Format, true);
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC view_desc = {};
     view_desc.Format                           = mapped_fmt;
@@ -188,7 +216,8 @@ void Resource_manager::create_uav(Buffer& buffer, const CD3DX12_RESOURCE_DESC& d
 
     m_device.m_device->CreateUnorderedAccessView(buffer.m_buffer.Get(), nullptr, &view_desc, handle);
 
-    buffer.m_uav_handle_id = id;
+    auto&& gpu_handle = m_device.frame_resource().m_srv_heap.get_gpu_descriptor(id);
+    return gpu_handle;
 }
 
 void Resource_manager::create_rtv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc)
@@ -482,18 +511,18 @@ void Resource_manager::create_acceleration_structure(const string& name, const M
 
     // -------------------------
     // create srv for tlas
-    auto id     = m_device.m_srv_heap.get_next_decriptor_id();
-    auto handle = m_device.m_srv_heap.get_cpu_descriptor(id);
-
-    D3D12_SHADER_RESOURCE_VIEW_DESC view_desc          = {};
-    view_desc.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    view_desc.Format                                   = DXGI_FORMAT_UNKNOWN;
-    view_desc.ViewDimension                            = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-    view_desc.RaytracingAccelerationStructure.Location = tlas_buffer->m_buffer->GetGPUVirtualAddress();
-
-    m_device.m_device->CreateShaderResourceView(nullptr, &view_desc, handle);
-
-    tlas_buffer->m_cbv_srv_handle_id = id;
+    // auto id     = m_device.m_srv_heap.get_next_decriptor_id();
+    // auto handle = m_device.m_srv_heap.get_cpu_descriptor(id);
+    //
+    // D3D12_SHADER_RESOURCE_VIEW_DESC view_desc          = {};
+    // view_desc.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    // view_desc.Format                                   = DXGI_FORMAT_UNKNOWN;
+    // view_desc.ViewDimension                            = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+    // view_desc.RaytracingAccelerationStructure.Location = tlas_buffer->m_buffer->GetGPUVirtualAddress();
+    //
+    // m_device.m_device->CreateShaderResourceView(nullptr, &view_desc, handle);
+    //
+    // tlas_buffer->m_cbv_srv_handle_id = id;
 }
 
 } // namespace D3D12

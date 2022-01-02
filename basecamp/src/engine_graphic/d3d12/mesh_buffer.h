@@ -1,6 +1,6 @@
 #pragma once
 
-#include "resource.h"
+#include "buffer.h"
 
 namespace D3D12 {
 

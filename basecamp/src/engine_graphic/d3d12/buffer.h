@@ -10,10 +10,10 @@ struct Buffer {
 
     D3D12_RESOURCE_DESC m_d3d_desc;
     // d3d descriptor id (pointer to view in the heap)
-    uint32_t m_cbv_srv_handle_id = 0;
-    uint32_t m_uav_handle_id     = 0;
-    uint32_t m_rtv_handle_id     = 0;
-    uint32_t m_dsv_handle_id     = 0;
+    // uint32_t m_cbv_srv_handle_id = 0; <- get dynamically from frame resource
+    // uint32_t m_uav_handle_id     = 0; <- get dynamically from frame resource
+    uint32_t m_rtv_handle_id = 0;
+    uint32_t m_dsv_handle_id = 0;
 
     void destroy()
     {

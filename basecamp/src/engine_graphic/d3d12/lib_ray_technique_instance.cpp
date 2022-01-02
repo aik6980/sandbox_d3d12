@@ -307,30 +307,35 @@ const CBUFFER_VARIABLE_INFO* Lib_ray_technique_instance::get_cbuffer_var_info(co
 }
 void Lib_ray_technique_instance::set_root_signature_parameters(ID3D12GraphicsCommandList& command_list, Lib_ray_technique& technique)
 {
+    auto&& resource_mgr = m_device.resource_manager();
+
     for (uint32_t i = 0; i < technique.m_descriptor_ranges.size(); ++i) {
         auto&& name = technique.m_descriptor_table_names[i];
 
         auto&& found_cbuffer_data = m_cbuffer.find(name);
         if (found_cbuffer_data != m_cbuffer.end()) {
-            auto&& gpu_descriptor_handle = m_device.get_gpu_descriptor_handle(*found_cbuffer_data->second);
-            if (std::get<bool>(gpu_descriptor_handle)) {
-                command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+            auto&& buffer = m_device.get_buffer(*found_cbuffer_data->second).lock();
+            if (buffer) {
+                auto&& gpu_descriptor_handle = resource_mgr.create_cbv(*buffer);
+                command_list.SetComputeRootDescriptorTable(i, gpu_descriptor_handle);
             }
         }
 
         auto&& found_srv_data = m_srv.find(name);
         if (found_srv_data != m_srv.end()) {
-            auto&& gpu_descriptor_handle = m_device.get_gpu_descriptor_handle(found_srv_data->second);
-            if (std::get<bool>(gpu_descriptor_handle)) {
-                command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+            auto&& buffer = found_srv_data->second.lock();
+            if (buffer) {
+                auto&& gpu_descriptor_handle = resource_mgr.create_srv(*buffer);
+                command_list.SetComputeRootDescriptorTable(i, gpu_descriptor_handle);
             }
         }
 
         auto&& found_uav_data = m_uav.find(name);
         if (found_uav_data != m_uav.end()) {
-            auto&& gpu_descriptor_handle = m_device.get_uav_gpu_descriptor_handle(found_uav_data->second);
-            if (std::get<bool>(gpu_descriptor_handle)) {
-                command_list.SetComputeRootDescriptorTable(i, std::get<CD3DX12_GPU_DESCRIPTOR_HANDLE>(gpu_descriptor_handle));
+            auto&& buffer = found_uav_data->second.lock();
+            if (buffer) {
+                auto&& gpu_descriptor_handle = resource_mgr.create_uav(*buffer);
+                command_list.SetComputeRootDescriptorTable(i, gpu_descriptor_handle);
             }
         }
 

@@ -1,0 +1,118 @@
+// [Note] current compile for Raytracing ONLY
+// each resources need to have register(xx) <- otherwise it will generate garbage in HLSL asm
+
+//RaytracingAccelerationStructure Scene;
+//RWTexture2D<float4> Output;
+//
+//cbuffer Raygen_cb
+//{
+//    float4 Main_vp;
+//    float4 Stencil_vp;
+//};
+
+RaytracingAccelerationStructure Scene_srv : register(t0);
+RWTexture2D<float4> Output_uav : register(u0);
+
+cbuffer Raygen_cb : register(b0)
+{
+	float4 Main_vp;
+	float4 Stencil_vp;
+};
+
+cbuffer Camera_cb : register(b1)
+{
+    float4x4 ProjectionToWorld;
+
+};
+
+bool Is_inside_viewport(float2 pos, float4 vp)
+{
+	float left	 = vp.x;
+	float top	 = vp.y;
+	float right	 = vp.z;
+	float bottom = vp.w;
+
+	return (pos.x >= left && pos.x <= right)
+		&& (pos.y >= top && pos.y <= bottom);
+}
+
+inline void generate_camera_ray(uint2 index, uint2 dimensions, out float3 origin, out float3 dir)
+{
+    float2 xy = index + 0.5f; // center in the middle of the pixel
+    float2 screen_pos = xy / dimensions.xy * 2.0 - 1.0;
+	
+	// invert y for directx 
+    screen_pos.y = -screen_pos.y;
+
+	// unproject the pixel coordinate into a ray
+    //float4 world = mul(float4(screen_pos, 0.0, 1.0), )
+
+}
+
+struct Payload_st
+{
+    float4 colour;
+};
+
+[shader("raygeneration")]
+void raygen_entry()
+{
+	uint3 launch_index = DispatchRaysIndex();
+	float2 lerp_val = launch_index.xy / (float2)DispatchRaysDimensions();
+
+	// viewport
+    float left	= Main_vp.x;
+    float top	= Main_vp.y;
+    float right = Main_vp.z;
+    float bottom= Main_vp.w;
+
+	float3 ray_origin = float3(lerp(left, right, lerp_val.x), lerp(top, bottom, lerp_val.y), 0.0);
+	float3 ray_dir = float3(0, 0, 1);
+
+	if (Is_inside_viewport(ray_origin.xy, Stencil_vp)) {
+        RayDesc ray;
+
+        ray.Origin = ray_origin;
+        ray.Direction = ray_dir;
+        ray.TMin      = 0.001;
+        ray.TMax      = 10000.0;
+
+		Payload_st payload = { float4(0,0,0,0) };
+
+		uint ray_flags = RAY_FLAG_CULL_BACK_FACING_TRIANGLES;
+		uint instance_inclusion_mask = ~0;
+		uint ray_contribution_to_hitgroup_index = 0;
+		uint multiplier_for_geometry_contribution_to_shader_index = 1;
+		uint miss_shader_index = 0;
+
+        TraceRay(Scene_srv, ray_flags, instance_inclusion_mask,
+			ray_contribution_to_hitgroup_index,
+			multiplier_for_geometry_contribution_to_shader_index,
+			miss_shader_index,
+			ray,
+			payload);
+
+		Output_uav[launch_index.xy] = payload.colour;
+	}
+    else {
+		float3 col              = float3(0.4, 0.6, 0.2);
+        Output_uav[launch_index.xy] = float4(lerp_val, 0.0, 1.0);
+    }
+
+}
+
+typedef BuiltInTriangleIntersectionAttributes Tri_attributes;
+
+[shader("closesthit")] 
+void closethit_entry(inout Payload_st payload, in Tri_attributes attr) 
+{
+	float3 barycentrics = float3(1.0 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
+	payload.colour = float4(barycentrics, 1.0);
+}
+
+[shader("miss")] 
+void miss_entry(inout Payload_st payload)
+{
+    payload.colour = float4(0.0, 0.0, 0.0, 1.0);
+}
+

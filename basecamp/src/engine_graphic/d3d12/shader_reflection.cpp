@@ -314,12 +314,17 @@ void Lib_ray_reflection::generate_global_input()
     }
 
     // sorting by binding id
-    auto sort_func = [](const D3D12_SHADER_INPUT_BIND_DESC& a, const D3D12_SHADER_INPUT_BIND_DESC& b) { return a.BindPoint < b.BindPoint; };
+    auto sort_func   = [](const D3D12_SHADER_INPUT_BIND_DESC& a, const D3D12_SHADER_INPUT_BIND_DESC& b) { return a.BindPoint < b.BindPoint; };
+    auto unique_func = [](const D3D12_SHADER_INPUT_BIND_DESC& a, const D3D12_SHADER_INPUT_BIND_DESC& b) { return strcmp(a.Name, b.Name) == 0; };
+
     for (int i = 0; i < Sit_count; ++i) {
         auto&& beg = m_global_inputs.m_shader_input_descs[i].begin();
         auto&& end = m_global_inputs.m_shader_input_descs[i].end();
 
         std::sort(beg, end, sort_func);
+        // remove duplicated items in the list
+        auto unique_end = std::unique(beg, end, unique_func);
+        m_global_inputs.m_shader_input_descs[i].erase(unique_end, end);
     }
 }
 

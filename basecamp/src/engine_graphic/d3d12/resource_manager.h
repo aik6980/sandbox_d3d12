@@ -19,10 +19,11 @@ class Resource_manager {
         const TextureData* init_data, D3D12_RESOURCE_STATES init_state = D3D12_RESOURCE_STATE_GENERIC_READ);
 
     // views
-    void create_srv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
-    void create_uav(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
-    void create_rtv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
-    void create_dsv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
+    CD3DX12_GPU_DESCRIPTOR_HANDLE create_cbv(Buffer& buffer);
+    CD3DX12_GPU_DESCRIPTOR_HANDLE create_srv(Buffer& buffer);
+    CD3DX12_GPU_DESCRIPTOR_HANDLE create_uav(Buffer& buffer);
+    void                          create_rtv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
+    void                          create_dsv(Buffer& buffer, const CD3DX12_RESOURCE_DESC& desc);
 
     std::weak_ptr<Mesh_buffer> request_mesh_buffer(const string& str_id);
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "resource.h"
+#include "buffer.h"
+#include "descriptor_heap.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -17,6 +18,12 @@ class FrameResource {
     FrameResource(const FrameResource& rhs) = delete;
     FrameResource& operator=(const FrameResource& rhs) = delete;
 
+    void begin_frame()
+    {
+        clear_staging_resources();
+        m_srv_heap.reset();
+    }
+
     void clear_staging_resources()
     {
         for (auto&& buffer : m_staging_buffers) {
@@ -27,6 +34,8 @@ class FrameResource {
     }
 
   public:
+    Descriptor_heap m_srv_heap;
+
     // We cannot reset the allocator until the GPU is done processing the commands.
     // So each frame needs their own allocator.
     ComPtr<ID3D12CommandAllocator> m_command_list_allocator;

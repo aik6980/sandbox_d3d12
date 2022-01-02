@@ -145,11 +145,13 @@ void Device::begin_frame()
     m_commandList.reset(cmd_list_allocator.Get(), nullptr);
 
     // set descriptor heaps for SRV
-    ID3D12DescriptorHeap* descriptor_heaps[] = {m_srv_heap.m_descriptor_heap.Get(), m_sampler_heap.m_descriptor_heap.Get()};
+    auto&&                curr_srv_heap      = curr_frame_resource.m_srv_heap;
+    ID3D12DescriptorHeap* descriptor_heaps[] = {curr_srv_heap.m_descriptor_heap.Get(), m_sampler_heap.m_descriptor_heap.Get()};
     m_commandList()->SetDescriptorHeaps(_countof(descriptor_heaps), descriptor_heaps);
 
     // clear statging buffers
-    curr_frame_resource.clear_staging_resources();
+    // reset cbv_srv_uav descriptor heap
+    curr_frame_resource.begin_frame();
 }
 
 void Device::end_frame()
@@ -279,15 +281,17 @@ shared_ptr<Buffer> Device::create_cbuffer(uint32_t size, const string& name)
 
     auto&& w_name = wstring(name.begin(), name.end());
     buffer->m_buffer->SetName(w_name.c_str());
+    buffer->m_d3d_desc = desc;
 
-    auto                            id     = m_srv_heap.get_next_decriptor_id();
-    auto                            handle = m_srv_heap.get_cpu_descriptor(id);
-    D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc;
-    view_desc.BufferLocation = buffer->m_buffer->GetGPUVirtualAddress();
-    view_desc.SizeInBytes    = (UINT)desc.Width;
-    m_device->CreateConstantBufferView(&view_desc, handle);
-
-    buffer->m_cbv_srv_handle_id = id;
+    // get dynamically from frame resource
+    // auto                            id     = m_srv_heap.get_next_decriptor_id();
+    // auto                            handle = m_srv_heap.get_cpu_descriptor(id);
+    // D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc;
+    // view_desc.BufferLocation = buffer->m_buffer->GetGPUVirtualAddress();
+    // view_desc.SizeInBytes    = (UINT)desc.Width;
+    // m_device->CreateConstantBufferView(&view_desc, handle);
+    //
+    // buffer->m_cbv_srv_handle_id = id;
 
     return buffer;
 }
@@ -318,32 +322,9 @@ void* Device::get_mapped_data(const Dynamic_buffer& buffer)
     return buffer.m_data[m_curr_frame_resource_index];
 }
 
-std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_gpu_descriptor_handle(const Dynamic_buffer& buffer)
+weak_ptr<Buffer> Device::get_buffer(const Dynamic_buffer& buffer)
 {
-    auto&& buffer_handle = buffer.m_buffer[m_curr_frame_resource_index];
-    return get_gpu_descriptor_handle(buffer_handle);
-}
-
-std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_gpu_descriptor_handle(weak_ptr<Buffer> buffer_handle)
-{
-    auto&& buffer = buffer_handle.lock();
-    if (buffer) {
-        auto&& descriptor_handle_id = buffer->m_cbv_srv_handle_id;
-        return std::make_tuple(true, m_srv_heap.get_gpu_descriptor(descriptor_handle_id));
-    }
-
-    return std::make_tuple(false, CD3DX12_GPU_DESCRIPTOR_HANDLE());
-}
-
-std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_uav_gpu_descriptor_handle(weak_ptr<Buffer> buffer_handle)
-{
-    auto&& buffer = buffer_handle.lock();
-    if (buffer) {
-        auto&& descriptor_handle_id = buffer->m_uav_handle_id;
-        return std::make_tuple(true, m_srv_heap.get_gpu_descriptor(descriptor_handle_id));
-    }
-
-    return std::make_tuple(false, CD3DX12_GPU_DESCRIPTOR_HANDLE());
+    return buffer.m_buffer[m_curr_frame_resource_index];
 }
 
 std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_gpu_descriptor_handle(weak_ptr<Sampler> handle)
@@ -607,14 +588,16 @@ void Device::CreateSwapChain()
 
 void Device::create_srv_descriptor_heap()
 {
-    D3D12_DESCRIPTOR_HEAP_DESC desc;
-    desc.NumDescriptors = m_srv_heap.m_max_descriptor;
-    desc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    desc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE; // this is where we define that this heap will provide GPUDescriptorHandle
-    desc.NodeMask       = 0;
-    DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_srv_heap.m_descriptor_heap)));
+    for (auto&& frame_resource : m_frame_resource_list) {
+        D3D12_DESCRIPTOR_HEAP_DESC desc;
+        desc.NumDescriptors = frame_resource->m_srv_heap.m_max_descriptor;
+        desc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        desc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE; // this is where we define that this heap will provide GPUDescriptorHandle
+        desc.NodeMask       = 0;
+        DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&frame_resource->m_srv_heap.m_descriptor_heap)));
 
-    m_srv_heap.m_descriptor_size = m_device->GetDescriptorHandleIncrementSize(desc.Type);
+        frame_resource->m_srv_heap.m_descriptor_size = m_device->GetDescriptorHandleIncrementSize(desc.Type);
+    }
 }
 
 void Device::create_rtv_and_dsv_descriptor_heaps()

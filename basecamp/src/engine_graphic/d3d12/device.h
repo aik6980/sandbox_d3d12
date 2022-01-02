@@ -3,8 +3,9 @@
 #include "D3D12MemoryAllocator/D3D12MemAlloc.h"
 #include "d3dx12/d3dx12.h"
 
+#include "buffer.h"
 #include "command_list.h"
-#include "resource.h"
+#include "descriptor_heap.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -53,11 +54,9 @@ class Device {
     shared_ptr<Buffer>         create_cbuffer(uint32_t size, const string& name);
     shared_ptr<Dynamic_buffer> create_dynamic_cbuffer(uint32_t size, const string& name);
 
-    void* get_mapped_data(const Dynamic_buffer& buffer);
+    void*            get_mapped_data(const Dynamic_buffer& buffer);
+    weak_ptr<Buffer> get_buffer(const Dynamic_buffer& buffer);
 
-    std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(const Dynamic_buffer& buffer);
-    std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
-    std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_uav_gpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
     std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(weak_ptr<Sampler> handle);
     std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> get_rtv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
     std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> get_dsv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
@@ -71,24 +70,6 @@ class Device {
     void imgui_post_render();
 
   private:
-    struct Descriptor_heap {
-        ComPtr<ID3D12DescriptorHeap> m_descriptor_heap;
-
-        const uint32_t m_max_descriptor     = 256;
-        uint32_t       m_descriptor_size    = 0;
-        uint32_t       m_next_descriptor_id = 0;
-
-        uint32_t                      get_next_decriptor_id() { return m_next_descriptor_id++; }
-        CD3DX12_CPU_DESCRIPTOR_HANDLE get_cpu_descriptor(uint32_t id) const
-        {
-            return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_descriptor_heap->GetCPUDescriptorHandleForHeapStart(), m_descriptor_size * id);
-        }
-        CD3DX12_GPU_DESCRIPTOR_HANDLE get_gpu_descriptor(uint32_t id) const
-        {
-            return CD3DX12_GPU_DESCRIPTOR_HANDLE(m_descriptor_heap->GetGPUDescriptorHandleForHeapStart(), m_descriptor_size * id);
-        }
-    };
-
     void FindHardwareAdapter(IDXGIFactory4& factory);
 
     void CreateCommandObjects();
@@ -134,7 +115,7 @@ class Device {
 
     Descriptor_heap m_rtv_heap;
     Descriptor_heap m_dsv_heap;
-    Descriptor_heap m_srv_heap;
+    // Descriptor_heap m_srv_heap; // <- request this dynamically from frame resource
     Descriptor_heap m_sampler_heap;
 
     ComPtr<ID3D12Resource> m_swap_chain_buffer[m_num_swap_chain_buffer_count];

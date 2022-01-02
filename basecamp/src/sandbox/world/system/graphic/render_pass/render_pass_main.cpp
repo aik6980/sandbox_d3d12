@@ -18,7 +18,6 @@ void Render_pass_main::load_resource()
     auto&& buffer                  = resource_mgr.create_texture(m_main_colour_buffer_id, resource_desc, &m_main_colour_buffer_clear_val, nullptr);
 
     if (resource_mgr.register_buffer(m_main_colour_buffer_id, buffer)) {
-        resource_mgr.create_uav(*buffer, resource_desc);
         resource_mgr.create_rtv(*buffer, resource_desc);
     }
 }
@@ -80,7 +79,6 @@ void Render_pass_shadow_map::load_resource()
     auto&& buffer       = resource_mgr.create_texture(m_depth_buffer_id, resource_desc, &m_depth_buffer_clear_val, nullptr);
 
     if (resource_mgr.register_buffer(m_depth_buffer_id, buffer)) {
-        resource_mgr.create_srv(*buffer, resource_desc);
         resource_mgr.create_dsv(*buffer, resource_desc);
     }
 }
@@ -138,8 +136,6 @@ void Render_pass_raytrace_main::load_resource()
     auto&& resource_mgr = App::engine().resource_mgr();
 
     auto&& buffer = resource_mgr.create_texture(m_raytrace_colour_buffer_id, resource_desc, nullptr, nullptr);
-    resource_mgr.create_uav(*buffer, resource_desc);
-    resource_mgr.create_srv(*buffer, resource_desc);
 }
 
 weak_ptr<D3D12::Buffer> Render_pass_raytrace_main::render_target_buffer()
