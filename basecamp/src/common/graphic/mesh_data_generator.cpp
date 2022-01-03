@@ -20,8 +20,10 @@ void MeshDataGenerator::create_unit_quad(MeshVertexArray& vertex_array, MeshInde
     index_array.m_indices32[5] = 3;
 }
 
-void MeshDataGenerator::create_unit_cube(MeshVertexArray& vertex_array, MeshIndexArray& index_array)
+tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_unit_cube()
 {
+    MeshVertexArray vertex_array;
+    MeshIndexArray  index_array;
     vertex_array.reset_vertices(4 * 6);
     index_array.reset_indices(6 * 6);
 
@@ -124,6 +126,8 @@ void MeshDataGenerator::create_unit_cube(MeshVertexArray& vertex_array, MeshInde
     index_array.m_indices32[ioffset + 9]  = voffset2 + 3;
     index_array.m_indices32[ioffset + 10] = voffset2 + 1;
     index_array.m_indices32[ioffset + 11] = voffset2 + 2;
+
+    return tuple(vertex_array, index_array);
 }
 
 tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_grid(float width, float depth, uint32_t m, uint32_t n)

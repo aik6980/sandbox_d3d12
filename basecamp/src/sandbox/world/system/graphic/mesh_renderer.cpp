@@ -290,7 +290,7 @@ void Mesh_renderer::build_cube_mesh()
     MeshVertexArray verts;
     MeshIndexArray  indices;
 
-    MeshDataGenerator::create_unit_cube(verts, indices);
+    tie(verts, indices)                = MeshDataGenerator::create_unit_cube();
     vector<P1C1InputLayout> mesh_verts = MeshDataGenerator::to_p1c1(verts);
 
     m_unit_cube_name = build_mesh(mesh_verts, indices, "unit_cube", m_engine);

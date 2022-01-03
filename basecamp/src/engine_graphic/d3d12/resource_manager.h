@@ -49,6 +49,7 @@ class Resource_manager {
 
     // dxr
     std::shared_ptr<Buffer> create_acceleration_structure(const string& name, const Mesh_buffer& mesh_buffer, bool persistent);
+    std::shared_ptr<Buffer> create_acceleration_structure(const string& name, const Scene_data& mesh_buffer, bool persistent);
 
   private:
     template <class T>

@@ -6,7 +6,7 @@
 class MeshDataGenerator {
   public:
     static void                                   create_unit_quad(MeshVertexArray& vertex_array, MeshIndexArray& index_array);
-    static void                                   create_unit_cube(MeshVertexArray& vertex_array, MeshIndexArray& index_array);
+    static tuple<MeshVertexArray, MeshIndexArray> create_unit_cube();
     static tuple<MeshVertexArray, MeshIndexArray> create_grid(float width, float depth, uint32_t m, uint32_t n);
 
     static vector<RtInputLayout>   to_rt(MeshVertexArray& vertex_array);

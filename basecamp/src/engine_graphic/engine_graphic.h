@@ -7,6 +7,7 @@
 #include <array>
 #include <chrono>
 #include <codecvt>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -54,6 +55,7 @@ struct Buffer_request;
 struct Buffer;
 struct Dynamic_buffer;
 struct Sampler;
+struct Scene_data;
 
 class Technique;
 class TechniqueInstance;

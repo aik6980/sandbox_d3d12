@@ -598,4 +598,175 @@ std::shared_ptr<Buffer> Resource_manager::create_acceleration_structure(const st
     return tlas_buffer.lock();
 }
 
+std::shared_ptr<Buffer> Resource_manager::create_acceleration_structure(const string& name, const Scene_data& scene_buffer, bool persistent)
+{
+    auto&& num_instances = scene_buffer.num_instances();
+    if (num_instances == 0) {
+        return nullptr;
+    }
+
+    auto&& num_meshes = scene_buffer.m_instance_transforms.size();
+
+    vector<weak_ptr<Buffer>> blas_buffers;
+    blas_buffers.reserve(num_meshes);
+
+    for (auto&& obj : scene_buffer.m_instance_transforms) {
+
+        // request meshes
+        auto&& mesh_name   = obj.first;
+        auto&& mesh_buffer = request_mesh_buffer(mesh_name).lock();
+
+        if (!mesh_buffer) {
+            throw;
+        }
+
+        auto&& vertex_buffer = mesh_buffer->m_vertex_buffer_handle.lock();
+        auto&& index_buffer  = mesh_buffer->m_index_buffer_handle.lock();
+        if (!vertex_buffer || !index_buffer) {
+            throw;
+        }
+
+        D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
+        geometry_desc.Type                           = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+        geometry_desc.Triangles.IndexBuffer          = index_buffer->m_buffer->GetGPUVirtualAddress();
+        geometry_desc.Triangles.IndexCount           = mesh_buffer->m_mesh_location.index_count;
+        geometry_desc.Triangles.IndexFormat          = mesh_buffer->idx_format;
+        geometry_desc.Triangles.Transform3x4         = 0;
+        // geometry_desc.Triangles.VertexFormat               = DXGI_FORMAT_R32G32B32A32_FLOAT; // D3Derror <- probably not supported//
+        geometry_desc.Triangles.VertexFormat               = DXGI_FORMAT_R32G32B32_FLOAT;
+        geometry_desc.Triangles.VertexCount                = mesh_buffer->vb_bytes_size / mesh_buffer->vtx_bytes_stride;
+        geometry_desc.Triangles.VertexBuffer.StartAddress  = vertex_buffer->m_buffer->GetGPUVirtualAddress();
+        geometry_desc.Triangles.VertexBuffer.StrideInBytes = mesh_buffer->vtx_bytes_stride;
+
+        // Mark the geometry as opaque.
+        // PERFORMANCE TIP: mark geometry as opaque whenever applicable as it can enable important ray processing optimizations.
+        // Note: When rays encounter opaque geometry an any hit shader will not be executed whether it is present or not.
+        geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+
+        // create BLAS
+        // Get required sizes for an acceleration structure.
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottom_level_inputs = {};
+        bottom_level_inputs.DescsLayout                                          = D3D12_ELEMENTS_LAYOUT_ARRAY;
+        bottom_level_inputs.Flags                                                = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+        bottom_level_inputs.NumDescs                                             = 1;
+        bottom_level_inputs.Type                                                 = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+        bottom_level_inputs.pGeometryDescs                                       = &geometry_desc;
+
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottom_level_prebuild_info = {};
+        m_device.d3d_device()->GetRaytracingAccelerationStructurePrebuildInfo(&bottom_level_inputs, &bottom_level_prebuild_info);
+
+        if (bottom_level_prebuild_info.ResultDataMaxSizeInBytes == 0) {
+            throw;
+        }
+
+        auto&& scratch_resource_buffer_size = bottom_level_prebuild_info.ResultDataMaxSizeInBytes;
+        auto&& scratch_resource_name        = name + "_" + mesh_name + "_blas_scratch";
+
+        Buffer_request scratch_resource_req;
+        scratch_resource_req.desc                = CD3DX12_RESOURCE_DESC::Buffer(scratch_resource_buffer_size, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        scratch_resource_req.lifetime_persistent = persistent;
+
+        auto&& scratch_buffer = create_buffer(scratch_resource_name, scratch_resource_req, nullptr, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+        auto&&         blas_resource_name = name + "_" + mesh_name + "_blas";
+        Buffer_request blas_resource_req;
+        blas_resource_req.desc = CD3DX12_RESOURCE_DESC::Buffer(bottom_level_prebuild_info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        blas_resource_req.lifetime_persistent = persistent;
+        auto&& blas_buffer = create_buffer(blas_resource_name, blas_resource_req, nullptr, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+
+        // Bottom Level Acceleration Structure desc
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC bottom_level_build_desc = {};
+        {
+            bottom_level_build_desc.Inputs                           = bottom_level_inputs;
+            bottom_level_build_desc.ScratchAccelerationStructureData = scratch_buffer.lock()->m_buffer->GetGPUVirtualAddress();
+            bottom_level_build_desc.DestAccelerationStructureData    = blas_buffer.lock()->m_buffer->GetGPUVirtualAddress();
+        }
+
+        // Build acceleration structure.
+        auto&& command_list = m_device.commmand_list()();
+        command_list->BuildRaytracingAccelerationStructure(&bottom_level_build_desc, 0, nullptr);
+        // note, this barrier is important, need to make sure blas is finished before building tlas
+        command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(blas_buffer.lock()->m_buffer.Get()));
+
+        blas_buffers.emplace_back(blas_buffer);
+    }
+
+    // Build instance data
+    vector<D3D12_RAYTRACING_INSTANCE_DESC> instance_descs;
+    instance_descs.reserve(scene_buffer.num_instances());
+
+    int blas_id = 0;
+    for (auto&& obj : scene_buffer.m_instance_transforms) {
+
+        auto&& blas_buffer = blas_buffers[blas_id].lock();
+        if (!blas_buffer) {
+            throw;
+        }
+
+        for (auto&& transform : obj.second) {
+            // Create an instance desc for the bottom-level acceleration structure.
+            D3D12_RAYTRACING_INSTANCE_DESC instance_desc = {};
+            XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instance_desc.Transform), transform);
+            instance_desc.InstanceMask          = 1;
+            instance_desc.AccelerationStructure = blas_buffer->m_buffer->GetGPUVirtualAddress();
+
+            instance_descs.emplace_back(instance_desc);
+        }
+
+        blas_id++;
+    }
+
+    // create an instance buffer
+    auto&&         instance_buffer_name = name + "_instance";
+    Buffer_request instance_resource_req;
+    instance_resource_req.desc                = CD3DX12_RESOURCE_DESC::Buffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * instance_descs.size());
+    instance_resource_req.lifetime_persistent = persistent;
+    auto&& instance_buffer                    = create_buffer(instance_buffer_name, instance_resource_req, instance_descs.data());
+
+    // Build TLAS
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS top_level_inputs = {};
+    top_level_inputs.DescsLayout                                          = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    top_level_inputs.Flags                                                = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+    top_level_inputs.NumDescs                                             = instance_descs.size();
+    top_level_inputs.Type                                                 = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO top_level_prebuild_info = {};
+    m_device.d3d_device()->GetRaytracingAccelerationStructurePrebuildInfo(&top_level_inputs, &top_level_prebuild_info);
+
+    if (top_level_prebuild_info.ResultDataMaxSizeInBytes == 0) {
+        throw;
+    }
+
+    auto&& scratch_resource_buffer_size = top_level_prebuild_info.ResultDataMaxSizeInBytes;
+    auto&& scratch_resource_name        = name + "_tlas_scratch";
+
+    Buffer_request scratch_resource_req;
+    scratch_resource_req.desc                = CD3DX12_RESOURCE_DESC::Buffer(scratch_resource_buffer_size, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    scratch_resource_req.lifetime_persistent = persistent;
+
+    auto&& scratch_buffer = create_buffer(scratch_resource_name, scratch_resource_req, nullptr, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+    auto&&         tlas_resource_name = name + "_tlas";
+    Buffer_request tlas_resource_req;
+    tlas_resource_req.desc = CD3DX12_RESOURCE_DESC::Buffer(top_level_prebuild_info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    tlas_resource_req.lifetime_persistent = persistent;
+    auto&& tlas_buffer = create_buffer(tlas_resource_name, tlas_resource_req, nullptr, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+
+    // Top Level Acceleration Structure desc
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC top_level_build_desc = {};
+    {
+        top_level_inputs.InstanceDescs                        = instance_buffer.lock()->m_buffer->GetGPUVirtualAddress();
+        top_level_build_desc.Inputs                           = top_level_inputs;
+        top_level_build_desc.ScratchAccelerationStructureData = scratch_buffer.lock()->m_buffer->GetGPUVirtualAddress();
+        top_level_build_desc.DestAccelerationStructureData    = tlas_buffer.lock()->m_buffer->GetGPUVirtualAddress();
+    }
+
+    // Build acceleration structure.
+    auto&& command_list = m_device.commmand_list()();
+    // note, this barrier is important, need to make sure blas is finished before building tlas
+    command_list->BuildRaytracingAccelerationStructure(&top_level_build_desc, 0, nullptr);
+
+    return tlas_buffer.lock();
+}
+
 } // namespace D3D12

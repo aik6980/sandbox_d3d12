@@ -21,7 +21,10 @@ class Raytrace_renderer {
 
     string m_rtaccel_structure_buffer_handle;
     // string m_unit_quad_name;
+    string m_unit_cube_name;
     string m_grid_mesh;
+
+    unique_ptr<D3D12::Scene_data> m_scene_data;
 
     Engine&         m_engine;
     Frame_pipeline& m_frame_pipeline;

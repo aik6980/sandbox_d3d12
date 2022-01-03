@@ -13,5 +13,6 @@
 #include "d3d12/mesh_buffer.h"
 #include "d3d12/render_technique_instance.h"
 #include "d3d12/resource_manager.h"
+#include "d3d12/scene_buffer.h"
 #include "d3d12/shader.h"
 #include "d3d12/shader_manager.h"

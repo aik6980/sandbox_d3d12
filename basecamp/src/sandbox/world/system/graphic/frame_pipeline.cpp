@@ -22,6 +22,12 @@ void Frame_pipeline::load_resource()
     m_render_pass_shadow_map->load_resource();
 }
 
+void Frame_pipeline::update()
+{
+    m_mesh_renderer->update();
+    m_raytrace_renderer->update();
+}
+
 void Frame_pipeline::draw()
 {
     m_mesh_renderer->draw();

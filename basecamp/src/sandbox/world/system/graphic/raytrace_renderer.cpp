@@ -1,5 +1,6 @@
 #include "raytrace_renderer.h"
 
+#include "app.h"
 #include "common/common.cpp.h"
 #include "engine_graphic/engine.h"
 #include "engine_graphic/engine_graphic_cpp.h"
@@ -38,7 +39,36 @@ void Raytrace_renderer::load_resource()
 
     auto&& mesh_data  = MeshDataGenerator::create_grid(25.0, 25.0, 10, 10);
     auto&& mesh_verts = MeshDataGenerator::to_rt(get<MeshVertexArray>(mesh_data));
-    m_grid_mesh       = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), "grid_mesh", m_engine);
+    m_grid_mesh       = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), "grid_mesh_rt", m_engine);
+
+    auto&& cube_mesh_data  = MeshDataGenerator::create_unit_cube();
+    auto&& cube_mesh_verts = MeshDataGenerator::to_rt(get<MeshVertexArray>(cube_mesh_data));
+    m_unit_cube_name       = build_mesh(cube_mesh_verts, get<MeshIndexArray>(cube_mesh_data), "cube_mesh_rt", m_engine);
+
+    m_scene_data = make_unique<D3D12::Scene_data>();
+}
+
+void Raytrace_renderer::update()
+{
+    // update scene
+    m_scene_data->m_instance_transforms.clear();
+
+    auto&& t = App::get_duration_app();
+    // add instances
+    uint32_t num_instances = 5;
+    for (int i = 0; i < num_instances; ++i) {
+        float    phase = i * XM_2PI / num_instances;
+        XMVECTOR pos   = XMVectorSet(4.0f * sin(phase), 4.0f + sin(phase + t * 1.5f), 4.0f * cos(phase), 0.0f);
+
+        auto&& trans_mat = XMMatrixTranslationFromVector(pos);
+        m_scene_data->add_instance(m_unit_cube_name, trans_mat);
+    }
+
+    auto&& trans_mat = XMMatrixIdentity();
+    m_scene_data->add_instance(m_grid_mesh, trans_mat);
+
+    auto&& cube_trans_mat = XMMatrixTranslation(0.0f, 1.0f, 0.0f);
+    m_scene_data->add_instance(m_unit_cube_name, cube_trans_mat);
 }
 
 void Raytrace_renderer::draw()
@@ -49,8 +79,9 @@ void Raytrace_renderer::draw()
 
     // re-build acceleration struture
     auto&& mesh_buffer    = m_engine.resource_mgr().request_mesh_buffer(m_grid_mesh).lock();
-    auto&& rtaccel_buffer = resource_mgr.create_acceleration_structure("rtaccel_structure_buffer", *mesh_buffer, false);
-    // m_rtaccel_structure_buffer_handle = "rtaccel_structure_buffer_tlas";
+    auto&& rtaccel_buffer = resource_mgr.create_acceleration_structure("rtaccel_structure_buffer", *m_scene_data, false);
+    // auto&& rtaccel_buffer = resource_mgr.create_acceleration_structure("rtaccel_structure_buffer", *mesh_buffer, false);
+    //  m_rtaccel_structure_buffer_handle = "rtaccel_structure_buffer_tlas";
 
     auto&& main_colour_buffer = m_frame_pipeline.m_render_pass_raytrace_main->render_target_buffer().lock();
     render_device.buffer_state_transition(*main_colour_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);

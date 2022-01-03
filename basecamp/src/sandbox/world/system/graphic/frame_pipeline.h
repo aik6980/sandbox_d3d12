@@ -15,7 +15,7 @@ class Frame_pipeline : public Engine_client {
     Frame_pipeline(Engine& engine);
 
     virtual void load_resource() override;
-    virtual void update() override{};
+    virtual void update() override;
     virtual void draw() override;
 
     unique_ptr<Mesh_renderer>     m_mesh_renderer;
