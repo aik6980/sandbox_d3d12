@@ -202,7 +202,7 @@ void Lib_ray_reflection::get_reflection(ComPtr<ID3DBlob> buffer)
     // allocate sub objects
     m_sub_shaders.resize(m_lib_desc.FunctionCount);
 
-    for (int i = 0; i < m_lib_desc.FunctionCount; ++i) {
+    for (uint32_t i = 0; i < m_lib_desc.FunctionCount; ++i) {
         auto&&              func_reflection = m_lib_reflection->GetFunctionByIndex(i);
         D3D12_FUNCTION_DESC func_desc;
         func_reflection->GetDesc(&func_desc);
@@ -287,7 +287,7 @@ void Lib_ray_reflection::generate_global_input()
     for (auto&& sub_shader : m_sub_shaders) {
 
         for (int i = 0; i < Sit_count; ++i) {
-            shader_input_desc_size[i] += sub_shader.m_func_input_info.m_shader_input_descs[i].size();
+            shader_input_desc_size[i] += (uint32_t)sub_shader.m_func_input_info.m_shader_input_descs[i].size();
         }
     }
 

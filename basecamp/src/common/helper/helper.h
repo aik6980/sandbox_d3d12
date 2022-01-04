@@ -26,7 +26,7 @@ int Case_insensitive_find_substr(const T& str1, const T& str2, const std::locale
 {
     typename T::const_iterator it = std::search(str1.begin(), str1.end(), str2.begin(), str2.end(), Case_insensitive_equal<typename T::value_type>(loc));
     if (it != str1.end()) {
-        return it - str1.begin();
+        return (int)(it - str1.begin());
     }
     else {
         return -1; // not found
@@ -38,3 +38,9 @@ inline constexpr T Align_up(T val, T align)
 {
     return (val + align - 1) / align * align;
 }
+
+// https://codingtidbit.com/2020/02/09/c17-codecvt_utf8-is-deprecated/
+// Convert a wide Unicode string to an UTF8 string
+std::string To_string(const std::wstring& wstr);
+// Convert an UTF8 string to a wide Unicode String
+std::wstring To_wstring(const std::string& str);

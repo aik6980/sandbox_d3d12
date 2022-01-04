@@ -34,6 +34,5 @@ VS_OUTPUT main(VS_INPUT input)
 	posl = mul(posl, Light_projection);
 	output.pos_light = posl;
 
-
 	return output;
 }

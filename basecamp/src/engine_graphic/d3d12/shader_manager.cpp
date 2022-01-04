@@ -31,14 +31,7 @@ Shader* Shader_manager::get_shader(const string& name)
         return found->second.get();
     }
 
-    // Example converting string <=> wstring
-    // std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    // std::string narrow = converter.to_bytes(wide_utf16_source_string);
-    // std::wstring wide = converter.from_bytes(narrow_utf8_source_string);
-
-    wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-
-    wstring w_name    = converter.from_bytes(name);
+    wstring w_name    = To_wstring(name);
     wstring file_path = L"shader_hlsl/" + w_name + L".obj";
 
     auto&& shader_obj = std::make_unique<Shader>();
@@ -66,14 +59,7 @@ Lib_ray_shader* Shader_manager::get_lib_shader(const string& name)
         return found->second.get();
     }
 
-    // Example converting string <=> wstring
-    // std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    // std::string narrow = converter.to_bytes(wide_utf16_source_string);
-    // std::wstring wide = converter.from_bytes(narrow_utf8_source_string);
-
-    wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-
-    wstring w_name    = converter.from_bytes(name);
+    wstring w_name    = To_wstring(name);
     wstring file_path = L"shader_hlsl/" + w_name + L".obj";
 
     auto&& shader_obj = std::make_unique<Lib_ray_shader>();

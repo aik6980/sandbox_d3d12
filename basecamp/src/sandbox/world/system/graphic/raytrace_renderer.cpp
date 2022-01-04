@@ -56,7 +56,7 @@ void Raytrace_renderer::update()
     auto&& t = App::get_duration_app();
     // add instances
     uint32_t num_instances = 5;
-    for (int i = 0; i < num_instances; ++i) {
+    for (uint32_t i = 0; i < num_instances; ++i) {
         float    phase = i * XM_2PI / num_instances;
         XMVECTOR pos   = XMVectorSet(4.0f * sin(phase), 4.0f + sin(phase + t * 1.5f), 4.0f * cos(phase), 0.0f);
 
@@ -118,8 +118,8 @@ void Raytrace_renderer::draw()
             dispatch_desc.MissShaderTable.StrideInBytes          = dispatch_desc.MissShaderTable.SizeInBytes;
             dispatch_desc.RayGenerationShaderRecord.StartAddress = raygen_tbl->m_buffer->GetGPUVirtualAddress();
             dispatch_desc.RayGenerationShaderRecord.SizeInBytes  = raygen_tbl->m_buffer->GetDesc().Width;
-            dispatch_desc.Width                                  = main_colour_buffer->m_d3d_desc.Width;
-            dispatch_desc.Height                                 = main_colour_buffer->m_d3d_desc.Height;
+            dispatch_desc.Width                                  = (uint32_t)main_colour_buffer->m_d3d_desc.Width;
+            dispatch_desc.Height                                 = (uint32_t)main_colour_buffer->m_d3d_desc.Height;
             dispatch_desc.Depth                                  = 1;
 
             command_list()->SetPipelineState1(technique->m_dxr_state_object.Get());

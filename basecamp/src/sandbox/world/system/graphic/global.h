@@ -15,11 +15,11 @@ string build_mesh(const vector<T>& mesh_verts, const MeshIndexArray& mesh_indice
     // upload data to the GPU
     auto&& vtx_data = mesh_verts.data();
     auto&& vtx_size = mesh_verts.size() * sizeof(mesh_verts[0]);
-    auto&& vb       = engine.resource_mgr().create_static_buffer(name + "_vb", vtx_size, vtx_data);
+    auto&& vb       = engine.resource_mgr().create_static_buffer(name + "_vb", (uint32_t)vtx_size, vtx_data);
 
     auto&& idx_data = mesh_indices.m_indices32.data();
     auto&& idx_size = mesh_indices.m_indices32.size() * sizeof(mesh_indices.m_indices32[0]);
-    auto&& ib       = engine.resource_mgr().create_static_buffer(name + "_ib", idx_size, idx_data);
+    auto&& ib       = engine.resource_mgr().create_static_buffer(name + "_ib", (uint32_t)idx_size, idx_data);
 
     auto&& mesh_buffer                  = std::make_shared<D3D12::Mesh_buffer>();
     mesh_buffer->m_vertex_buffer_handle = vb;

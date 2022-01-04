@@ -727,7 +727,7 @@ std::shared_ptr<Buffer> Resource_manager::create_acceleration_structure(const st
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS top_level_inputs = {};
     top_level_inputs.DescsLayout                                          = D3D12_ELEMENTS_LAYOUT_ARRAY;
     top_level_inputs.Flags                                                = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-    top_level_inputs.NumDescs                                             = instance_descs.size();
+    top_level_inputs.NumDescs                                             = (uint32_t)instance_descs.size();
     top_level_inputs.Type                                                 = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO top_level_prebuild_info = {};

@@ -224,7 +224,7 @@ void Mesh_renderer::draw_meshes()
         command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         auto&& index_count = mesh_buffer->m_mesh_location.index_count;
-        command_list()->DrawIndexedInstanced(index_count, m_instance_data.size(), 0, 0, 0);
+        command_list()->DrawIndexedInstanced(index_count, (uint32_t)m_instance_data.size(), 0, 0, 0);
     }
 
     auto&& grid_mesh_handle      = m_engine.resource_mgr().request_mesh_buffer(m_grid_mesh);
@@ -409,8 +409,8 @@ void Post_renderer::draw()
 
         static uint32_t threadgroup_size = 32;
 
-        uint32_t dispatch_x = ceilf(rt_buffer->m_d3d_desc.Width / (float)threadgroup_size);
-        uint32_t dispatch_y = ceilf(rt_buffer->m_d3d_desc.Height / (float)threadgroup_size);
+        uint32_t dispatch_x = (uint32_t)ceilf(rt_buffer->m_d3d_desc.Width / (float)threadgroup_size);
+        uint32_t dispatch_y = (uint32_t)ceilf(rt_buffer->m_d3d_desc.Height / (float)threadgroup_size);
         command_list()->Dispatch(dispatch_x, dispatch_y, 1);
     }
 

@@ -17,7 +17,7 @@ uint32_t Scene_data::num_instances() const
 {
     uint32_t total = 0;
     for (auto&& obj : m_instance_transforms) {
-        total += obj.second.size();
+        total += (uint32_t)obj.second.size();
     }
 
     return total;

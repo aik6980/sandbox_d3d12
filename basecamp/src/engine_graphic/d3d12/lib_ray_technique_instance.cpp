@@ -36,13 +36,11 @@ void Lib_ray_technique::create_ray_tracing_pipeline_state_object()
     D3D12_SHADER_BYTECODE libdxil = CD3DX12_SHADER_BYTECODE(lib_shader_blob->GetBufferPointer(), lib_shader_blob->GetBufferSize());
     lib->SetDXILLibrary(&libdxil);
 
-    wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    wstring w_raygen_entry    = To_wstring(reflection->raygen_entry);
+    wstring w_miss_entry      = To_wstring(reflection->miss_entry);
+    wstring w_closethit_entry = To_wstring(reflection->closethit_entry);
+    wstring w_hit_group       = To_wstring(reflection->hitgroup);
 
-    wstring w_raygen_entry    = converter.from_bytes(reflection->raygen_entry);
-    wstring w_miss_entry      = converter.from_bytes(reflection->miss_entry);
-    wstring w_closethit_entry = converter.from_bytes(reflection->closethit_entry);
-
-    wstring w_hit_group = converter.from_bytes(reflection->hitgroup);
     // Define which shader exports to surface from the library.
     // If no shader exports are defined for a DXIL library subobject, all shaders will be surfaced.
     // In this sample, this could be omitted for convenience since the sample uses all shaders in the library.
@@ -102,13 +100,11 @@ void Lib_ray_technique::create_shader_table()
     auto&& lib_shader_blob = lib_shader->m_buffer;
     auto&& reflection      = lib_shader->m_reflection;
 
-    wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    wstring w_raygen_entry    = To_wstring(reflection->raygen_entry);
+    wstring w_miss_entry      = To_wstring(reflection->miss_entry);
+    wstring w_closethit_entry = To_wstring(reflection->closethit_entry);
 
-    wstring w_raygen_entry    = converter.from_bytes(reflection->raygen_entry);
-    wstring w_miss_entry      = converter.from_bytes(reflection->miss_entry);
-    wstring w_closethit_entry = converter.from_bytes(reflection->closethit_entry);
-
-    wstring w_hit_group = converter.from_bytes(reflection->hitgroup);
+    wstring w_hit_group = To_wstring(reflection->hitgroup);
 
     void* raygen_shader_identifier    = nullptr;
     void* miss_shader_identifier      = nullptr;
@@ -207,9 +203,7 @@ void Lib_ray_technique::create_root_signature_subobject(
         auto root_signature_association = raytrace_pso.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
         root_signature_association->SetSubobjectToAssociate(*localRootSignature);
 
-        wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-
-        wstring w_name = converter.from_bytes(sub_shader->m_name);
+        wstring w_name = To_wstring(sub_shader->m_name);
         root_signature_association->AddExport(w_name.c_str());
     }
 }
