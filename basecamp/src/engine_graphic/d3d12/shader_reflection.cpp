@@ -1,7 +1,7 @@
 
 
 #include "shader_reflection.h"
-#include "common/common.cpp.h"
+#include "common/common_cpp.h"
 #include "dxc/dxcapi.h"
 
 namespace D3D12 {

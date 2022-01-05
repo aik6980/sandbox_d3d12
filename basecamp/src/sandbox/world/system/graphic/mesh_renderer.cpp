@@ -3,8 +3,7 @@
 #include "mesh_renderer.h"
 
 #include "app.h"
-#include "common/common.cpp.h"
-#include "engine_graphic/engine.h"
+#include "common/common_cpp.h"
 #include "engine_graphic/engine_graphic_cpp.h"
 #include "frame_pipeline.h"
 #include "global.h"

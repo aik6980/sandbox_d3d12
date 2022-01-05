@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <assert.h>
@@ -31,5 +32,6 @@ using namespace DirectX::PackedVector;
 
 #include "helper/helper.h"
 #include "helper/math.h"
+#include "helper/string_pool.h"
 
 #include "graphic/graphic.h"

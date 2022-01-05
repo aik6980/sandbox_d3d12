@@ -12,10 +12,10 @@ D3D12_INPUT_LAYOUT_DESC INPUT_LAYOUT_DESC::as_d3d12_input_layout_desc() const
 
 void INPUT_LAYOUT_DESC::add_layout_element(const string& name)
 {
-    m_semantic_names.emplace_back(name);
+    // m_semantic_names.emplace_back(name);
 
     D3D12_INPUT_ELEMENT_DESC desc;
-    desc.SemanticName         = m_semantic_names.back().c_str();
+    desc.SemanticName         = Pooled_string(name); // m_semantic_names.back().c_str();
     desc.SemanticIndex        = 0;
     desc.Format               = DXGI_FORMAT_R32G32B32_FLOAT;
     desc.InputSlot            = 0;
@@ -28,11 +28,11 @@ void INPUT_LAYOUT_DESC::add_layout_element(const string& name)
 
 void INPUT_LAYOUT_DESC::add_layout_element(const D3D12_INPUT_ELEMENT_DESC& input)
 {
-    m_semantic_names.emplace_back(input.SemanticName);
+    // m_semantic_names.emplace_back(input.SemanticName);
 
     D3D12_INPUT_ELEMENT_DESC desc = input;
     // patching name string address
-    desc.SemanticName = m_semantic_names.back().c_str();
+    // desc.SemanticName = m_semantic_names.back().c_str();
 
     m_input_layout.emplace_back(desc);
 }

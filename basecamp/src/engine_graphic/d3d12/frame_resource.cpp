@@ -1,5 +1,5 @@
 #include "frame_resource.h"
-#include "common/common.cpp.h"
+#include "common/common_cpp.h"
 
 namespace D3D12 {
 FrameResource::FrameResource(ID3D12Device* device)

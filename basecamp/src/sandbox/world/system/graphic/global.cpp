@@ -1,6 +1,6 @@
 #include "global.h"
 
-#include "common/common.cpp.h"
+#include "common/common_cpp.h"
 #include "engine_graphic/engine.h"
 #include "engine_graphic/engine_graphic_cpp.h"
 

@@ -1,7 +1,7 @@
 
 
 #include "shader_manager.h"
-#include "common/common.cpp.h"
+#include "common/common_cpp.h"
 #include "device.h"
 #include "graphic_pipeline_state_desc.h"
 #include "lib_ray_technique_instance.h"
