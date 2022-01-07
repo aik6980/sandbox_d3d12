@@ -111,7 +111,8 @@ std::shared_ptr<Buffer> Resource_manager::create_texture(
     {
         auto&& w_name = wstring(name.begin(), name.end());
         buffer->m_buffer->SetName(w_name.c_str());
-        buffer->m_d3d_desc = resource_desc;
+        buffer->m_d3d_desc   = resource_desc;
+        buffer->m_curr_state = init_state;
     }
 
     m_static_buffers.insert(std::make_pair(name, buffer));
@@ -168,7 +169,8 @@ std::weak_ptr<Buffer> Resource_manager::create_buffer(const string& name, const 
     {
         auto&& w_name = wstring(name.begin(), name.end());
         buffer->m_buffer->SetName(w_name.c_str());
-        buffer->m_d3d_desc = resource_desc;
+        buffer->m_d3d_desc   = resource_desc;
+        buffer->m_curr_state = init_state;
     }
 
     // lifetime
@@ -510,7 +512,6 @@ std::shared_ptr<Buffer> Resource_manager::create_acceleration_structure(const st
     scratch_resource_req.lifetime_persistent = persistent;
 
     auto&& scratch_buffer = create_buffer(scratch_resource_name, scratch_resource_req, nullptr, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    // m_device.buffer_state_transition(*scratch_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     // Allocate resources for acceleration structures.
     // Acceleration structures can only be placed in resources that are created in the default heap (or custom heap equivalent).

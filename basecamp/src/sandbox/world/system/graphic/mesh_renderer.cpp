@@ -200,9 +200,11 @@ void Mesh_renderer::draw_meshes()
     auto&& mesh_instancing_pso         = m_engine.shader_mgr().get_pso(mesh_instancing_tech_handle, rt_fmt, ds_fmt);
     if (mesh_instancing_pso && mesh_buffer) {
 
-        m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
-        m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
+        // m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
+        // m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
 
+        Camera_st camera_cb = {cam.view(), cam.projection()};
+        m_mesh_instancing_technique_instance->set_cbv("Camera_cb_v51", "Camera_cb_v51", camera_cb);
         m_mesh_instancing_technique_instance->set_cbv("Light_cb", "Receive_shadow", 0);
 
         auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
@@ -386,7 +388,8 @@ void Post_renderer::draw()
     auto&& rt_fmt = m_frame_pipeline.m_render_pass_main->render_target_format();
     auto&& ds_fmt = DXGI_FORMAT_UNKNOWN;
 
-    render_device.buffer_state_transition(*rt_buffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    // render_device.buffer_state_transition(*rt_buffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    render_device.buffer_state_transition(*rt_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     auto&& tech_instance = m_compute_post_technique_instance;
     auto&& tech_handle   = tech_instance->get_technique();
@@ -398,7 +401,8 @@ void Post_renderer::draw()
         // set srv
         auto&& raytrace_buffer = m_frame_pipeline.m_render_pass_raytrace_main->render_target_buffer().lock();
         if (raytrace_buffer) {
-            render_device.buffer_state_transition(*raytrace_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+            // render_device.buffer_state_transition(*raytrace_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+            render_device.buffer_state_transition(*raytrace_buffer, D3D12_RESOURCE_STATE_GENERIC_READ);
             tech_instance->set_srv("Texture_srv", raytrace_buffer);
         }
 
@@ -414,5 +418,6 @@ void Post_renderer::draw()
     }
 
     // copy to back buffer
-    render_device.transfer_to_back_buffer(*rt_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    // render_device.transfer_to_back_buffer(*rt_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    render_device.transfer_to_back_buffer(*rt_buffer);
 }

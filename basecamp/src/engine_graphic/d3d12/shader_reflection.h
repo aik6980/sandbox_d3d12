@@ -3,16 +3,10 @@
 #include "input_layout_desc.h"
 
 namespace D3D12 {
-struct CBUFFER_VARIABLE_INFO {
-    string                     m_name;
-    D3D12_SHADER_VARIABLE_DESC m_desc;
-};
 
 struct Cbuffer_info {
-    string                   m_name;
-    D3D12_SHADER_BUFFER_DESC m_desc;
-
-    unordered_map<string, CBUFFER_VARIABLE_INFO> m_variable_infos;
+    D3D12_SHADER_BUFFER_DESC                          m_desc;
+    unordered_map<string, D3D12_SHADER_VARIABLE_DESC> m_variable_infos;
 };
 
 enum Shader_input_type

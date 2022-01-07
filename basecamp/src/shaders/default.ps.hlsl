@@ -25,7 +25,7 @@ float4 main(PS_INPUT input) : SV_Target0
 	{
 		colour_tmp = colour.rgb;
 	}
-	
+
 	output.rgb = colour_tmp;// +colour1.rgb + tex_colour.rgb;
 	output.a = 1.0;
 	return output;

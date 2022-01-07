@@ -6,7 +6,6 @@ namespace D3D12 {
 class Device;
 class Shader_manager;
 struct Cbuffer_info;
-struct CBUFFER_VARIABLE_INFO;
 struct Buffer;
 struct Sampler;
 struct Dynamic_buffer;
@@ -16,8 +15,8 @@ class Technique {
   public:
     Technique(Shader_manager& shader_mgr) : m_shader_mgr(shader_mgr) {}
 
-    const CBUFFER_VARIABLE_INFO* get_cbuffer_var_info(const string& cbuffer_name, const string& var_name);
-    const INPUT_LAYOUT_DESC*     get_input_layout_desc();
+    const D3D12_SHADER_VARIABLE_DESC* get_cbuffer_var_info(const string& cbuffer_name, const string& var_name);
+    const INPUT_LAYOUT_DESC*          get_input_layout_desc();
 
     Graphics_pipeline_state_desc get_graphic_pipeline_state_desc();
     Compute_pipeline_state_desc  get_compute_pipeline_state_desc();
@@ -33,8 +32,8 @@ class Technique {
     vector<string>                               m_descriptor_table_names;
 
   private:
-    const Cbuffer_info*          get_cbuffer_info(const string& shader_name, const string& cbuffer_name);
-    const CBUFFER_VARIABLE_INFO* get_cbuffer_var_info(const string& shader_name, const string& cbuffer_name, const string& var_name);
+    const Cbuffer_info*               get_cbuffer_info(const string& shader_name, const string& cbuffer_name);
+    const D3D12_SHADER_VARIABLE_DESC* get_cbuffer_var_info(const string& shader_name, const string& cbuffer_name, const string& var_name);
 
     Shader_manager& m_shader_mgr;
 };
@@ -51,6 +50,13 @@ class TechniqueInstance {
     void set_cbv(const string& cbuffer_name, const string& var_name, const T& data)
     {
         set_cbv(cbuffer_name, var_name, (void*)&data, sizeof(data));
+    }
+
+    // using 5.1 ConstantBuffer<> binding through struct syntax
+    template <class T>
+    void set_cbv(const string& cbuffer_name, const T& data)
+    {
+        set_cbv(cbuffer_name, cbuffer_name, (void*)&data, sizeof(data));
     }
 
     void set_cbv(const string& cbuffer_name, const string& var_name, void* data, uint32_t data_size);

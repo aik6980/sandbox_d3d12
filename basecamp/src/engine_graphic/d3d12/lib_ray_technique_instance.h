@@ -81,8 +81,8 @@ class Lib_ray_technique_instance {
   private:
     void init_dynamic_cbuffer(const string& name);
 
-    const CBUFFER_VARIABLE_INFO* get_cbuffer_var_info(const string& cbuffer_name, const string& var_name);
-    void                         set_root_signature_parameters(ID3D12GraphicsCommandList& command_list, Lib_ray_technique& technique);
+    const D3D12_SHADER_VARIABLE_DESC* get_cbuffer_var_info(const string& cbuffer_name, const string& var_name);
+    void                              set_root_signature_parameters(ID3D12GraphicsCommandList& command_list, Lib_ray_technique& technique);
 
     Device&         m_device;
     Shader_manager& m_shader_mgr;

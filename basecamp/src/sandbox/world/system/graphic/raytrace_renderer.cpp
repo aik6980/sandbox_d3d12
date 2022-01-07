@@ -83,7 +83,8 @@ void Raytrace_renderer::draw()
     //  m_rtaccel_structure_buffer_handle = "rtaccel_structure_buffer_tlas";
 
     auto&& main_colour_buffer = m_frame_pipeline.m_render_pass_raytrace_main->render_target_buffer().lock();
-    render_device.buffer_state_transition(*main_colour_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    // render_device.buffer_state_transition(*main_colour_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    render_device.buffer_state_transition(*main_colour_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     auto&& technique = m_engine.shader_mgr().get_lib_ray_technique("raytrace_simplelighting").lock();
     if (technique) {

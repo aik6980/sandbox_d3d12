@@ -223,9 +223,9 @@ void Lib_ray_technique_instance::set_cbv(const string& cbuffer_name, const strin
         // validate variable info
         auto&& var_info = get_cbuffer_var_info(cbuffer_name, var_name);
         if (var_info) {
-            if (var_info->m_desc.Size == data_size) {
+            if (var_info->Size == data_size) {
                 auto&& mapped_buffer_data = m_device.get_mapped_data(*found_cbuffer_data->second);
-                auto&& dest_data          = (char*)mapped_buffer_data + var_info->m_desc.StartOffset;
+                auto&& dest_data          = (char*)mapped_buffer_data + var_info->StartOffset;
 
                 memcpy(dest_data, data, data_size);
             }
@@ -284,7 +284,7 @@ void Lib_ray_technique_instance::init_dynamic_cbuffer(const string& name)
         }
     }
 }
-const CBUFFER_VARIABLE_INFO* Lib_ray_technique_instance::get_cbuffer_var_info(const string& cbuffer_name, const string& var_name)
+const D3D12_SHADER_VARIABLE_DESC* Lib_ray_technique_instance::get_cbuffer_var_info(const string& cbuffer_name, const string& var_name)
 {
     auto&& found_cbuffer_info = m_cbuffer_infos.find(cbuffer_name);
     if (found_cbuffer_info != m_cbuffer_infos.end()) {

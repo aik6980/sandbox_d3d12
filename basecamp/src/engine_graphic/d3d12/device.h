@@ -61,8 +61,11 @@ class Device {
     std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> get_rtv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
     std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> get_dsv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);
 
-    void buffer_state_transition(Buffer& buffer, D3D12_RESOURCE_STATES state_before, D3D12_RESOURCE_STATES state_after);
-    void transfer_to_back_buffer(Buffer& buffer, D3D12_RESOURCE_STATES state_before);
+    // old api before introduce state management
+    // void buffer_state_transition(Buffer& buffer, D3D12_RESOURCE_STATES state_before, D3D12_RESOURCE_STATES state_after);
+    void buffer_state_transition(Buffer& buffer, D3D12_RESOURCE_STATES state_after);
+    // void transfer_to_back_buffer(Buffer& buffer, D3D12_RESOURCE_STATES state_before);
+    void transfer_to_back_buffer(Buffer& buffer);
 
     void imgui_init();
     void imgui_begin_frame();

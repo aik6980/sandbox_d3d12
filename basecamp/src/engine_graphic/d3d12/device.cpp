@@ -360,21 +360,44 @@ std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> Device::get_dsv_cpu_descriptor_h
     return std::make_tuple(false, CD3DX12_CPU_DESCRIPTOR_HANDLE());
 }
 
-void Device::buffer_state_transition(Buffer& buffer, D3D12_RESOURCE_STATES state_before, D3D12_RESOURCE_STATES state_after)
+// void Device::buffer_state_transition(Buffer& buffer, D3D12_RESOURCE_STATES state_before, D3D12_RESOURCE_STATES state_after)
+//{
+//     m_commandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.m_buffer.Get(), state_before, state_after));
+// }
+
+void Device::buffer_state_transition(Buffer& buffer, D3D12_RESOURCE_STATES state_after)
 {
-    m_commandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.m_buffer.Get(), state_before, state_after));
+    D3D12_RESOURCE_STATES state_before = buffer.m_curr_state;
+    if (state_before != state_after) {
+
+        m_commandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.m_buffer.Get(), state_before, state_after));
+        buffer.m_curr_state = state_after;
+    }
 }
 
-void Device::transfer_to_back_buffer(Buffer& buffer, D3D12_RESOURCE_STATES state_before)
+// void Device::transfer_to_back_buffer(Buffer& buffer, D3D12_RESOURCE_STATES state_before)
+//{
+//     buffer_state_transition(buffer, state_before, D3D12_RESOURCE_STATE_COPY_SOURCE);
+//     m_commandList()->ResourceBarrier(
+//         1, &CD3DX12_RESOURCE_BARRIER::Transition(&curr_backbuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_DEST));
+//
+//     // copy resource
+//     m_commandList()->CopyResource(&curr_backbuffer(), buffer.m_buffer.Get());
+//
+//     buffer_state_transition(buffer, D3D12_RESOURCE_STATE_COPY_SOURCE, state_before);
+//     m_commandList()->ResourceBarrier(
+//         1, &CD3DX12_RESOURCE_BARRIER::Transition(&curr_backbuffer(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET));
+// }
+
+void Device::transfer_to_back_buffer(Buffer& buffer)
 {
-    buffer_state_transition(buffer, state_before, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    buffer_state_transition(buffer, D3D12_RESOURCE_STATE_COPY_SOURCE);
     m_commandList()->ResourceBarrier(
         1, &CD3DX12_RESOURCE_BARRIER::Transition(&curr_backbuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_DEST));
 
     // copy resource
     m_commandList()->CopyResource(&curr_backbuffer(), buffer.m_buffer.Get());
 
-    buffer_state_transition(buffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_GENERIC_READ);
     m_commandList()->ResourceBarrier(
         1, &CD3DX12_RESOURCE_BARRIER::Transition(&curr_backbuffer(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET));
 }
@@ -441,10 +464,10 @@ void Device::create_backbuffer()
     clear_val.DepthStencil.Stencil = 0;
 
     // Create descriptor to mip level 0 of entire resource using the format of the resource.
-    auto&& depth_buffer = m_resource_mgr->create_texture(m_depth_buffer_id, resource_desc, &clear_val, nullptr);
+    auto&& depth_buffer = m_resource_mgr->create_texture(m_depth_buffer_id, resource_desc, &clear_val, nullptr, D3D12_RESOURCE_STATE_DEPTH_WRITE);
     m_resource_mgr->register_buffer(m_depth_buffer_id, depth_buffer);
 
-    buffer_state_transition(*depth_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    // buffer_state_transition(*depth_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
     m_resource_mgr->create_dsv(*depth_buffer, resource_desc);
 

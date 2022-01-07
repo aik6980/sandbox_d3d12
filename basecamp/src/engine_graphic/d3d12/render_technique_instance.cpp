@@ -6,7 +6,7 @@
 #include "shader_manager.h"
 
 namespace D3D12 {
-const CBUFFER_VARIABLE_INFO* Technique::get_cbuffer_var_info(const string& cbuffer_name, const string& var_name)
+const D3D12_SHADER_VARIABLE_DESC* Technique::get_cbuffer_var_info(const string& cbuffer_name, const string& var_name)
 {
     auto&& var_info = get_cbuffer_var_info(m_vs, cbuffer_name, var_name);
     if (!var_info) {
@@ -69,7 +69,7 @@ const Cbuffer_info* Technique::get_cbuffer_info(const string& shader_name, const
     return cbuffer_desc;
 }
 
-const CBUFFER_VARIABLE_INFO* Technique::get_cbuffer_var_info(const string& shader_name, const string& cbuffer_name, const string& var_name)
+const D3D12_SHADER_VARIABLE_DESC* Technique::get_cbuffer_var_info(const string& shader_name, const string& cbuffer_name, const string& var_name)
 {
     auto&& cbuffer_desc = get_cbuffer_info(shader_name, cbuffer_name);
     if (cbuffer_desc) {
@@ -99,9 +99,9 @@ void TechniqueInstance::set_cbv(const string& cbuffer_name, const string& var_na
             // validate variable info
             auto&& var_info = technique->get_cbuffer_var_info(cbuffer_name, var_name);
             if (var_info) {
-                if (var_info->m_desc.Size == data_size) {
+                if (var_info->Size == data_size) {
                     auto&& mapped_buffer_data = m_device.get_mapped_data(*found_cbuffer_data->second);
-                    auto&& dest_data          = (char*)mapped_buffer_data + var_info->m_desc.StartOffset;
+                    auto&& dest_data          = (char*)mapped_buffer_data + var_info->StartOffset;
 
                     memcpy(dest_data, data, data_size);
                 }

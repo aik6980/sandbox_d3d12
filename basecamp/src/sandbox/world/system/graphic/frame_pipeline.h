@@ -1,5 +1,6 @@
 #pragma once
 #include "engine_graphic/engine_graphic.h"
+#include "shaders/hlsl_shared_struct.h"
 #include "world/component/camera.h"
 
 class Mesh_renderer;

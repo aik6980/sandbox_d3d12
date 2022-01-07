@@ -21,6 +21,9 @@ struct Buffer {
     uint32_t m_rtv_handle_id = 0;
     uint32_t m_dsv_handle_id = 0;
 
+    // state
+    D3D12_RESOURCE_STATES m_curr_state = D3D12_RESOURCE_STATE_COMMON;
+
     void destroy()
     {
         m_buffer.Reset();

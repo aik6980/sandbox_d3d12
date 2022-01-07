@@ -15,7 +15,8 @@ void Render_pass_main::load_resource()
     auto&& resource_mgr = App::engine().resource_mgr();
 
     m_main_colour_buffer_clear_val = CD3DX12_CLEAR_VALUE(DXGI_FORMAT_R8G8B8A8_UNORM, DirectX::Colors::LightSteelBlue);
-    auto&& buffer                  = resource_mgr.create_texture(m_main_colour_buffer_id, resource_desc, &m_main_colour_buffer_clear_val, nullptr);
+    auto&& buffer =
+        resource_mgr.create_texture(m_main_colour_buffer_id, resource_desc, &m_main_colour_buffer_clear_val, nullptr, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     if (resource_mgr.register_buffer(m_main_colour_buffer_id, buffer)) {
         resource_mgr.create_rtv(*buffer, resource_desc);
@@ -37,7 +38,8 @@ void Render_pass_main::begin_render()
         auto&& view = std::get<CD3DX12_CPU_DESCRIPTOR_HANDLE>(cpu_descriptor_handle);
 
         // using promoted COMMON
-        render_device.buffer_state_transition(*rt_buffer.lock(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        // render_device.buffer_state_transition(*rt_buffer.lock(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        render_device.buffer_state_transition(*rt_buffer.lock(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 
         command_list()->ClearRenderTargetView(view, m_main_colour_buffer_clear_val.Color, 0, nullptr);
         command_list()->OMSetRenderTargets(1, &view, true, &render_device.curr_backbuffer_depth_stencil_view());
@@ -76,7 +78,7 @@ void Render_pass_shadow_map::load_resource()
     resource_desc.Flags     = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
     auto&& resource_mgr = App::engine().resource_mgr();
-    auto&& buffer       = resource_mgr.create_texture(m_depth_buffer_id, resource_desc, &m_depth_buffer_clear_val, nullptr);
+    auto&& buffer       = resource_mgr.create_texture(m_depth_buffer_id, resource_desc, &m_depth_buffer_clear_val, nullptr, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
     if (resource_mgr.register_buffer(m_depth_buffer_id, buffer)) {
         resource_mgr.create_dsv(*buffer, resource_desc);
@@ -97,8 +99,8 @@ void Render_pass_shadow_map::begin_render()
 
         auto&& depth_stencil_view = std::get<CD3DX12_CPU_DESCRIPTOR_HANDLE>(cpu_descriptor_handle);
 
-        // using promoted COMMON
-        render_device.buffer_state_transition(*depth_buffer.lock(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        // render_device.buffer_state_transition(*depth_buffer.lock(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        render_device.buffer_state_transition(*depth_buffer.lock(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
         command_list()->ClearDepthStencilView(depth_stencil_view, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
         command_list()->OMSetRenderTargets(0, nullptr, true, &std::get<CD3DX12_CPU_DESCRIPTOR_HANDLE>(cpu_descriptor_handle));
@@ -113,7 +115,8 @@ void Render_pass_shadow_map::end_render()
     auto&& depth_buffer = resource_mgr.request_buffer(m_depth_buffer_id);
 
     auto&& render_device = App::engine().render_device();
-    render_device.buffer_state_transition(*depth_buffer.lock(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
+    // render_device.buffer_state_transition(*depth_buffer.lock(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
+    render_device.buffer_state_transition(*depth_buffer.lock(), D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
 weak_ptr<D3D12::Buffer> Render_pass_shadow_map::depth_stencil_buffer()

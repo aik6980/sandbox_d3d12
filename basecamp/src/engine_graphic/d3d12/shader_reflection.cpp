@@ -152,19 +152,24 @@ void ShaderReflection::generate_cbuffer_desc()
 
         Cbuffer_info cbuffer_info;
         constant_buffer_reflection->GetDesc(&cbuffer_info.m_desc);
-        cbuffer_info.m_name = to_string(cbuffer_info.m_desc.Name);
 
         for (uint32_t j = 0; j < cbuffer_info.m_desc.Variables; ++j) {
-            CBUFFER_VARIABLE_INFO var_info;
-            auto&&                d3d_var_info = constant_buffer_reflection->GetVariableByIndex(j);
+            D3D12_SHADER_VARIABLE_DESC var_info;
+            auto&&                     d3d_var_info = constant_buffer_reflection->GetVariableByIndex(j);
 
-            d3d_var_info->GetDesc(&var_info.m_desc);
-            var_info.m_name = to_string(var_info.m_desc.Name);
+            d3d_var_info->GetDesc(&var_info);
 
-            cbuffer_info.m_variable_infos.emplace(std::make_pair(var_info.m_name, var_info));
+            auto&&                 type_reflection = d3d_var_info->GetType();
+            D3D12_SHADER_TYPE_DESC type_desc;
+            type_reflection->GetDesc(&type_desc);
+            if (type_desc.Class == D3D_SVC_STRUCT) {
+                // type_reflection->
+            }
+
+            cbuffer_info.m_variable_infos.emplace(std::make_pair(var_info.Name, var_info));
         }
 
-        m_infos.m_cbuffer_infos.emplace(std::make_pair(cbuffer_info.m_name, cbuffer_info));
+        m_infos.m_cbuffer_infos.emplace(std::make_pair(cbuffer_info.m_desc.Name, cbuffer_info));
     }
 }
 
@@ -263,19 +268,17 @@ void Lib_ray_reflection::generate_cbuffer_desc(Lib_ray_sub_shader& sub_shader)
 
         Cbuffer_info cbuffer_info;
         constant_buffer_reflection->GetDesc(&cbuffer_info.m_desc);
-        cbuffer_info.m_name = to_string(cbuffer_info.m_desc.Name);
 
         for (uint32_t j = 0; j < cbuffer_info.m_desc.Variables; ++j) {
-            CBUFFER_VARIABLE_INFO var_info;
-            auto&&                d3d_var_info = constant_buffer_reflection->GetVariableByIndex(j);
+            D3D12_SHADER_VARIABLE_DESC var_info;
+            auto&&                     d3d_var_info = constant_buffer_reflection->GetVariableByIndex(j);
 
-            d3d_var_info->GetDesc(&var_info.m_desc);
-            var_info.m_name = to_string(var_info.m_desc.Name);
+            d3d_var_info->GetDesc(&var_info);
 
-            cbuffer_info.m_variable_infos.emplace(std::make_pair(var_info.m_name, var_info));
+            cbuffer_info.m_variable_infos.emplace(std::make_pair(var_info.Name, var_info));
         }
 
-        var_infos.m_cbuffer_infos.emplace(std::make_pair(cbuffer_info.m_name, cbuffer_info));
+        var_infos.m_cbuffer_infos.emplace(std::make_pair(cbuffer_info.m_desc.Name, cbuffer_info));
     }
 }
 

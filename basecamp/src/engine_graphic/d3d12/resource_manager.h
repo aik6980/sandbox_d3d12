@@ -91,5 +91,8 @@ class Resource_manager {
     unordered_map<string, std::shared_ptr<Buffer>>         m_static_buffers;
     unordered_map<string, std::shared_ptr<Dynamic_buffer>> m_dynamic_buffers;
     unordered_map<string, std::shared_ptr<Sampler>>        m_samplers;
+
+    // resource state trackers
+    unordered_map<string, Resource_state_tracker> m_resource_state_trackers;
 };
 } // namespace D3D12

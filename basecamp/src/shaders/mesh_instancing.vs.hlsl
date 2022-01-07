@@ -13,8 +13,8 @@ VS_OUTPUT main(VS_INPUT input)
 {
 	float4 pos = float4(input.position.xyz, 1.0);
 	pos += input.pos_world;
-	pos = mul(pos, View);
-	pos = mul(pos, Projection);
+    pos = mul(pos, Camera_cb_v51.View);
+    pos = mul(pos, Camera_cb_v51.Projection);
 
 	VS_OUTPUT output;
 	output.position = pos;

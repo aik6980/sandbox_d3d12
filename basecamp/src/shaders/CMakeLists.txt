@@ -1,4 +1,4 @@
-file(GLOB_RECURSE ALL_FILES "*.hlsl")
+file(GLOB_RECURSE ALL_FILES "*.hlsl" "*.h")
 file(GLOB_RECURSE CS_FILES "*.cs.hlsl")
 file(GLOB_RECURSE VS_FILES "*.vs.hlsl")
 file(GLOB_RECURSE PS_FILES "*.ps.hlsl")
@@ -48,6 +48,8 @@ Dxc_compile("${VS_FILES}" "vs_6_0")
 Dxc_compile("${PS_FILES}" "ps_6_0")
 Dxc_compile("${CS_FILES}" "cs_6_0")
 Dxc_compile("${RAY_FILES}" "lib_6_5")
+
+func_group_src("${ALL_FILES}")
 
 set(PROJECT_NAME shader_spirv)
 project(${PROJECT_NAME})

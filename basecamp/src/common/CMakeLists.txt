@@ -6,13 +6,14 @@ add_library(${PROJECT_NAME} STATIC ${PROJECT_FILES})
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE stdafx.h)
 set(LIB_OIS ${CMAKE_SOURCE_DIR}/ext/ois/OIS_d.lib)
-target_link_libraries(${PROJECT_NAME} ${LIB_OIS})
+set(LIB_ASSIMP ${CMAKE_SOURCE_DIR}/ext/assimp/assimp-vc143-mt.lib)
+target_link_libraries(${PROJECT_NAME} ${LIB_OIS} ${LIB_ASSIMP})
 
 set(INC_OIS ${CMAKE_SOURCE_DIR}/ext/ois/include)
-include_directories(${CMAKE_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${INC_OIS})
+set(INC_ASSIMP ${CMAKE_SOURCE_DIR}/ext/assimp/include)
+include_directories(${CMAKE_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${INC_OIS} ${INC_ASSIMP})
 
-ADD_DEFINITIONS(-DUNICODE)
-ADD_DEFINITIONS(-D_UNICODE)
+ADD_DEFINITIONS(-DUNICODE -D_UNICODE -DCOMPILE_CPP)
 
 # don't need this in CMAKE 3.22
 #if (MSVC)
