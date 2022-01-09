@@ -9,9 +9,10 @@ class MeshDataGenerator {
     static tuple<MeshVertexArray, MeshIndexArray> create_unit_cube();
     static tuple<MeshVertexArray, MeshIndexArray> create_grid(float width, float depth, uint32_t m, uint32_t n);
 
-    static vector<RtInputLayout>   to_rt(MeshVertexArray& vertex_array);
-    static vector<P1InputLayout>   to_p1(MeshVertexArray& vertex_array);
-    static vector<P1C1InputLayout> to_p1c1(MeshVertexArray& vertex_array);
+    static vector<Fat_vertex>  to_fat(MeshVertexArray& vertex_array);
+    static vector<RT_vertex>   to_rt(MeshVertexArray& vertex_array);
+    static vector<P1_vertex>   to_p1(MeshVertexArray& vertex_array);
+    static vector<P1C1_vertex> to_p1c1(MeshVertexArray& vertex_array);
 };
 
 class TextureDataGenerator {

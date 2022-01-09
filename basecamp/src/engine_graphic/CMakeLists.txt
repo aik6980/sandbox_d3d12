@@ -10,7 +10,6 @@ target_link_libraries(${PROJECT_NAME} common d3d12 dxgi dxguid d3dcompiler ${LIB
 
 include_directories(${CMAKE_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR})
 
-ADD_DEFINITIONS(-DUNICODE)
-ADD_DEFINITIONS(-D_UNICODE)
+ADD_DEFINITIONS(-DUNICODE -D_UNICODE -DCOMPILE_CPP)
 
 func_group_src("${PROJECT_FILES}")

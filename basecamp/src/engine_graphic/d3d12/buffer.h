@@ -7,6 +7,7 @@ namespace D3D12 {
 
 struct Buffer_request {
     CD3DX12_RESOURCE_DESC desc;
+    uint32_t              m_struct_stride     = 0;
     bool                  lifetime_persistent = true;
 };
 
@@ -15,6 +16,7 @@ struct Buffer {
     ComPtr<ID3D12Resource> m_buffer;
 
     D3D12_RESOURCE_DESC m_d3d_desc;
+    uint32_t            m_struct_stride = 0;
     // d3d descriptor id (pointer to view in the heap)
     // uint32_t m_cbv_srv_handle_id = 0; <- get dynamically from frame resource
     // uint32_t m_uav_handle_id     = 0; <- get dynamically from frame resource

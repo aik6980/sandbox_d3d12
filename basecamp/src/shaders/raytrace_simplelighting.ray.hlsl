@@ -1,3 +1,5 @@
+#include "hlsl_shared_struct.h"
+
 // [Note] current compile for Raytracing ONLY
 // each resources need to have register(xx) <- otherwise it will generate garbage in HLSL asm
 
@@ -24,6 +26,11 @@ cbuffer Camera_cb : register(b1)
     float4x4 Camera_projection_to_world;
     float3 Camera_world_pos;
 };
+
+StructuredBuffer<Instance_data> Instance_data_srv : register(t1);
+StructuredBuffer<Mesh_data> Mesh_data_srv : register(t2);
+StructuredBuffer<Fat_vertex> Vertices_srv : register(t3);
+Buffer<uint> Indices_srv : register(t4);
 
 bool Is_inside_viewport(float2 pos, float4 vp)
 {
@@ -114,8 +121,24 @@ typedef BuiltInTriangleIntersectionAttributes Tri_attributes;
 [shader("closesthit")] 
 void closethit_entry(inout Payload_st payload, in Tri_attributes attr) 
 {
-	float3 barycentrics = float3(1.0 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
-	payload.colour = float4(barycentrics, 1.0);
+	//float3 barycentrics = float3(1.0 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
+	//payload.colour = float4(barycentrics, 1.0);
+    uint instance_index = InstanceIndex();
+    uint mesh_id = Instance_data_srv[instance_index].m_mesh_id;
+    Mesh_data mesh_data = Mesh_data_srv[mesh_id];
+
+    // Get the base index of the triangle's first 16 bit index.
+    uint index_size_in_bytes = 4;
+    uint indices_pre_tri = 3;
+    uint base_index = PrimitiveIndex() * indices_pre_tri + mesh_data.m_offset_indices;
+
+    uint3 indices = uint3(Indices_srv[base_index], Indices_srv[base_index + 1], Indices_srv[base_index + 2]);
+    indices += mesh_data.m_offset_vertices;
+    Fat_vertex vertices[3] = { Vertices_srv[indices.x], Vertices_srv[indices.y], Vertices_srv[indices.z] };
+
+
+    payload.colour = vertices[0].m_colour;
+
 }
 
 [shader("miss")] 

@@ -26,15 +26,15 @@ struct TextureData {
     int  pixel_size_in_byte() const { return sizeof(decltype(*m_data.begin())); }
 };
 
-struct RtInputLayout {
+struct RT_vertex {
     XMFLOAT3 m_position;
 };
 
-struct P1InputLayout {
+struct P1_vertex {
     XMFLOAT4 m_position;
 };
 
-struct P1C1InputLayout {
+struct P1C1_vertex {
     XMFLOAT4 m_position;
     XMFLOAT4 m_colour;
 };

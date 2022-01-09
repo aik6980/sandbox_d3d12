@@ -281,7 +281,7 @@ void Mesh_renderer::build_quad_mesh()
     MeshIndexArray  indices;
 
     MeshDataGenerator::create_unit_quad(verts, indices);
-    vector<P1InputLayout> mesh_verts = MeshDataGenerator::to_p1(verts);
+    vector<P1_vertex> mesh_verts = MeshDataGenerator::to_p1(verts);
 
     m_unit_quad_name = build_mesh(mesh_verts, indices, "unit_quad", m_engine);
 }
@@ -291,8 +291,8 @@ void Mesh_renderer::build_cube_mesh()
     MeshVertexArray verts;
     MeshIndexArray  indices;
 
-    tie(verts, indices)                = MeshDataGenerator::create_unit_cube();
-    vector<P1C1InputLayout> mesh_verts = MeshDataGenerator::to_p1c1(verts);
+    tie(verts, indices)            = MeshDataGenerator::create_unit_cube();
+    vector<P1C1_vertex> mesh_verts = MeshDataGenerator::to_p1c1(verts);
 
     m_unit_cube_name = build_mesh(mesh_verts, indices, "unit_cube", m_engine);
 }

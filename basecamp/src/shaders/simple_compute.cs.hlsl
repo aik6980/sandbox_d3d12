@@ -17,15 +17,18 @@ void main(uint3 Gid : SV_GroupID,
         return;
     }
 
-    if (DTid.x > w * 0.5)
+    if (DTid.x > w * 0.51)
     {
         float4 col = Texture_srv.Load(int3(DTid.xy, 0));
         Texture_uav[DTid.xy] = col;
         return;
     }
-
-    float4 col = Texture_uav[DTid.xy];
-    float lum = col.r * 0.3 + col.g * 0.59 + col.b * 0.11;
+    else if (DTid.x > w * 0.49)
+    {
+        float4 col = Texture_uav[DTid.xy];
+        float lum = col.r * 0.3 + col.g * 0.59 + col.b * 0.11;
     
-    Texture_uav[DTid.xy] = float4(lum.xxx, 1.0);
+        Texture_uav[DTid.xy] = float4(lum.xxx, 1.0);
+        return;
+    }
 }

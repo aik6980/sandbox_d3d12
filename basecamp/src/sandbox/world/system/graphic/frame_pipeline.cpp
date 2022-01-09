@@ -1,5 +1,6 @@
 #include "frame_pipeline.h"
 
+#include "common/common_cpp.h"
 #include "engine_graphic/engine_graphic_cpp.h"
 #include "mesh_renderer.h"
 #include "raytrace_renderer.h"

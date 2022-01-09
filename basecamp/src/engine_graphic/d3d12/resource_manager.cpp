@@ -15,11 +15,12 @@ std::shared_ptr<Buffer> Resource_manager::create_static_buffer(const string& nam
 
     auto&& buffer = std::make_shared<Buffer>();
     m_device.m_allocator->CreateResource(
-        &allocation_desc, &resource_desc, D3D12_RESOURCE_STATE_COMMON, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer));
+        &allocation_desc, &resource_desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer));
     {
         auto&& w_name = wstring(name.begin(), name.end());
         buffer->m_buffer->SetName(w_name.c_str());
-        buffer->m_d3d_desc = resource_desc;
+        buffer->m_d3d_desc   = resource_desc;
+        buffer->m_curr_state = D3D12_RESOURCE_STATE_GENERIC_READ;
     }
 
     m_static_buffers.insert(std::make_pair(name, buffer));
@@ -49,7 +50,7 @@ std::shared_ptr<Buffer> Resource_manager::create_static_buffer(const string& nam
         // will copy the CPU memory into the intermediate upload heap.  Then, using ID3D12CommandList::CopySubresourceRegion,
         // the intermediate upload heap data will be copied to mBuffer.
         command_list->ResourceBarrier(
-            1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
+            1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST));
 
         // [note] this function is not at the lowest level either,
         // so, still room to learn down there
@@ -59,10 +60,6 @@ std::shared_ptr<Buffer> Resource_manager::create_static_buffer(const string& nam
             1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
 
         m_device.frame_resource().m_per_frame_buffers.emplace_back(staging_buffer);
-    }
-    else {
-        command_list->ResourceBarrier(
-            1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer->m_buffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_GENERIC_READ));
     }
 
     return buffer;
@@ -169,8 +166,9 @@ std::weak_ptr<Buffer> Resource_manager::create_buffer(const string& name, const 
     {
         auto&& w_name = wstring(name.begin(), name.end());
         buffer->m_buffer->SetName(w_name.c_str());
-        buffer->m_d3d_desc   = resource_desc;
-        buffer->m_curr_state = init_state;
+        buffer->m_d3d_desc      = resource_desc;
+        buffer->m_curr_state    = init_state;
+        buffer->m_struct_stride = info.m_struct_stride;
     }
 
     // lifetime
@@ -241,7 +239,8 @@ CD3DX12_GPU_DESCRIPTOR_HANDLE Resource_manager::create_srv(Buffer& buffer)
     auto handle = m_device.frame_resource().m_srv_heap.get_cpu_descriptor(id);
 
     // raytrace acceleration structure using DXGI_FORMAT_UNKNOWN
-    bool is_rtaccel_structure = (buffer.m_d3d_desc.Format == DXGI_FORMAT_UNKNOWN);
+    bool is_rtaccel_structure = (buffer.m_d3d_desc.Format == DXGI_FORMAT_UNKNOWN) && buffer.m_struct_stride == 0;
+    bool is_structured_buffer = (buffer.m_d3d_desc.Format == DXGI_FORMAT_UNKNOWN) && buffer.m_struct_stride > 0;
 
     if (is_rtaccel_structure) {
         D3D12_SHADER_RESOURCE_VIEW_DESC view_desc          = {};
@@ -251,6 +250,17 @@ CD3DX12_GPU_DESCRIPTOR_HANDLE Resource_manager::create_srv(Buffer& buffer)
         view_desc.RaytracingAccelerationStructure.Location = buffer.m_buffer->GetGPUVirtualAddress();
 
         m_device.m_device->CreateShaderResourceView(nullptr, &view_desc, handle);
+    }
+    else if (is_structured_buffer) {
+        D3D12_SHADER_RESOURCE_VIEW_DESC view_desc = {};
+        view_desc.Shader4ComponentMapping         = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        view_desc.Format                          = DXGI_FORMAT_UNKNOWN;
+        view_desc.ViewDimension                   = D3D12_SRV_DIMENSION_BUFFER;
+        view_desc.Buffer.FirstElement             = 0;
+        view_desc.Buffer.StructureByteStride      = buffer.m_struct_stride;
+        view_desc.Buffer.NumElements              = buffer.m_d3d_desc.Width / buffer.m_struct_stride;
+
+        m_device.m_device->CreateShaderResourceView(buffer.m_buffer.Get(), &view_desc, handle);
     }
     else {
         auto&&                          mapped_fmt = format_to_view_mapping(buffer.m_d3d_desc.Format, true);

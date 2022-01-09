@@ -195,9 +195,22 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_grid(float widt
     return tuple(vertices, indices);
 }
 
-vector<RtInputLayout> MeshDataGenerator::to_rt(MeshVertexArray& vertex_array)
+vector<Fat_vertex> MeshDataGenerator::to_fat(MeshVertexArray& vertex_array)
 {
-    vector<RtInputLayout> output;
+    vector<Fat_vertex> output;
+    output.resize(vertex_array.m_position.size());
+    for (uint32_t i = 0; i < vertex_array.m_position.size(); ++i) {
+        XMStoreFloat3(&output[i].m_position, XMLoadFloat3(&vertex_array.m_position[i]));
+        XMStoreFloat4(&output[i].m_colour, XMLoadFloat3(&vertex_array.m_colour[i]));
+        XMStoreFloat3(&output[i].m_normal, XMLoadFloat3(&vertex_array.m_normal[i]));
+    }
+
+    return output;
+}
+
+vector<RT_vertex> MeshDataGenerator::to_rt(MeshVertexArray& vertex_array)
+{
+    vector<RT_vertex> output;
     output.resize(vertex_array.m_position.size());
     for (uint32_t i = 0; i < vertex_array.m_position.size(); ++i) {
         XMStoreFloat3(&output[i].m_position, XMLoadFloat3(&vertex_array.m_position[i]));
@@ -206,9 +219,9 @@ vector<RtInputLayout> MeshDataGenerator::to_rt(MeshVertexArray& vertex_array)
     return output;
 }
 
-vector<P1InputLayout> MeshDataGenerator::to_p1(MeshVertexArray& vertex_array)
+vector<P1_vertex> MeshDataGenerator::to_p1(MeshVertexArray& vertex_array)
 {
-    vector<P1InputLayout> output;
+    vector<P1_vertex> output;
     output.resize(vertex_array.m_position.size());
     for (uint32_t i = 0; i < vertex_array.m_position.size(); ++i) {
         XMStoreFloat4(&output[i].m_position, XMLoadFloat3(&vertex_array.m_position[i]));
@@ -217,9 +230,9 @@ vector<P1InputLayout> MeshDataGenerator::to_p1(MeshVertexArray& vertex_array)
     return output;
 }
 
-vector<P1C1InputLayout> MeshDataGenerator::to_p1c1(MeshVertexArray& vertex_array)
+vector<P1C1_vertex> MeshDataGenerator::to_p1c1(MeshVertexArray& vertex_array)
 {
-    vector<P1C1InputLayout> output;
+    vector<P1C1_vertex> output;
     output.resize(vertex_array.m_position.size());
     for (uint32_t i = 0; i < vertex_array.m_position.size(); ++i) {
         XMStoreFloat4(&output[i].m_position, XMLoadFloat3(&vertex_array.m_position[i]));

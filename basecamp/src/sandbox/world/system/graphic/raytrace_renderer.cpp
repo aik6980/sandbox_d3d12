@@ -28,7 +28,7 @@ void Raytrace_renderer::load_resource()
     // MeshIndexArray  indices;
 
     // MeshDataGenerator::create_unit_cube(verts, indices);
-    // vector<RtInputLayout> mesh_verts = MeshDataGenerator::to_rt(verts);
+    // vector<RT_vertex> mesh_verts = MeshDataGenerator::to_rt(verts);
 
     // m_unit_quad_name   = build_mesh(mesh_verts, indices, "unit_quad_rt", m_engine);
     // auto&& mesh_buffer = m_engine.resource_mgr().request_mesh_buffer(m_unit_quad_name).lock();
@@ -36,13 +36,29 @@ void Raytrace_renderer::load_resource()
     //  resource_mgr.create_acceleration_structure("rtaccel_structure_buffer", *mesh_buffer, true);
     //  m_rtaccel_structure_buffer_handle = "rtaccel_structure_buffer_tlas";
 
-    auto&& mesh_data  = MeshDataGenerator::create_grid(25.0, 25.0, 10, 10);
-    auto&& mesh_verts = MeshDataGenerator::to_rt(get<MeshVertexArray>(mesh_data));
-    m_grid_mesh       = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), "grid_mesh_rt", m_engine);
+    {
+        auto&& mesh_name  = "grid_mesh_rt";
+        auto&& mesh_data  = MeshDataGenerator::create_grid(25.0, 25.0, 10, 10);
+        auto&& mesh_verts = MeshDataGenerator::to_rt(get<MeshVertexArray>(mesh_data));
+        m_grid_mesh       = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), mesh_name, m_engine);
 
-    auto&& cube_mesh_data  = MeshDataGenerator::create_unit_cube();
-    auto&& cube_mesh_verts = MeshDataGenerator::to_rt(get<MeshVertexArray>(cube_mesh_data));
-    m_unit_cube_name       = build_mesh(cube_mesh_verts, get<MeshIndexArray>(cube_mesh_data), "cube_mesh_rt", m_engine);
+        m_mesh_list[mesh_name]               = make_unique<Mesh_data_raw>();
+        m_mesh_list[mesh_name]->vertices_raw = make_unique<MeshVertexArray>(get<MeshVertexArray>(mesh_data));
+        m_mesh_list[mesh_name]->indices_raw  = make_unique<MeshIndexArray>(get<MeshIndexArray>(mesh_data));
+        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(get<MeshVertexArray>(mesh_data));
+    }
+
+    {
+        auto&& mesh_name  = "cube_mesh_rt";
+        auto&& mesh_data  = MeshDataGenerator::create_unit_cube();
+        auto&& mesh_verts = MeshDataGenerator::to_rt(get<MeshVertexArray>(mesh_data));
+        m_unit_cube_name  = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), "cube_mesh_rt", m_engine);
+
+        m_mesh_list[mesh_name]               = make_unique<Mesh_data_raw>();
+        m_mesh_list[mesh_name]->vertices_raw = make_unique<MeshVertexArray>(get<MeshVertexArray>(mesh_data));
+        m_mesh_list[mesh_name]->indices_raw  = make_unique<MeshIndexArray>(get<MeshIndexArray>(mesh_data));
+        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(get<MeshVertexArray>(mesh_data));
+    }
 
     m_scene_data = make_unique<D3D12::Scene_data>();
 }
@@ -82,6 +98,8 @@ void Raytrace_renderer::draw()
     // auto&& rtaccel_buffer = resource_mgr.create_acceleration_structure("rtaccel_structure_buffer", *mesh_buffer, false);
     //  m_rtaccel_structure_buffer_handle = "rtaccel_structure_buffer_tlas";
 
+    auto&& scene_data_buffers = build_scene_attrib_buffer();
+
     auto&& main_colour_buffer = m_frame_pipeline.m_render_pass_raytrace_main->render_target_buffer().lock();
     // render_device.buffer_state_transition(*main_colour_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     render_device.buffer_state_transition(*main_colour_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -109,6 +127,12 @@ void Raytrace_renderer::draw()
             m_raytrace_technique_instance->set_cbv("Raygen_cb", "Main_vp", viewport);
             m_raytrace_technique_instance->set_cbv("Raygen_cb", "Stencil_vp", stencil);
 
+            // scene attrib
+            m_raytrace_technique_instance->set_srv("Instance_data_srv", scene_data_buffers.instance_data_buffer);
+            m_raytrace_technique_instance->set_srv("Mesh_data_srv", scene_data_buffers.mesh_data_buffer);
+            m_raytrace_technique_instance->set_srv("Vertices_srv", scene_data_buffers.vertex_buffer);
+            m_raytrace_technique_instance->set_srv("Indices_srv", scene_data_buffers.index_buffer);
+
             D3D12_DISPATCH_RAYS_DESC dispatch_desc               = {};
             dispatch_desc.HitGroupTable.StartAddress             = hitgroup_tbl->m_buffer->GetGPUVirtualAddress();
             dispatch_desc.HitGroupTable.SizeInBytes              = hitgroup_tbl->m_buffer->GetDesc().Width;
@@ -134,4 +158,114 @@ void Raytrace_renderer::draw()
     // auto&& rt_buffer_handle = m_render_pass_raytrace_main->render_target_buffer();
     // auto&& rt_buffer        = rt_buffer_handle.lock();
     // render_device.transfer_to_back_buffer(*rt_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+}
+
+Scene_data_buffer Raytrace_renderer::build_scene_attrib_buffer()
+{
+    // build mesh data buffer
+    vector<Fat_vertex> vertices;
+    vector<uint32_t>   indices;
+    vector<Mesh_data>  mesh_data;
+    uint32_t           total_vertices = 0;
+    uint32_t           total_indices  = 0;
+
+    mesh_data.reserve(m_scene_data->m_instance_transforms.size());
+    vertices.reserve(256);
+    indices.reserve(256);
+
+    for (auto&& obj : m_scene_data->m_instance_transforms) {
+        auto&& found = m_mesh_list.find(obj.first);
+        if (found == m_mesh_list.end()) {
+            throw;
+        }
+
+        Mesh_data mesh;
+        mesh.m_num_vertices    = found->second->vertices_fat.size();
+        mesh.m_num_indices     = found->second->indices_raw->m_indices32.size();
+        mesh.m_offset_vertices = total_vertices;
+        mesh.m_offset_indices  = total_indices;
+
+        total_vertices += mesh.m_num_vertices;
+        total_indices += mesh.m_num_indices;
+
+        mesh_data.emplace_back(mesh);
+
+        // concat to the attrib buffer
+        vertices.insert(vertices.end(), found->second->vertices_fat.begin(), found->second->vertices_fat.end());
+        indices.insert(indices.end(), found->second->indices_raw->m_indices32.begin(), found->second->indices_raw->m_indices32.end());
+    }
+
+    // build instance buffer
+    vector<Instance_data> instance_data;
+    instance_data.reserve(m_scene_data->num_instances());
+    uint32_t mesh_id = 0;
+    for (auto&& obj : m_scene_data->m_instance_transforms) {
+        for (auto&& obj_instance : obj.second) {
+            Instance_data instance;
+            instance.m_mesh_id = mesh_id;
+
+            instance_data.emplace_back(instance);
+        }
+
+        mesh_id++;
+    }
+
+    // build buffer
+    auto&& render_device = m_engine.render_device();
+    auto&& resource_mgr  = render_device.resource_manager();
+
+    Scene_data_buffer output;
+    {
+        auto&& resource_data = instance_data;
+        auto&& resource_name = "scene_data_instance_buffer";
+
+        D3D12::Buffer_request resource_req;
+        resource_req.m_struct_stride     = sizeof(resource_data.data()[0]);
+        resource_req.desc                = CD3DX12_RESOURCE_DESC::Buffer(resource_data.size() * resource_req.m_struct_stride);
+        resource_req.lifetime_persistent = false;
+        auto&& buffer                    = resource_mgr.create_buffer(resource_name, resource_req, resource_data.data(), D3D12_RESOURCE_STATE_GENERIC_READ);
+
+        output.instance_data_buffer = buffer;
+    }
+
+    {
+        auto&& resource_data = mesh_data;
+        auto&& resource_name = "scene_data_mesh_data_buffer";
+
+        D3D12::Buffer_request resource_req;
+        resource_req.m_struct_stride     = sizeof(resource_data.data()[0]);
+        resource_req.desc                = CD3DX12_RESOURCE_DESC::Buffer(resource_data.size() * resource_req.m_struct_stride);
+        resource_req.lifetime_persistent = false;
+        auto&& buffer                    = resource_mgr.create_buffer(resource_name, resource_req, resource_data.data(), D3D12_RESOURCE_STATE_GENERIC_READ);
+
+        output.mesh_data_buffer = buffer;
+    }
+
+    {
+        auto&& resource_data = vertices;
+        auto&& resource_name = "scene_data_vertex_buffer";
+
+        D3D12::Buffer_request resource_req;
+        resource_req.m_struct_stride     = sizeof(resource_data.data()[0]);
+        resource_req.desc                = CD3DX12_RESOURCE_DESC::Buffer(resource_data.size() * resource_req.m_struct_stride);
+        resource_req.lifetime_persistent = false;
+        auto&& buffer                    = resource_mgr.create_buffer(resource_name, resource_req, resource_data.data(), D3D12_RESOURCE_STATE_GENERIC_READ);
+
+        output.vertex_buffer = buffer;
+    }
+
+    {
+        auto&& resource_data = indices;
+        auto&& resource_name = "scene_data_index_buffer";
+
+        D3D12::Buffer_request resource_req;
+        resource_req.m_struct_stride     = sizeof(resource_data.data()[0]);
+        resource_req.desc                = CD3DX12_RESOURCE_DESC::Buffer(resource_data.size() * resource_req.m_struct_stride);
+        resource_req.lifetime_persistent = false;
+        auto&& buffer                    = resource_mgr.create_buffer(resource_name, resource_req, resource_data.data(), D3D12_RESOURCE_STATE_GENERIC_READ);
+
+        output.index_buffer = buffer;
+    }
+
+    return output;
 }

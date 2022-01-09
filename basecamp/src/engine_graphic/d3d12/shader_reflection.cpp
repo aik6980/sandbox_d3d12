@@ -340,11 +340,14 @@ void Shader_reflection_info::generate_bound_resource_desc(const D3D12_SHADER_INP
         m_shader_input_descs[Sit_cbuffer].emplace_back(desc);
         break;
     case D3D_SIT_TEXTURE:
+    case D3D_SIT_STRUCTURED:
+    case D3D_SIT_BYTEADDRESS:
     case D3D_SIT_RTACCELERATIONSTRUCTURE:
         m_shader_input_descs[Sit_srv].emplace_back(desc);
         break;
     case D3D_SIT_UAV_RWTYPED:
     case D3D_SIT_UAV_RWSTRUCTURED:
+    case D3D_SIT_UAV_RWBYTEADDRESS:
         m_shader_input_descs[Sit_uav].emplace_back(desc);
         break;
     case D3D_SIT_SAMPLER:

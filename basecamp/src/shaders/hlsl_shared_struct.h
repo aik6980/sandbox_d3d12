@@ -6,11 +6,32 @@
 using namespace DirectX;
 
 using float4x4 = XMFLOAT4X4;
+using float4   = XMFLOAT4;
+using float3   = XMFLOAT3;
+using uint     = uint32_t;
 #endif
 
 struct Camera_st {
     float4x4 View;
     float4x4 Projection;
+};
+
+// using for Raytracing
+struct Fat_vertex {
+    float3 m_position;
+    float4 m_colour;
+    float3 m_normal;
+};
+
+struct Mesh_data {
+    uint m_num_vertices;
+    uint m_num_indices;
+    uint m_offset_vertices;
+    uint m_offset_indices;
+};
+
+struct Instance_data {
+    uint m_mesh_id;
 };
 
 #endif
