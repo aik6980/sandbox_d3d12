@@ -65,36 +65,6 @@ std::shared_ptr<Buffer> Resource_manager::create_static_buffer(const string& nam
     return buffer;
 }
 
-std::shared_ptr<Buffer> Resource_manager::create_upload_buffer(const string& name, uint32_t byte_size, const void* init_data)
-{
-    auto&& resource_desc = CD3DX12_RESOURCE_DESC::Buffer(byte_size);
-
-    D3D12MA::ALLOCATION_DESC allocation_desc = {};
-    allocation_desc.HeapType                 = D3D12_HEAP_TYPE_UPLOAD;
-
-    auto&& buffer = std::make_shared<Buffer>();
-    m_device.m_allocator->CreateResource(
-        &allocation_desc, &resource_desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer));
-    {
-        auto&& w_name = wstring(name.begin(), name.end());
-        buffer->m_buffer->SetName(w_name.c_str());
-        buffer->m_d3d_desc = resource_desc;
-    }
-
-    m_static_buffers.insert(std::make_pair(name, buffer));
-
-    auto&& command_list = m_device.commmand_list()();
-    // optional, if we want to upload an initial_data
-    if (init_data) {
-        void* p_data = nullptr;
-        DBG::throw_hr((buffer->m_buffer)->Map(0, nullptr, &p_data));
-        memcpy(p_data, init_data, byte_size);
-        (buffer->m_buffer)->Unmap(0, nullptr);
-    }
-
-    return buffer;
-}
-
 std::shared_ptr<Buffer> Resource_manager::create_texture(
     const string& name, const CD3DX12_RESOURCE_DESC& info, const CD3DX12_CLEAR_VALUE* clear_val, const TextureData* init_data, D3D12_RESOURCE_STATES init_state)
 {

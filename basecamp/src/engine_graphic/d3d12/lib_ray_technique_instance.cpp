@@ -139,8 +139,12 @@ void Lib_ray_technique::create_shader_table()
         raygen_table.m_shader_records.push_back(Shader_record(raygen_shader_identifier, shader_identifier_size));
 
         m_raygen_shader_table_buffer = m_lib + "_raygen_table";
+        auto&& name                  = m_raygen_shader_table_buffer;
         auto&& blob                  = raygen_table.generate_data();
-        auto&& shader_table_buffer   = resource_mgr.create_upload_buffer(m_raygen_shader_table_buffer, (uint32_t)blob.size(), blob.data());
+        // auto&& shader_table_buffer   = resource_mgr.create_upload_buffer(m_raygen_shader_table_buffer, (uint32_t)blob.size(), blob.data());
+        D3D12::Buffer_request resource_req;
+        resource_req.desc          = CD3DX12_RESOURCE_DESC::Buffer((uint32_t)blob.size());
+        auto&& shader_table_buffer = resource_mgr.create_buffer(name, resource_req, blob.data());
     }
 
     // Miss shader table
@@ -155,8 +159,12 @@ void Lib_ray_technique::create_shader_table()
         shader_table.m_shader_records.push_back(Shader_record(miss_shader_identifier, shader_identifier_size));
 
         m_miss_shader_table_buffer = m_lib + "_miss_table";
+        auto&& name                = m_miss_shader_table_buffer;
         auto&& blob                = shader_table.generate_data();
-        auto&& shader_table_buffer = resource_mgr.create_upload_buffer(m_miss_shader_table_buffer, (uint32_t)blob.size(), blob.data());
+        // auto&& shader_table_buffer = resource_mgr.create_upload_buffer(m_miss_shader_table_buffer, (uint32_t)blob.size(), blob.data());
+        D3D12::Buffer_request resource_req;
+        resource_req.desc          = CD3DX12_RESOURCE_DESC::Buffer((uint32_t)blob.size());
+        auto&& shader_table_buffer = resource_mgr.create_buffer(name, resource_req, blob.data());
     }
 
     // Hit group shader table
@@ -171,8 +179,12 @@ void Lib_ray_technique::create_shader_table()
         shader_table.m_shader_records.push_back(Shader_record(hit_group_shader_identifier, shader_identifier_size));
 
         m_hitgroup_shader_table_buffer = m_lib + "_hitgroup_table";
+        auto&& name                    = m_hitgroup_shader_table_buffer;
         auto&& blob                    = shader_table.generate_data();
-        auto&& shader_table_buffer     = resource_mgr.create_upload_buffer(m_hitgroup_shader_table_buffer, (uint32_t)blob.size(), blob.data());
+        // auto&& shader_table_buffer     = resource_mgr.create_upload_buffer(m_hitgroup_shader_table_buffer, (uint32_t)blob.size(), blob.data());
+        D3D12::Buffer_request resource_req;
+        resource_req.desc          = CD3DX12_RESOURCE_DESC::Buffer((uint32_t)blob.size());
+        auto&& shader_table_buffer = resource_mgr.create_buffer(name, resource_req, blob.data());
     }
 }
 
