@@ -44,15 +44,18 @@ class Mesh_renderer {
 
     Camera m_light;
 
-    shared_ptr<D3D12::TechniqueInstance> m_render_technique_instance;
-    shared_ptr<D3D12::TechniqueInstance> m_render_technique_instance1;
+    // shared_ptr<D3D12::Technique_instance> m_render_technique_instance;
+    // shared_ptr<D3D12::Technique_instance> m_render_technique_instance1;
 
-    shared_ptr<D3D12::TechniqueInstance> m_render_technique_mesh_instance;
-    shared_ptr<D3D12::TechniqueInstance> m_render_technique_grid_mesh_instance;
+    // shared_ptr<D3D12::Technique_instance> m_render_technique_mesh_instance;
+    // shared_ptr<D3D12::Technique_instance> m_render_technique_grid_mesh_instance;
+    string m_technique_mesh;
 
-    shared_ptr<D3D12::TechniqueInstance> m_shadow_map_technique_instance;
+    // shared_ptr<D3D12::Technique_instance> m_shadow_map_technique_instance;
+    string m_technique_shadow_map;
 
-    shared_ptr<D3D12::TechniqueInstance> m_mesh_instancing_technique_instance;
+    // shared_ptr<D3D12::Technique_instance> m_mesh_instancing_technique_instance;
+    string m_technique_mesh_instancing;
 };
 
 class Post_renderer {
@@ -65,5 +68,5 @@ class Post_renderer {
     Engine&         m_engine;
     Frame_pipeline& m_frame_pipeline;
 
-    shared_ptr<D3D12::TechniqueInstance> m_compute_post_technique_instance;
+    // shared_ptr<D3D12::Technique_instance> m_compute_post_technique_instance;
 };

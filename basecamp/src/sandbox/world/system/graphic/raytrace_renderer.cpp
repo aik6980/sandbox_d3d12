@@ -13,11 +13,11 @@ void Raytrace_renderer::load_resource()
     auto&& resource_mgr   = device.resource_manager();
 
     {
-        string technique_name = "raytrace_simplelighting";
-        m_engine.shader_mgr().register_lib_ray_technique(technique_name, "raytrace_simplelighting.ray");
+        m_technique_raytracing_simple_lighting = "raytrace_simplelighting";
+        m_engine.shader_mgr().register_lib_ray_technique(m_technique_raytracing_simple_lighting, "raytrace_simplelighting.ray");
 
-        m_raytrace_technique_instance = std::make_shared<D3D12::Lib_ray_technique_instance>(device, shader_manager);
-        m_raytrace_technique_instance->init(technique_name);
+        // m_raytrace_technique_instance = std::make_shared<D3D12::Lib_ray_technique_instance>(device, shader_manager);
+        // m_raytrace_technique_instance->init(technique_name);
     }
 
     m_frame_pipeline.m_render_pass_raytrace_main = make_unique<Render_pass_raytrace_main>();
@@ -104,7 +104,8 @@ void Raytrace_renderer::draw()
     // render_device.buffer_state_transition(*main_colour_buffer, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     render_device.buffer_state_transition(*main_colour_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    auto&& technique = m_engine.shader_mgr().get_lib_ray_technique("raytrace_simplelighting").lock();
+    auto&& technique          = m_engine.shader_mgr().get_lib_ray_technique(m_technique_raytracing_simple_lighting).lock();
+    auto&& technique_instance = m_engine.shader_mgr().create_lib_ray_technique_instance(m_technique_raytracing_simple_lighting);
     if (technique) {
 
         auto&& raygen_tbl   = resource_mgr.request_buffer(technique->m_raygen_shader_table_buffer).lock();
@@ -116,22 +117,22 @@ void Raytrace_renderer::draw()
         if (raygen_tbl && miss_tbl && hitgroup_tbl) {
 
             auto&& cam = m_frame_pipeline.m_camera;
-            m_raytrace_technique_instance->set_cbv("Camera_cb", "Camera_projection_to_world", cam.projection_to_world());
-            m_raytrace_technique_instance->set_cbv("Camera_cb", "Camera_world_pos", cam.position());
+            technique_instance->set_cbv("Camera_cb", "Camera_projection_to_world", cam.projection_to_world());
+            technique_instance->set_cbv("Camera_cb", "Camera_world_pos", cam.position());
 
-            m_raytrace_technique_instance->set_uav("Output_uav", main_colour_buffer);
-            m_raytrace_technique_instance->set_srv("Scene_srv", rtaccel_buffer);
+            technique_instance->set_uav("Output_uav", main_colour_buffer);
+            technique_instance->set_srv("Scene_srv", rtaccel_buffer);
 
             auto&& viewport = XMFLOAT4(-1.0f, -1.0f, 1.0f, 1.0f);
             auto&& stencil  = XMFLOAT4(-1.0f * 0.9f, -1.0f * 0.9f, 1.0f * 0.9f, 1.0f * 0.9f);
-            m_raytrace_technique_instance->set_cbv("Raygen_cb", "Main_vp", viewport);
-            m_raytrace_technique_instance->set_cbv("Raygen_cb", "Stencil_vp", stencil);
+            technique_instance->set_cbv("Raygen_cb", "Main_vp", viewport);
+            technique_instance->set_cbv("Raygen_cb", "Stencil_vp", stencil);
 
             // scene attrib
-            m_raytrace_technique_instance->set_srv("Instance_data_srv", scene_data_buffers.instance_data_buffer);
-            m_raytrace_technique_instance->set_srv("Mesh_data_srv", scene_data_buffers.mesh_data_buffer);
-            m_raytrace_technique_instance->set_srv("Vertices_srv", scene_data_buffers.vertex_buffer);
-            m_raytrace_technique_instance->set_srv("Indices_srv", scene_data_buffers.index_buffer);
+            technique_instance->set_srv("Instance_data_srv", scene_data_buffers.instance_data_buffer);
+            technique_instance->set_srv("Mesh_data_srv", scene_data_buffers.mesh_data_buffer);
+            technique_instance->set_srv("Vertices_srv", scene_data_buffers.vertex_buffer);
+            technique_instance->set_srv("Indices_srv", scene_data_buffers.index_buffer);
 
             D3D12_DISPATCH_RAYS_DESC dispatch_desc               = {};
             dispatch_desc.HitGroupTable.StartAddress             = hitgroup_tbl->m_buffer->GetGPUVirtualAddress();
@@ -148,7 +149,7 @@ void Raytrace_renderer::draw()
 
             command_list()->SetPipelineState1(technique->m_dxr_state_object.Get());
 
-            m_raytrace_technique_instance->set_root_signature_parameters(*command_list());
+            technique_instance->set_root_signature_parameters(*command_list());
 
             command_list()->DispatchRays(&dispatch_desc);
         }

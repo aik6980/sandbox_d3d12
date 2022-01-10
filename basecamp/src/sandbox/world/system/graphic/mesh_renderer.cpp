@@ -22,50 +22,50 @@ void Mesh_renderer::load_resource()
 
         m_engine.shader_mgr().register_technique(technique_name, t);
 
-        m_render_technique_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
-        m_render_technique_instance->init(technique_name);
-
-        m_render_technique_instance1 = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
-        m_render_technique_instance1->init(technique_name);
+        // m_render_technique_instance = std::make_shared<D3D12::Technique_instance>(device, shader_manager);
+        // m_render_technique_instance->init(technique_name);
+        //
+        // m_render_technique_instance1 = std::make_shared<D3D12::Technique_instance>(device, shader_manager);
+        // m_render_technique_instance1->init(technique_name);
     }
 
     {
-        string               technique_name = "mesh";
+        m_technique_mesh = "mesh";
         D3D12::TechniqueInit t;
         t.m_vs = "mesh.vs";
         t.m_ps = "mesh.ps";
 
-        m_engine.shader_mgr().register_technique(technique_name, t);
+        m_engine.shader_mgr().register_technique(m_technique_mesh, t);
 
-        m_render_technique_mesh_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
-        m_render_technique_mesh_instance->init(technique_name);
-
-        m_render_technique_grid_mesh_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
-        m_render_technique_grid_mesh_instance->init(technique_name);
+        // m_render_technique_mesh_instance = std::make_shared<D3D12::Technique_instance>(device, shader_manager);
+        // m_render_technique_mesh_instance->init(technique_name);
+        //
+        // m_render_technique_grid_mesh_instance = std::make_shared<D3D12::Technique_instance>(device, shader_manager);
+        // m_render_technique_grid_mesh_instance->init(technique_name);
     }
 
     {
-        string               technique_name = "mesh_shadow_map";
+        m_technique_shadow_map = "mesh_shadow_map";
         D3D12::TechniqueInit t;
         t.m_vs = "mesh.vs";
         t.m_ps = "";
 
-        m_engine.shader_mgr().register_technique(technique_name, t);
+        m_engine.shader_mgr().register_technique(m_technique_shadow_map, t);
 
-        m_shadow_map_technique_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
-        m_shadow_map_technique_instance->init(technique_name);
+        // m_shadow_map_technique_instance = std::make_shared<D3D12::Technique_instance>(device, shader_manager);
+        // m_shadow_map_technique_instance->init(technique_name);
     }
 
     {
-        string               technique_name = "mesh_instancing";
+        m_technique_mesh_instancing = "mesh_instancing";
         D3D12::TechniqueInit t;
         t.m_vs = "mesh_instancing.vs";
         t.m_ps = "mesh.ps";
 
-        m_engine.shader_mgr().register_technique(technique_name, t);
+        m_engine.shader_mgr().register_technique(m_technique_mesh_instancing, t);
 
-        m_mesh_instancing_technique_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
-        m_mesh_instancing_technique_instance->init(technique_name);
+        // m_mesh_instancing_technique_instance = std::make_shared<D3D12::Technique_instance>(device, shader_manager);
+        // m_mesh_instancing_technique_instance->init(technique_name);
     }
 
     // build a mesh
@@ -94,23 +94,25 @@ void Mesh_renderer::draw_meshes_shadow_map()
 
     auto&& command_list = m_engine.render_device().commmand_list();
 
-    auto&& mesh_handle      = m_engine.resource_mgr().request_mesh_buffer(m_unit_cube_name);
-    auto&& mesh_buffer      = mesh_handle.lock();
-    auto&& mesh_tech_handle = m_shadow_map_technique_instance->get_technique();
-    auto&& pso              = m_engine.shader_mgr().get_pso(mesh_tech_handle, rt_fmt, ds_fmt);
-    if (pso && mesh_buffer) {
+    auto&& mesh_handle = m_engine.resource_mgr().request_mesh_buffer(m_unit_cube_name);
+    auto&& mesh_buffer = mesh_handle.lock();
+    // auto&& mesh_tech_handle = m_shadow_map_technique_instance->get_technique();
+    // auto&& pso              = m_engine.shader_mgr().get_pso(mesh_tech_handle, rt_fmt, ds_fmt);
+    // if (pso && mesh_buffer)
+    auto&& technique_instance = m_engine.shader_mgr().create_technique_instance(m_technique_shadow_map, rt_fmt, ds_fmt);
+    if (technique_instance) {
 
-        m_shadow_map_technique_instance->set_cbv("Camera_cb", "View", &camera.view(), sizeof(camera.view()));
-        m_shadow_map_technique_instance->set_cbv("Camera_cb", "Projection", &camera.projection(), sizeof(camera.projection()));
+        technique_instance->set_cbv("Camera_cb", "View", &camera.view(), sizeof(camera.view()));
+        technique_instance->set_cbv("Camera_cb", "Projection", &camera.projection(), sizeof(camera.projection()));
 
         XMMATRIX world = XMMatrixTranslation(0.0f, 1.0f, 0.0f);
-        m_shadow_map_technique_instance->set_cbv("Object_cb", "World", &world, sizeof(world));
+        technique_instance->set_cbv("Object_cb", "World", &world, sizeof(world));
 
         auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
-        m_shadow_map_technique_instance->set_srv("Diffuse_srv", tex);
+        technique_instance->set_srv("Diffuse_srv", tex);
 
-        command_list()->SetPipelineState(pso.Get());
-        m_shadow_map_technique_instance->set_root_signature_parameters(*command_list());
+        command_list()->SetPipelineState(technique_instance->m_pso.Get());
+        technique_instance->set_root_signature_parameters(*command_list());
 
         command_list()->IASetVertexBuffers(0, 1, &mesh_buffer->vertex_buffer_view());
         command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
@@ -128,139 +130,114 @@ void Mesh_renderer::draw_meshes()
     auto&& rt_fmt = m_frame_pipeline.m_render_pass_main->render_target_format();
     auto&& ds_fmt = m_frame_pipeline.m_render_pass_main->depth_stencil_format();
 
-    m_render_technique_instance->set_cbv("key", "key_i", &key_i, sizeof(key_i));
-
-    float vec[2] = {0.25f * sinf(0.001f), 0.0f};
-    m_render_technique_instance->set_cbv("cb_vs", "offset", vec, sizeof(vec));
-
-    float scale[2] = {1.0, 1.0};
-    m_render_technique_instance->set_cbv("cb_vs", "scale", scale, sizeof(scale));
-    scale[0] = scale[1] = 0.25f;
-    m_render_technique_instance1->set_cbv("cb_vs", "scale", scale, sizeof(scale));
-
-    float colour[4] = {0.9f, 0.1f, 0.9f, 1.0f};
-    m_render_technique_instance->set_cbv("cb_ps", "colour", colour, sizeof(colour));
-
-    float offsety = 0.25f * sinf(0.001f);
-    m_render_technique_instance1->set_cbv("cb_vs", "offsety", &offsety, sizeof(offsety));
-
-    // begine gpu work this frame
     auto&& render_device = m_engine.render_device();
     auto&& command_list  = m_engine.render_device().commmand_list();
 
-    auto&& tech_handle = m_render_technique_instance->get_technique();
-    if (auto tech = tech_handle.lock()) {
-        auto&& pso = m_engine.shader_mgr().get_pso(tech_handle, rt_fmt, ds_fmt);
-        command_list()->SetPipelineState(pso.Get());
-        m_render_technique_instance->set_root_signature_parameters(*command_list());
+    auto&& mesh_handle = m_engine.resource_mgr().request_mesh_buffer(m_unit_cube_name);
+    auto&& mesh_buffer = mesh_handle.lock();
+    // auto&& mesh_tech_handle = m_render_technique_mesh_instance->get_technique();
+    // auto&& pso              = m_engine.shader_mgr().get_pso(mesh_tech_handle, rt_fmt, ds_fmt);
+    // if (pso && mesh_buffer)
+    {
+        auto&& technique_instance = m_engine.shader_mgr().create_technique_instance(m_technique_mesh, rt_fmt, ds_fmt);
+        if (technique_instance) {
 
-        command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        // command_list()->DrawInstanced(3, 1, 0, 0);
+            technique_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
+            technique_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
+
+            technique_instance->set_cbv("Light_cb", "Receive_shadow", 0);
+
+            XMMATRIX world = XMMatrixTranslation(0.0f, 1.0f, 0.0f);
+            technique_instance->set_cbv("Object_cb", "World", &world, sizeof(world));
+
+            auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
+            technique_instance->set_srv("Diffuse_srv", tex);
+
+            command_list()->SetPipelineState(technique_instance->m_pso.Get());
+            technique_instance->set_root_signature_parameters(*command_list());
+
+            command_list()->IASetVertexBuffers(0, 1, &mesh_buffer->vertex_buffer_view());
+            command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
+            command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            auto&& index_count = mesh_buffer->m_mesh_location.index_count;
+            command_list()->DrawIndexedInstanced(index_count, 1, 0, 0, 0);
+        }
     }
 
-    auto&& tech_handle1 = m_render_technique_instance1->get_technique();
-    if (auto tech = tech_handle1.lock()) {
-        auto&& pso = m_engine.shader_mgr().get_pso(tech_handle1, rt_fmt, ds_fmt);
-        command_list()->SetPipelineState(pso.Get());
-        m_render_technique_instance1->set_root_signature_parameters(*command_list());
+    // auto&& mesh_instancing_tech_handle = m_mesh_instancing_technique_instance->get_technique();
+    // auto&& mesh_instancing_pso         = m_engine.shader_mgr().get_pso(mesh_instancing_tech_handle, rt_fmt, ds_fmt);
+    // if (mesh_instancing_pso && mesh_buffer)
+    {
+        auto&& technique_instance = m_engine.shader_mgr().create_technique_instance(m_technique_mesh_instancing, rt_fmt, ds_fmt);
+        if (technique_instance) {
 
-        command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        // command_list()->DrawInstanced(3, 1, 0, 0);
+            // m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
+            // m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
+
+            Camera_st camera_cb = {cam.view(), cam.projection()};
+            technique_instance->set_cbv("Camera_cb_v51", "Camera_cb_v51", camera_cb);
+            technique_instance->set_cbv("Light_cb", "Receive_shadow", 0);
+
+            auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
+            technique_instance->set_srv("Diffuse_srv", tex);
+
+            // update instance data
+            m_engine.resource_mgr().update_dynamic_buffer(
+                m_instance_data_buffer_name, m_instance_data.data(), sizeof(Instance_data) * (uint32_t)m_instance_data.size());
+
+            command_list()->SetPipelineState(technique_instance->m_pso.Get());
+            technique_instance->set_root_signature_parameters(*command_list());
+
+            std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vb_views = {
+                mesh_buffer->vertex_buffer_view(), m_engine.resource_mgr().request_instance_buffer_view(m_instance_data_buffer_name, sizeof(Instance_data))};
+
+            command_list()->IASetVertexBuffers(0, (uint32_t)vb_views.size(), vb_views.data());
+            command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
+            command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            auto&& index_count = mesh_buffer->m_mesh_location.index_count;
+            command_list()->DrawIndexedInstanced(index_count, (uint32_t)m_instance_data.size(), 0, 0, 0);
+        }
     }
 
-    auto&& mesh_handle      = m_engine.resource_mgr().request_mesh_buffer(m_unit_cube_name);
-    auto&& mesh_buffer      = mesh_handle.lock();
-    auto&& mesh_tech_handle = m_render_technique_mesh_instance->get_technique();
-    auto&& pso              = m_engine.shader_mgr().get_pso(mesh_tech_handle, rt_fmt, ds_fmt);
-    if (pso && mesh_buffer) {
+    auto&& grid_mesh_handle = m_engine.resource_mgr().request_mesh_buffer(m_grid_mesh);
+    auto&& grid_mesh_buffer = grid_mesh_handle.lock();
+    // auto&& grid_mesh_tech_handle = m_render_technique_grid_mesh_instance->get_technique();
+    // auto&& pso1                  = m_engine.shader_mgr().get_pso(grid_mesh_tech_handle, rt_fmt, ds_fmt);
+    // if (grid_mesh_buffer && pso1)
+    {
+        auto&& technique_instance = m_engine.shader_mgr().create_technique_instance(m_technique_mesh, rt_fmt, ds_fmt);
+        {
 
-        m_render_technique_mesh_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
-        m_render_technique_mesh_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
+            technique_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
+            technique_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
 
-        m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Receive_shadow", 0);
+            technique_instance->set_cbv("Light_cb", "Receive_shadow", 1);
+            technique_instance->set_cbv("Light_cb", "Light_view", &m_light.view(), sizeof(m_light.view()));
+            technique_instance->set_cbv("Light_cb", "Light_projection", &m_light.projection(), sizeof(m_light.projection()));
+            auto&& shadow_map_tex = m_frame_pipeline.m_render_pass_shadow_map->depth_stencil_buffer();
+            technique_instance->set_srv("Shadow_map_srv", shadow_map_tex);
 
-        XMMATRIX world = XMMatrixTranslation(0.0f, 1.0f, 0.0f);
-        m_render_technique_mesh_instance->set_cbv("Object_cb", "World", &world, sizeof(world));
+            auto&& sampler = m_engine.resource_mgr().request_sampler(m_point_sampler);
+            technique_instance->set_sampler("Point_sampler", sampler);
 
-        auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
-        m_render_technique_mesh_instance->set_srv("Diffuse_srv", tex);
+            XMMATRIX world = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
+            technique_instance->set_cbv("Object_cb", "World", &world, sizeof(world));
 
-        command_list()->SetPipelineState(pso.Get());
-        m_render_technique_mesh_instance->set_root_signature_parameters(*command_list());
+            auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
+            technique_instance->set_srv("Diffuse_srv", tex);
 
-        command_list()->IASetVertexBuffers(0, 1, &mesh_buffer->vertex_buffer_view());
-        command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
-        command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            command_list()->SetPipelineState(technique_instance->m_pso.Get());
+            technique_instance->set_root_signature_parameters(*command_list());
 
-        auto&& index_count = mesh_buffer->m_mesh_location.index_count;
-        command_list()->DrawIndexedInstanced(index_count, 1, 0, 0, 0);
-    }
+            command_list()->IASetVertexBuffers(0, 1, &grid_mesh_buffer->vertex_buffer_view());
+            command_list()->IASetIndexBuffer(&grid_mesh_buffer->index_buffer_view());
+            command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    auto&& mesh_instancing_tech_handle = m_mesh_instancing_technique_instance->get_technique();
-    auto&& mesh_instancing_pso         = m_engine.shader_mgr().get_pso(mesh_instancing_tech_handle, rt_fmt, ds_fmt);
-    if (mesh_instancing_pso && mesh_buffer) {
-
-        // m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
-        // m_mesh_instancing_technique_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
-
-        Camera_st camera_cb = {cam.view(), cam.projection()};
-        m_mesh_instancing_technique_instance->set_cbv("Camera_cb_v51", "Camera_cb_v51", camera_cb);
-        m_mesh_instancing_technique_instance->set_cbv("Light_cb", "Receive_shadow", 0);
-
-        auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
-        m_mesh_instancing_technique_instance->set_srv("Diffuse_srv", tex);
-
-        // update instance data
-        m_engine.resource_mgr().update_dynamic_buffer(
-            m_instance_data_buffer_name, m_instance_data.data(), sizeof(Instance_data) * (uint32_t)m_instance_data.size());
-
-        command_list()->SetPipelineState(mesh_instancing_pso.Get());
-        m_mesh_instancing_technique_instance->set_root_signature_parameters(*command_list());
-
-        std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vb_views = {
-            mesh_buffer->vertex_buffer_view(), m_engine.resource_mgr().request_instance_buffer_view(m_instance_data_buffer_name, sizeof(Instance_data))};
-
-        command_list()->IASetVertexBuffers(0, (uint32_t)vb_views.size(), vb_views.data());
-        command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
-        command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-        auto&& index_count = mesh_buffer->m_mesh_location.index_count;
-        command_list()->DrawIndexedInstanced(index_count, (uint32_t)m_instance_data.size(), 0, 0, 0);
-    }
-
-    auto&& grid_mesh_handle      = m_engine.resource_mgr().request_mesh_buffer(m_grid_mesh);
-    auto&& grid_mesh_buffer      = grid_mesh_handle.lock();
-    auto&& grid_mesh_tech_handle = m_render_technique_grid_mesh_instance->get_technique();
-    auto&& pso1                  = m_engine.shader_mgr().get_pso(grid_mesh_tech_handle, rt_fmt, ds_fmt);
-    if (grid_mesh_buffer && pso1) {
-
-        m_render_technique_grid_mesh_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
-        m_render_technique_grid_mesh_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
-
-        m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Receive_shadow", 1);
-        m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Light_view", &m_light.view(), sizeof(m_light.view()));
-        m_render_technique_grid_mesh_instance->set_cbv("Light_cb", "Light_projection", &m_light.projection(), sizeof(m_light.projection()));
-        auto&& shadow_map_tex = m_frame_pipeline.m_render_pass_shadow_map->depth_stencil_buffer();
-        m_render_technique_grid_mesh_instance->set_srv("Shadow_map_srv", shadow_map_tex);
-
-        auto&& sampler = m_engine.resource_mgr().request_sampler(m_point_sampler);
-        m_render_technique_grid_mesh_instance->set_sampler("Point_sampler", sampler);
-
-        XMMATRIX world = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
-        m_render_technique_grid_mesh_instance->set_cbv("Object_cb", "World", &world, sizeof(world));
-
-        auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
-        m_render_technique_grid_mesh_instance->set_srv("Diffuse_srv", tex);
-
-        command_list()->SetPipelineState(pso1.Get());
-        m_render_technique_grid_mesh_instance->set_root_signature_parameters(*command_list());
-
-        command_list()->IASetVertexBuffers(0, 1, &grid_mesh_buffer->vertex_buffer_view());
-        command_list()->IASetIndexBuffer(&grid_mesh_buffer->index_buffer_view());
-        command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-        auto&& index_count = grid_mesh_buffer->m_mesh_location.index_count;
-        command_list()->DrawIndexedInstanced(index_count, 1, 0, 0, 0);
+            auto&& index_count = grid_mesh_buffer->m_mesh_location.index_count;
+            command_list()->DrawIndexedInstanced(index_count, 1, 0, 0, 0);
+        }
     }
 }
 void Mesh_renderer::draw()
@@ -371,8 +348,8 @@ void Post_renderer::load_resource()
 
         m_engine.shader_mgr().register_technique(technique_name, t);
 
-        m_compute_post_technique_instance = std::make_shared<D3D12::TechniqueInstance>(device, shader_manager);
-        m_compute_post_technique_instance->init(technique_name);
+        // m_compute_post_technique_instance = std::make_shared<D3D12::Technique_instance>(device, shader_manager);
+        // m_compute_post_technique_instance->init(technique_name);
     }
 }
 
@@ -391,24 +368,26 @@ void Post_renderer::draw()
     // render_device.buffer_state_transition(*rt_buffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     render_device.buffer_state_transition(*rt_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    auto&& tech_instance = m_compute_post_technique_instance;
-    auto&& tech_handle   = tech_instance->get_technique();
-    auto&& pso           = m_engine.shader_mgr().get_pso(tech_handle, rt_fmt, ds_fmt);
-    if (pso) {
+    // auto&& tech_instance = m_compute_post_technique_instance;
+    // auto&& tech_handle   = tech_instance->get_technique();
+    // auto&& pso           = m_engine.shader_mgr().get_pso(tech_handle, rt_fmt, ds_fmt);
+    // if (pso)
+    auto&& technique_instance = m_engine.shader_mgr().create_technique_instance("compute_post", rt_fmt, ds_fmt);
+    if (technique_instance) {
 
-        tech_instance->set_uav("Texture_uav", rt_buffer);
+        technique_instance->set_uav("Texture_uav", rt_buffer);
 
         // set srv
         auto&& raytrace_buffer = m_frame_pipeline.m_render_pass_raytrace_main->render_target_buffer().lock();
         if (raytrace_buffer) {
             // render_device.buffer_state_transition(*raytrace_buffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
             render_device.buffer_state_transition(*raytrace_buffer, D3D12_RESOURCE_STATE_GENERIC_READ);
-            tech_instance->set_srv("Texture_srv", raytrace_buffer);
+            technique_instance->set_srv("Texture_srv", raytrace_buffer);
         }
 
-        command_list()->SetPipelineState(pso.Get());
+        command_list()->SetPipelineState(technique_instance->m_pso.Get());
         // set compute root signature
-        tech_instance->set_root_signature_parameters(*command_list());
+        technique_instance->set_root_signature_parameters(*command_list());
 
         static uint32_t threadgroup_size = 32;
 

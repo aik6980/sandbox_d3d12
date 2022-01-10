@@ -236,7 +236,7 @@ void Lib_ray_technique_instance::set_cbv(const string& cbuffer_name, const strin
         auto&& var_info = get_cbuffer_var_info(cbuffer_name, var_name);
         if (var_info) {
             if (var_info->Size == data_size) {
-                auto&& mapped_buffer_data = m_device.get_mapped_data(*found_cbuffer_data->second);
+                auto&& mapped_buffer_data = get<void*>(found_cbuffer_data->second);
                 auto&& dest_data          = (char*)mapped_buffer_data + var_info->StartOffset;
 
                 memcpy(dest_data, data, data_size);
@@ -289,7 +289,7 @@ void Lib_ray_technique_instance::init_dynamic_cbuffer(const string& name)
         if (cbuffer_desc) {
             // only add if it is not in the list
             if (m_cbuffer.find(name) == m_cbuffer.end()) {
-                auto&& cbuffer_data = m_device.create_dynamic_cbuffer(cbuffer_desc->m_desc.Size, name);
+                auto&& cbuffer_data = m_device.create_cbuffer(cbuffer_desc->m_desc.Size, name);
                 m_cbuffer.insert(std::make_pair(name, cbuffer_data));
                 m_cbuffer_infos.insert(std::make_pair(name, cbuffer_desc));
             }
@@ -320,7 +320,7 @@ void Lib_ray_technique_instance::set_root_signature_parameters(ID3D12GraphicsCom
 
         auto&& found_cbuffer_data = m_cbuffer.find(name);
         if (found_cbuffer_data != m_cbuffer.end()) {
-            auto&& buffer = m_device.get_buffer(*found_cbuffer_data->second).lock();
+            auto&& buffer = get<weak_ptr<Buffer>>(found_cbuffer_data->second).lock();
             if (buffer) {
                 auto&& gpu_descriptor_handle = resource_mgr.create_cbv(*buffer);
                 command_list.SetComputeRootDescriptorTable(i, gpu_descriptor_handle);

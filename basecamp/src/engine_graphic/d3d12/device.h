@@ -51,11 +51,11 @@ class Device {
     void wait_for_gpu();
     void flush_command_queue();
 
-    shared_ptr<Buffer>         create_cbuffer(uint32_t size, const string& name);
-    shared_ptr<Dynamic_buffer> create_dynamic_cbuffer(uint32_t size, const string& name);
-
-    void*            get_mapped_data(const Dynamic_buffer& buffer);
-    weak_ptr<Buffer> get_buffer(const Dynamic_buffer& buffer);
+    // shared_ptr<Buffer>         create_cbuffer(uint32_t size, const string& name);
+    // shared_ptr<Dynamic_buffer> create_dynamic_cbuffer(uint32_t size, const string& name);
+    // void*            get_mapped_data(const Dynamic_buffer& buffer);
+    // weak_ptr<Buffer> get_buffer(const Dynamic_buffer& buffer);
+    tuple<weak_ptr<Buffer>, void*> create_cbuffer(uint32_t size, const string& name);
 
     std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> get_gpu_descriptor_handle(weak_ptr<Sampler> handle);
     std::tuple<bool, CD3DX12_CPU_DESCRIPTOR_HANDLE> get_rtv_cpu_descriptor_handle(weak_ptr<Buffer> buffer_handle);

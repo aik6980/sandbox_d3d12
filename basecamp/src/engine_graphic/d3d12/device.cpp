@@ -257,74 +257,92 @@ void Device::flush_command_queue()
     }
 }
 
-shared_ptr<Buffer> Device::create_cbuffer(uint32_t size, const string& name)
+// shared_ptr<Buffer> Device::create_cbuffer(uint32_t size, const string& name)
+//{
+//     D3D12MA::ALLOCATION_DESC allocation_desc = {};
+//     allocation_desc.HeapType                 = D3D12_HEAP_TYPE_UPLOAD;
+//
+//     D3D12_RESOURCE_DESC desc;
+//     desc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
+//     desc.Alignment          = 0;
+//     desc.Width              = Align_up(size, (uint32_t)D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+//     desc.Height             = 1;
+//     desc.DepthOrArraySize   = 1;
+//     desc.MipLevels          = 1;
+//     desc.Format             = DXGI_FORMAT_UNKNOWN;
+//     desc.SampleDesc.Count   = 1;
+//     desc.SampleDesc.Quality = 0;
+//     desc.Layout             = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+//     desc.Flags              = D3D12_RESOURCE_FLAG_NONE;
+//
+//     auto&& buffer = std::make_shared<Buffer>();
+//     DBG::throw_hr(m_allocator->CreateResource(
+//         &allocation_desc, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer)));
+//
+//     auto&& w_name = wstring(name.begin(), name.end());
+//     buffer->m_buffer->SetName(w_name.c_str());
+//     buffer->m_d3d_desc = desc;
+//
+//     return buffer;
+// }
+//
+// shared_ptr<Dynamic_buffer> Device::create_dynamic_cbuffer(uint32_t size, const string& name)
+//{
+//     auto&& dynamic_buffer = std::make_shared<Dynamic_buffer>();
+//
+//     for (auto&& frame_resource : m_frame_resource_list) {
+//         auto&& buffer = create_cbuffer(size, name);
+//         // buffer owned by frame resource
+//         frame_resource->m_dynamic_buffer.emplace_back(buffer);
+//
+//         // this is dynamic buffer, so expecting CPU WRITE. Let persistent mapping
+//         static const CD3DX12_RANGE empty_range(0u, 0u);
+//         void*                      data = nullptr;
+//         buffer->m_buffer->Map(0, &empty_range, &data);
+//
+//         dynamic_buffer->m_data.emplace_back(data);
+//         dynamic_buffer->m_buffer.emplace_back(buffer);
+//     }
+//
+//     return dynamic_buffer;
+// }
+//
+// void* Device::get_mapped_data(const Dynamic_buffer& buffer)
+//{
+//     return buffer.m_data[m_curr_frame_resource_index];
+// }
+
+// weak_ptr<Buffer> Device::get_buffer(const Dynamic_buffer& buffer)
+//{
+//     return buffer.m_buffer[m_curr_frame_resource_index];
+// }
+
+tuple<weak_ptr<Buffer>, void*> Device::create_cbuffer(uint32_t size, const string& name)
 {
     D3D12MA::ALLOCATION_DESC allocation_desc = {};
     allocation_desc.HeapType                 = D3D12_HEAP_TYPE_UPLOAD;
 
-    D3D12_RESOURCE_DESC desc;
-    desc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
-    desc.Alignment          = 0;
-    desc.Width              = Align_up(size, (uint32_t)D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
-    desc.Height             = 1;
-    desc.DepthOrArraySize   = 1;
-    desc.MipLevels          = 1;
-    desc.Format             = DXGI_FORMAT_UNKNOWN;
-    desc.SampleDesc.Count   = 1;
-    desc.SampleDesc.Quality = 0;
-    desc.Layout             = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    desc.Flags              = D3D12_RESOURCE_FLAG_NONE;
+    uint32_t buffer_size   = Align_up(size, (uint32_t)D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+    auto&&   resource_desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
     auto&& buffer = std::make_shared<Buffer>();
     DBG::throw_hr(m_allocator->CreateResource(
-        &allocation_desc, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer)));
+        &allocation_desc, &resource_desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &buffer->m_allocation, IID_PPV_ARGS(&buffer->m_buffer)));
 
     auto&& w_name = wstring(name.begin(), name.end());
     buffer->m_buffer->SetName(w_name.c_str());
-    buffer->m_d3d_desc = desc;
+    buffer->m_d3d_desc   = resource_desc;
+    buffer->m_curr_state = D3D12_RESOURCE_STATE_GENERIC_READ;
 
-    // get dynamically from frame resource
-    // auto                            id     = m_srv_heap.get_next_decriptor_id();
-    // auto                            handle = m_srv_heap.get_cpu_descriptor(id);
-    // D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc;
-    // view_desc.BufferLocation = buffer->m_buffer->GetGPUVirtualAddress();
-    // view_desc.SizeInBytes    = (UINT)desc.Width;
-    // m_device->CreateConstantBufferView(&view_desc, handle);
-    //
-    // buffer->m_cbv_srv_handle_id = id;
+    // store as a per frame object
+    frame_resource().m_per_frame_buffers.emplace_back(buffer);
 
-    return buffer;
-}
+    // this is dynamic buffer, so expecting CPU WRITE. Let persistent mapping
+    static const CD3DX12_RANGE empty_range(0u, 0u);
+    void*                      data = nullptr;
+    buffer->m_buffer->Map(0, &empty_range, &data);
 
-shared_ptr<Dynamic_buffer> Device::create_dynamic_cbuffer(uint32_t size, const string& name)
-{
-    auto&& dynamic_buffer = std::make_shared<Dynamic_buffer>();
-
-    for (auto&& frame_resource : m_frame_resource_list) {
-        auto&& buffer = create_cbuffer(size, name);
-        // buffer owned by frame resource
-        frame_resource->m_dynamic_buffer.emplace_back(buffer);
-
-        // this is dynamic buffer, so expecting CPU WRITE. Let persistent mapping
-        static const CD3DX12_RANGE empty_range(0u, 0u);
-        void*                      data = nullptr;
-        buffer->m_buffer->Map(0, &empty_range, &data);
-
-        dynamic_buffer->m_data.emplace_back(data);
-        dynamic_buffer->m_buffer.emplace_back(buffer);
-    }
-
-    return dynamic_buffer;
-}
-
-void* Device::get_mapped_data(const Dynamic_buffer& buffer)
-{
-    return buffer.m_data[m_curr_frame_resource_index];
-}
-
-weak_ptr<Buffer> Device::get_buffer(const Dynamic_buffer& buffer)
-{
-    return buffer.m_buffer[m_curr_frame_resource_index];
+    return make_tuple(buffer, data);
 }
 
 std::tuple<bool, CD3DX12_GPU_DESCRIPTOR_HANDLE> Device::get_gpu_descriptor_handle(weak_ptr<Sampler> handle)

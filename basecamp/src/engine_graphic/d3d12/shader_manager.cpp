@@ -86,38 +86,48 @@ weak_ptr<Technique> Shader_manager::get_render_technique(const string& name)
     return weak_ptr<Technique>();
 }
 
-ComPtr<ID3D12PipelineState> Shader_manager::get_pso(weak_ptr<Technique> tech_handle, DXGI_FORMAT rt, DXGI_FORMAT ds)
+ComPtr<ID3D12PipelineState> Shader_manager::get_pso(Technique& tech, DXGI_FORMAT rt, DXGI_FORMAT ds)
 {
-    auto&& tech = tech_handle.lock();
-    if (tech) {
+    string key    = DBG::Format("%#16x%d%d", &tech, rt, ds);
+    auto&& result = m_pso_list.find(key);
 
-        string key    = DBG::Format("%#16x%d%d", tech.get(), rt, ds);
-        auto&& result = m_pso_list.find(key);
+    if (result != m_pso_list.end()) {
+        return result->second;
+    }
 
-        if (result != m_pso_list.end()) {
-            return result->second;
-        }
+    ComPtr<ID3D12PipelineState> pso;
+    if (!tech.m_vs.empty()) {
+        auto&& pso_desc           = tech.get_graphic_pipeline_state_desc();
+        pso_desc.NumRenderTargets = (rt != DXGI_FORMAT_UNKNOWN) ? 1 : 0;
+        pso_desc.RTVFormats[0]    = rt;
+        pso_desc.DSVFormat        = ds;
 
-        ComPtr<ID3D12PipelineState> pso;
-        if (!tech->m_vs.empty()) {
-            auto&& pso_desc           = tech->get_graphic_pipeline_state_desc();
-            pso_desc.NumRenderTargets = (rt != DXGI_FORMAT_UNKNOWN) ? 1 : 0;
-            pso_desc.RTVFormats[0]    = rt;
-            pso_desc.DSVFormat        = ds;
+        DBG::throw_hr(m_device.d3d_device()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
+    }
+    else if (!tech.m_cs.empty()) {
+        auto&& pso_desc = tech.get_compute_pipeline_state_desc();
 
-            DBG::throw_hr(m_device.d3d_device()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
-        }
-        else if (!tech->m_cs.empty()) {
-            auto&& pso_desc = tech->get_compute_pipeline_state_desc();
+        DBG::throw_hr(m_device.d3d_device()->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
+    }
+    else {
+        throw;
+    }
 
-            DBG::throw_hr(m_device.d3d_device()->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pso)));
-        }
-        else {
-            throw;
-        }
+    m_pso_list[key] = pso;
+    return pso;
+}
 
-        m_pso_list[key] = pso;
-        return pso;
+unique_ptr<Technique_instance> Shader_manager::create_technique_instance(const string& technique_name, DXGI_FORMAT rt, DXGI_FORMAT ds)
+{
+    auto&& technique = get_render_technique(technique_name).lock();
+    if (technique) {
+        auto&& instance = std::make_unique<Technique_instance>(m_device, *this);
+        instance->init(technique_name);
+
+        auto&& pso      = get_pso(*technique, rt, ds);
+        instance->m_pso = pso;
+
+        return std::move(instance);
     }
 
     return nullptr;
@@ -131,6 +141,19 @@ weak_ptr<Lib_ray_technique> Shader_manager::get_lib_ray_technique(const string& 
     }
 
     return weak_ptr<Lib_ray_technique>();
+}
+
+unique_ptr<Lib_ray_technique_instance> Shader_manager::create_lib_ray_technique_instance(const string& technique_name)
+{
+    auto&& technique = get_lib_ray_technique(technique_name).lock();
+    if (technique) {
+        auto&& instance = std::make_unique<Lib_ray_technique_instance>(m_device, *this);
+        instance->init(technique_name);
+
+        return std::move(instance);
+    }
+
+    return nullptr;
 }
 
 void Shader_manager::register_technique(const string& name, const TechniqueInit& init_data)

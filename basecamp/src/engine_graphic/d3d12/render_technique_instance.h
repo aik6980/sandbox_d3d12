@@ -15,8 +15,7 @@ class Technique {
   public:
     Technique(Shader_manager& shader_mgr) : m_shader_mgr(shader_mgr) {}
 
-    const D3D12_SHADER_VARIABLE_DESC* get_cbuffer_var_info(const string& cbuffer_name, const string& var_name);
-    const INPUT_LAYOUT_DESC*          get_input_layout_desc();
+    const INPUT_LAYOUT_DESC* get_input_layout_desc();
 
     Graphics_pipeline_state_desc get_graphic_pipeline_state_desc();
     Compute_pipeline_state_desc  get_compute_pipeline_state_desc();
@@ -38,9 +37,9 @@ class Technique {
     Shader_manager& m_shader_mgr;
 };
 
-class TechniqueInstance {
+class Technique_instance {
   public:
-    TechniqueInstance(Device& device, Shader_manager& shader_mgr) : m_device(device), m_shader_mgr(shader_mgr) {}
+    Technique_instance(Device& device, Shader_manager& shader_mgr) : m_device(device), m_shader_mgr(shader_mgr) {}
 
     void init(const string& technique_name);
 
@@ -66,7 +65,11 @@ class TechniqueInstance {
 
     void set_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
 
+    ComPtr<ID3D12PipelineState> m_pso;
+
   private:
+    const D3D12_SHADER_VARIABLE_DESC* get_cbuffer_var_info(const string& cbuffer_name, const string& var_name);
+
     void set_raster_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
     void set_compute_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
 
@@ -77,9 +80,11 @@ class TechniqueInstance {
 
     weak_ptr<Technique> m_technique_handle;
 
-    unordered_map<string, shared_ptr<Dynamic_buffer>> m_cbuffer;
-    unordered_map<string, weak_ptr<Buffer>>           m_srv;
-    unordered_map<string, weak_ptr<Buffer>>           m_uav;
-    unordered_map<string, weak_ptr<Sampler>>          m_samplers;
+    // unordered_map<string, shared_ptr<Dynamic_buffer>> m_cbuffer;
+    unordered_map<string, tuple<weak_ptr<Buffer>, void*>> m_cbuffer;
+    unordered_map<string, const Cbuffer_info*>            m_cbuffer_infos;
+    unordered_map<string, weak_ptr<Buffer>>               m_srv;
+    unordered_map<string, weak_ptr<Buffer>>               m_uav;
+    unordered_map<string, weak_ptr<Sampler>>              m_samplers;
 };
 } // namespace D3D12

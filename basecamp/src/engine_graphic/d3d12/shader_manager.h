@@ -21,10 +21,12 @@ class Shader_manager {
     Shader*         get_shader(const string& name);
     Lib_ray_shader* get_lib_shader(const string& name);
 
-    weak_ptr<Technique>         get_render_technique(const string& name);
-    ComPtr<ID3D12PipelineState> get_pso(weak_ptr<Technique> tech_handle, DXGI_FORMAT rt, DXGI_FORMAT ds);
+    weak_ptr<Technique>            get_render_technique(const string& name);
+    ComPtr<ID3D12PipelineState>    get_pso(Technique& tech, DXGI_FORMAT rt, DXGI_FORMAT ds);
+    unique_ptr<Technique_instance> create_technique_instance(const string& technique_name, DXGI_FORMAT rt, DXGI_FORMAT ds);
 
-    weak_ptr<Lib_ray_technique> get_lib_ray_technique(const string& name);
+    weak_ptr<Lib_ray_technique>            get_lib_ray_technique(const string& name);
+    unique_ptr<Lib_ray_technique_instance> create_lib_ray_technique_instance(const string& technique_name);
 
     void register_technique(const string& name, const TechniqueInit& init_data);
     void register_lib_ray_technique(const string& name, const string& lib_ray);

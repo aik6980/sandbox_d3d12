@@ -6,15 +6,6 @@
 #include "shader_manager.h"
 
 namespace D3D12 {
-const D3D12_SHADER_VARIABLE_DESC* Technique::get_cbuffer_var_info(const string& cbuffer_name, const string& var_name)
-{
-    auto&& var_info = get_cbuffer_var_info(m_vs, cbuffer_name, var_name);
-    if (!var_info) {
-        var_info = get_cbuffer_var_info(m_ps, cbuffer_name, var_name);
-    }
-
-    return var_info;
-}
 
 const INPUT_LAYOUT_DESC* Technique::get_input_layout_desc()
 {
@@ -82,7 +73,7 @@ const D3D12_SHADER_VARIABLE_DESC* Technique::get_cbuffer_var_info(const string& 
     return nullptr;
 }
 
-void TechniqueInstance::init(const string& technique_name)
+void Technique_instance::init(const string& technique_name)
 {
     m_technique_handle = m_shader_mgr.get_render_technique(technique_name);
     if (auto&& technique = m_technique_handle.lock()) {
@@ -91,44 +82,43 @@ void TechniqueInstance::init(const string& technique_name)
     }
 }
 
-void TechniqueInstance::set_cbv(const string& cbuffer_name, const string& var_name, void* data, uint32_t data_size)
+void Technique_instance::set_cbv(const string& cbuffer_name, const string& var_name, void* data, uint32_t data_size)
 {
     auto&& found_cbuffer_data = m_cbuffer.find(cbuffer_name);
-    if (auto&& technique = m_technique_handle.lock()) {
-        if (found_cbuffer_data != m_cbuffer.end()) {
-            // validate variable info
-            auto&& var_info = technique->get_cbuffer_var_info(cbuffer_name, var_name);
-            if (var_info) {
-                if (var_info->Size == data_size) {
-                    auto&& mapped_buffer_data = m_device.get_mapped_data(*found_cbuffer_data->second);
-                    auto&& dest_data          = (char*)mapped_buffer_data + var_info->StartOffset;
+    if (found_cbuffer_data != m_cbuffer.end()) {
+        // validate variable info
+        auto&& var_info = get_cbuffer_var_info(cbuffer_name, var_name);
+        if (var_info) {
+            if (var_info->Size == data_size) {
+                // auto&& mapped_buffer_data = m_device.get_mapped_data(*found_cbuffer_data->second);
+                auto&& mapped_buffer_data = get<void*>(found_cbuffer_data->second);
+                auto&& dest_data          = (char*)mapped_buffer_data + var_info->StartOffset;
 
-                    memcpy(dest_data, data, data_size);
-                }
-                else {
-                    throw;
-                }
+                memcpy(dest_data, data, data_size);
+            }
+            else {
+                throw;
             }
         }
     }
 }
 
-void TechniqueInstance::set_srv(const string& var_name, weak_ptr<Buffer> buffer)
+void Technique_instance::set_srv(const string& var_name, weak_ptr<Buffer> buffer)
 {
     m_srv[var_name] = buffer;
 }
 
-void TechniqueInstance::set_uav(const string& var_name, weak_ptr<Buffer> buffer)
+void Technique_instance::set_uav(const string& var_name, weak_ptr<Buffer> buffer)
 {
     m_uav[var_name] = buffer;
 }
 
-void TechniqueInstance::set_sampler(const string& var_name, weak_ptr<Sampler> resource)
+void Technique_instance::set_sampler(const string& var_name, weak_ptr<Sampler> resource)
 {
     m_samplers[var_name] = resource;
 }
 
-void TechniqueInstance::set_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
+void Technique_instance::set_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
 {
     auto&& technique = m_technique_handle.lock();
     if (technique) {
@@ -144,7 +134,7 @@ void TechniqueInstance::set_root_signature_parameters(ID3D12GraphicsCommandList&
     }
 }
 
-void TechniqueInstance::set_raster_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
+void Technique_instance::set_raster_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
 {
     auto&& resource_mgr = m_device.resource_manager();
 
@@ -158,7 +148,8 @@ void TechniqueInstance::set_raster_root_signature_parameters(ID3D12GraphicsComma
 
             auto&& found_cbuffer_data = m_cbuffer.find(name);
             if (found_cbuffer_data != m_cbuffer.end()) {
-                auto&& buffer = m_device.get_buffer(*found_cbuffer_data->second).lock();
+                // auto&& buffer = m_device.get_buffer(*found_cbuffer_data->second).lock();
+                auto&& buffer = get<weak_ptr<Buffer>>(found_cbuffer_data->second).lock();
                 if (buffer) {
                     auto&& gpu_descriptor_handle = resource_mgr.create_cbv(*buffer);
                     command_list.SetGraphicsRootDescriptorTable(i, gpu_descriptor_handle);
@@ -194,7 +185,7 @@ void TechniqueInstance::set_raster_root_signature_parameters(ID3D12GraphicsComma
     }
 }
 
-void TechniqueInstance::set_compute_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
+void Technique_instance::set_compute_root_signature_parameters(ID3D12GraphicsCommandList& command_list)
 {
     auto&& resource_mgr = m_device.resource_manager();
 
@@ -208,7 +199,7 @@ void TechniqueInstance::set_compute_root_signature_parameters(ID3D12GraphicsComm
 
             auto&& found_cbuffer_data = m_cbuffer.find(name);
             if (found_cbuffer_data != m_cbuffer.end()) {
-                auto&& buffer = m_device.get_buffer(*found_cbuffer_data->second).lock();
+                auto&& buffer = get<weak_ptr<Buffer>>(found_cbuffer_data->second).lock();
                 if (buffer) {
                     auto&& gpu_descriptor_handle = resource_mgr.create_cbv(*buffer);
                     command_list.SetComputeRootDescriptorTable(i, gpu_descriptor_handle);
@@ -244,7 +235,23 @@ void TechniqueInstance::set_compute_root_signature_parameters(ID3D12GraphicsComm
     }
 }
 
-void TechniqueInstance::init_dynamic_cbuffer(const string& shader_name)
+const D3D12_SHADER_VARIABLE_DESC* Technique_instance::get_cbuffer_var_info(const string& cbuffer_name, const string& var_name)
+{
+    auto&& found_cbuffer_info = m_cbuffer_infos.find(cbuffer_name);
+    if (found_cbuffer_info != m_cbuffer_infos.end()) {
+
+        auto&& cbuffer_desc = found_cbuffer_info->second;
+
+        auto&& found_var = cbuffer_desc->m_variable_infos.find(var_name);
+        if (found_var != cbuffer_desc->m_variable_infos.end()) {
+            return &found_var->second;
+        }
+    }
+
+    return nullptr;
+}
+
+void Technique_instance::init_dynamic_cbuffer(const string& shader_name)
 {
     auto&& shader = m_shader_mgr.get_shader(shader_name);
     if (!shader) {
@@ -260,8 +267,9 @@ void TechniqueInstance::init_dynamic_cbuffer(const string& shader_name)
         if (cbuffer_desc) {
             // only add if it is not in the list
             if (m_cbuffer.find(name) == m_cbuffer.end()) {
-                auto&& cbuffer_data = m_device.create_dynamic_cbuffer(cbuffer_desc->m_desc.Size, name);
+                auto&& cbuffer_data = m_device.create_cbuffer(cbuffer_desc->m_desc.Size, name);
                 m_cbuffer.insert(std::make_pair(name, cbuffer_data));
+                m_cbuffer_infos.insert(std::make_pair(name, cbuffer_desc));
             }
         }
     }

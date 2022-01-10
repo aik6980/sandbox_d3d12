@@ -89,11 +89,12 @@ class Lib_ray_technique_instance {
 
     weak_ptr<Lib_ray_technique> m_technique_handle;
 
-    unordered_map<string, shared_ptr<Dynamic_buffer>> m_cbuffer;
-    unordered_map<string, const Cbuffer_info*>        m_cbuffer_infos;
-    unordered_map<string, weak_ptr<Buffer>>           m_srv;
-    unordered_map<string, weak_ptr<Buffer>>           m_uav;
-    unordered_map<string, weak_ptr<Sampler>>          m_samplers;
+    // unordered_map<string, shared_ptr<Dynamic_buffer>> m_cbuffer;
+    unordered_map<string, tuple<weak_ptr<Buffer>, void*>> m_cbuffer;
+    unordered_map<string, const Cbuffer_info*>            m_cbuffer_infos;
+    unordered_map<string, weak_ptr<Buffer>>               m_srv;
+    unordered_map<string, weak_ptr<Buffer>>               m_uav;
+    unordered_map<string, weak_ptr<Sampler>>              m_samplers;
 };
 
 } // namespace D3D12

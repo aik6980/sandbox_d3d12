@@ -33,7 +33,8 @@ class Raytrace_renderer {
     Scene_data_buffer build_scene_attrib_buffer();
 
   private:
-    shared_ptr<D3D12::Lib_ray_technique_instance> m_raytrace_technique_instance;
+    // shared_ptr<D3D12::Lib_ray_technique_instance> m_raytrace_technique_instance;
+    string m_technique_raytracing_simple_lighting;
 
     string m_rtaccel_structure_buffer_handle;
     // string m_unit_quad_name;

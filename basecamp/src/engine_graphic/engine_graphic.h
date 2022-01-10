@@ -59,7 +59,7 @@ struct Sampler;
 struct Scene_data;
 
 class Technique;
-class TechniqueInstance;
+class Technique_instance;
 class Lib_ray_technique;
 class Lib_ray_technique_instance;
 
