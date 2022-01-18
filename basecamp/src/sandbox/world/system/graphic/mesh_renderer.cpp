@@ -69,12 +69,20 @@ void Mesh_renderer::load_resource()
     }
 
     // build a mesh
+    Model_loader model_loader;
+    model_loader.load("..\\assets\\DuckWhite.fbx");
+    {
+        auto&& mesh_data  = model_loader.meshes();
+        auto&& mesh_verts = MeshDataGenerator::to_p1c1(get<Mesh_vertex_array>(mesh_data));
+        m_duck_white_mesh = build_mesh(mesh_verts, get<Mesh_index_array>(mesh_data), "duck_white_mesh", m_engine);
+    }
+
     build_quad_mesh();
     build_cube_mesh();
 
     auto&& mesh_data  = MeshDataGenerator::create_grid(25.0, 25.0, 10, 10);
-    auto&& mesh_verts = MeshDataGenerator::to_p1c1(get<MeshVertexArray>(mesh_data));
-    m_grid_mesh       = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), "grid_mesh", m_engine);
+    auto&& mesh_verts = MeshDataGenerator::to_p1c1(get<Mesh_vertex_array>(mesh_data));
+    m_grid_mesh       = build_mesh(mesh_verts, get<Mesh_index_array>(mesh_data), "grid_mesh", m_engine);
 
     build_texture();
 
@@ -123,6 +131,16 @@ void Mesh_renderer::draw_meshes_shadow_map()
     }
 }
 
+void Draw_indexed_mesh(D3D12::Command_list& command_list, D3D12::Technique_instance& technique_instance, D3D12::Mesh_buffer& mesh_buffer)
+{
+    command_list()->IASetVertexBuffers(0, 1, &mesh_buffer.vertex_buffer_view());
+    command_list()->IASetIndexBuffer(&mesh_buffer.index_buffer_view());
+    command_list()->IASetPrimitiveTopology(mesh_buffer.prim_topology);
+
+    auto&& index_count = mesh_buffer.m_mesh_location.index_count;
+    command_list()->DrawIndexedInstanced(index_count, 1, 0, 0, 0);
+}
+
 void Mesh_renderer::draw_meshes()
 {
     auto&& cam = m_frame_pipeline.m_camera;
@@ -135,6 +153,8 @@ void Mesh_renderer::draw_meshes()
 
     auto&& mesh_handle = m_engine.resource_mgr().request_mesh_buffer(m_unit_cube_name);
     auto&& mesh_buffer = mesh_handle.lock();
+
+    auto&& duck_mesh = m_engine.resource_mgr().request_mesh_buffer(m_duck_white_mesh).lock();
     // auto&& mesh_tech_handle = m_render_technique_mesh_instance->get_technique();
     // auto&& pso              = m_engine.shader_mgr().get_pso(mesh_tech_handle, rt_fmt, ds_fmt);
     // if (pso && mesh_buffer)
@@ -147,7 +167,8 @@ void Mesh_renderer::draw_meshes()
 
             technique_instance->set_cbv("Light_cb", "Receive_shadow", 0);
 
-            XMMATRIX world = XMMatrixTranslation(0.0f, 1.0f, 0.0f);
+            auto&& world = Matrix::CreateScale(0.1f) * Matrix::CreateTranslation(0.0f, 0.1f, 0.0f);
+            // auto&& world = m_frame_pipeline.m_test_world;
             technique_instance->set_cbv("Object_cb", "World", &world, sizeof(world));
 
             auto&& tex = m_engine.resource_mgr().request_buffer(m_texture_name);
@@ -156,12 +177,7 @@ void Mesh_renderer::draw_meshes()
             command_list()->SetPipelineState(technique_instance->m_pso.Get());
             technique_instance->set_root_signature_parameters(*command_list());
 
-            command_list()->IASetVertexBuffers(0, 1, &mesh_buffer->vertex_buffer_view());
-            command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
-            command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-            auto&& index_count = mesh_buffer->m_mesh_location.index_count;
-            command_list()->DrawIndexedInstanced(index_count, 1, 0, 0, 0);
+            Draw_indexed_mesh(command_list, *technique_instance, *duck_mesh);
         }
     }
 
@@ -254,8 +270,8 @@ void Mesh_renderer::draw()
 
 void Mesh_renderer::build_quad_mesh()
 {
-    MeshVertexArray verts;
-    MeshIndexArray  indices;
+    Mesh_vertex_array verts;
+    Mesh_index_array  indices;
 
     MeshDataGenerator::create_unit_quad(verts, indices);
     vector<P1_vertex> mesh_verts = MeshDataGenerator::to_p1(verts);
@@ -265,8 +281,8 @@ void Mesh_renderer::build_quad_mesh()
 
 void Mesh_renderer::build_cube_mesh()
 {
-    MeshVertexArray verts;
-    MeshIndexArray  indices;
+    Mesh_vertex_array verts;
+    Mesh_index_array  indices;
 
     tie(verts, indices)            = MeshDataGenerator::create_unit_cube();
     vector<P1C1_vertex> mesh_verts = MeshDataGenerator::to_p1c1(verts);
@@ -291,25 +307,25 @@ void Mesh_renderer::build_texture()
 
 void Mesh_renderer::update_camera()
 {
-    auto&& cam = m_frame_pipeline.m_camera;
-    auto&& t   = App::get_duration_app();
-
-    // XMVECTOR cam_pos    = XMVectorSet(0.0f, 6.0f, -8.0f, 0.0f);
-    XMVECTOR cam_pos    = XMVectorSet(12.0f * sin(t * 0.5f), 8.0f, 12.0f * cos(t * 0.5f), 0.0f);
-    XMVECTOR cam_target = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-    XMVECTOR cam_up     = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-    XMMATRIX view = XMMatrixLookAtLH(cam_pos, cam_target, cam_up);
-
-    auto&& render_device = m_engine.render_device();
-    auto&& viewport      = render_device.get_window_viewport();
-    auto&& aspect_ratio  = viewport.Width / viewport.Height;
-
-    XMMATRIX projection = XMMatrixPerspectiveFovLH(0.4f * 3.14f, aspect_ratio, 1.0f, 1000.0f);
-
-    cam.m_position   = cam_pos;
-    cam.m_view       = view;
-    cam.m_projection = projection;
+    // auto&& cam = m_frame_pipeline.m_camera;
+    auto&& t = App::get_duration_app();
+    //
+    //// XMVECTOR cam_pos    = XMVectorSet(0.0f, 6.0f, -8.0f, 0.0f);
+    // XMVECTOR cam_pos    = XMVectorSet(12.0f * sin(t * 0.5f), 8.0f, 12.0f * cos(t * 0.5f), 0.0f);
+    // XMVECTOR cam_target = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+    // XMVECTOR cam_up     = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    //
+    // XMMATRIX view = XMMatrixLookAtLH(cam_pos, cam_target, cam_up);
+    //
+    // auto&& render_device = m_engine.render_device();
+    // auto&& viewport      = render_device.get_window_viewport();
+    // auto&& aspect_ratio  = viewport.Width / viewport.Height;
+    //
+    // XMMATRIX projection = XMMatrixPerspectiveFovLH(0.4f * 3.14f, aspect_ratio, 1.0f, 1000.0f);
+    //
+    // cam.m_position   = cam_pos;
+    // cam.m_view       = view;
+    // cam.m_projection = projection;
 
     // light
     {

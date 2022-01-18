@@ -2,6 +2,7 @@
 
 class Input_manager;
 class Engine;
+class Frame_pipeline;
 
 class App {
   public:
@@ -24,6 +25,8 @@ class App {
     void on_event_msg(const MSG msg){};
 
     void create_world();
+
+    static Frame_pipeline* m_renderer;
 
   private:
     HINSTANCE m_hInstance;

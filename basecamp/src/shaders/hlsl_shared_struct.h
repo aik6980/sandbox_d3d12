@@ -23,7 +23,7 @@ struct Fat_vertex {
     float3 m_normal;
 };
 
-struct Mesh_data {
+struct Mesh_desc {
     uint m_num_vertices;
     uint m_num_indices;
     uint m_offset_vertices;

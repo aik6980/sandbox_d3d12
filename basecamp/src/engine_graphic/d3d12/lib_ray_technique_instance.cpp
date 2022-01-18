@@ -188,6 +188,29 @@ void Lib_ray_technique::create_shader_table()
     }
 }
 
+void Lib_ray_technique::prepare_cbuffer_bindings()
+{
+    auto&& shader = m_shader_mgr.get_lib_shader(m_lib);
+    if (!shader) {
+        return;
+    }
+
+    auto&& shader_info = shader->m_reflection;
+
+    auto&& cbuffer_bindings = shader_info->get_global_input_desc().cbuffer_binding_desc();
+    for (auto&& cbuffer_binding : cbuffer_bindings) {
+        string name         = cbuffer_binding.Name;
+        auto&& cbuffer_desc = shader_info->get_global_input_desc().get_cbuffer_desc(name);
+        if (cbuffer_desc) {
+            auto&& found = std::find_if(
+                m_cbuffer_infos.begin(), m_cbuffer_infos.end(), [&name](const Cbuffer_info* a) { return strcmp(a->m_desc.Name, name.c_str()) == 0; });
+            if (found == m_cbuffer_infos.end()) {
+                m_cbuffer_infos.emplace_back(cbuffer_desc);
+            }
+        }
+    }
+}
+
 void Lib_ray_technique::create_root_signature(CD3DX12_STATE_OBJECT_DESC& raytrace_pso, Lib_ray_reflection& reflection)
 {
     m_shader_mgr.build_global_root_signature(*this, reflection.get_global_input_desc());
@@ -224,7 +247,7 @@ void Lib_ray_technique_instance::init(const string& technique_name)
 {
     m_technique_handle = m_shader_mgr.get_lib_ray_technique(technique_name);
     if (auto&& technique = m_technique_handle.lock()) {
-        init_dynamic_cbuffer(technique->m_lib);
+        init_cbuffer(technique->m_lib);
     }
 }
 
@@ -273,26 +296,15 @@ void Lib_ray_technique_instance::set_root_signature_parameters(ID3D12GraphicsCom
     }
 }
 
-void Lib_ray_technique_instance::init_dynamic_cbuffer(const string& name)
+void Lib_ray_technique_instance::init_cbuffer(const string& name)
 {
-    auto&& shader = m_shader_mgr.get_lib_shader(name);
-    if (!shader) {
-        return;
-    }
-
-    auto&& shader_info = shader->m_reflection;
-
-    auto&& cbuffer_bindings = shader_info->get_global_input_desc().cbuffer_binding_desc();
-    for (auto&& cbuffer_binding : cbuffer_bindings) {
-        string name         = cbuffer_binding.Name;
-        auto&& cbuffer_desc = shader_info->get_global_input_desc().get_cbuffer_desc(name);
-        if (cbuffer_desc) {
-            // only add if it is not in the list
-            if (m_cbuffer.find(name) == m_cbuffer.end()) {
-                auto&& cbuffer_data = m_device.create_cbuffer(cbuffer_desc->m_desc.Size, name);
-                m_cbuffer.insert(std::make_pair(name, cbuffer_data));
-                m_cbuffer_infos.insert(std::make_pair(name, cbuffer_desc));
-            }
+    auto&& technique = m_technique_handle.lock();
+    if (technique) {
+        for (auto&& info : technique->m_cbuffer_infos) {
+            auto&& name         = info->m_desc.Name;
+            auto&& cbuffer_data = m_device.create_cbuffer(info->m_desc.Size, name);
+            m_cbuffer.insert(std::make_pair(name, cbuffer_data));
+            m_cbuffer_infos.insert(std::make_pair(name, info));
         }
     }
 }

@@ -24,8 +24,8 @@ void Raytrace_renderer::load_resource()
     m_frame_pipeline.m_render_pass_raytrace_main->load_resource();
 
     // build geometry
-    // MeshVertexArray verts;
-    // MeshIndexArray  indices;
+    // Mesh_vertex_array verts;
+    // Mesh_index_array  indices;
 
     // MeshDataGenerator::create_unit_cube(verts, indices);
     // vector<RT_vertex> mesh_verts = MeshDataGenerator::to_rt(verts);
@@ -39,25 +39,25 @@ void Raytrace_renderer::load_resource()
     {
         auto&& mesh_name  = "grid_mesh_rt";
         auto&& mesh_data  = MeshDataGenerator::create_grid(25.0, 25.0, 10, 10);
-        auto&& mesh_verts = MeshDataGenerator::to_rt(get<MeshVertexArray>(mesh_data));
-        m_grid_mesh       = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), mesh_name, m_engine);
+        auto&& mesh_verts = MeshDataGenerator::to_rt(get<Mesh_vertex_array>(mesh_data));
+        m_grid_mesh       = build_mesh(mesh_verts, get<Mesh_index_array>(mesh_data), mesh_name, m_engine);
 
         m_mesh_list[mesh_name]               = make_unique<Mesh_data_raw>();
-        m_mesh_list[mesh_name]->vertices_raw = make_unique<MeshVertexArray>(get<MeshVertexArray>(mesh_data));
-        m_mesh_list[mesh_name]->indices_raw  = make_unique<MeshIndexArray>(get<MeshIndexArray>(mesh_data));
-        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(get<MeshVertexArray>(mesh_data));
+        m_mesh_list[mesh_name]->vertices_raw = make_unique<Mesh_vertex_array>(get<Mesh_vertex_array>(mesh_data));
+        m_mesh_list[mesh_name]->indices_raw  = make_unique<Mesh_index_array>(get<Mesh_index_array>(mesh_data));
+        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(get<Mesh_vertex_array>(mesh_data));
     }
 
     {
         auto&& mesh_name  = "cube_mesh_rt";
         auto&& mesh_data  = MeshDataGenerator::create_unit_cube();
-        auto&& mesh_verts = MeshDataGenerator::to_rt(get<MeshVertexArray>(mesh_data));
-        m_unit_cube_name  = build_mesh(mesh_verts, get<MeshIndexArray>(mesh_data), "cube_mesh_rt", m_engine);
+        auto&& mesh_verts = MeshDataGenerator::to_rt(get<Mesh_vertex_array>(mesh_data));
+        m_unit_cube_name  = build_mesh(mesh_verts, get<Mesh_index_array>(mesh_data), "cube_mesh_rt", m_engine);
 
         m_mesh_list[mesh_name]               = make_unique<Mesh_data_raw>();
-        m_mesh_list[mesh_name]->vertices_raw = make_unique<MeshVertexArray>(get<MeshVertexArray>(mesh_data));
-        m_mesh_list[mesh_name]->indices_raw  = make_unique<MeshIndexArray>(get<MeshIndexArray>(mesh_data));
-        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(get<MeshVertexArray>(mesh_data));
+        m_mesh_list[mesh_name]->vertices_raw = make_unique<Mesh_vertex_array>(get<Mesh_vertex_array>(mesh_data));
+        m_mesh_list[mesh_name]->indices_raw  = make_unique<Mesh_index_array>(get<Mesh_index_array>(mesh_data));
+        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(get<Mesh_vertex_array>(mesh_data));
     }
 
     m_scene_data = make_unique<D3D12::Scene_data>();
@@ -166,7 +166,7 @@ Scene_data_buffer Raytrace_renderer::build_scene_attrib_buffer()
     // build mesh data buffer
     vector<Fat_vertex> vertices;
     vector<uint32_t>   indices;
-    vector<Mesh_data>  mesh_data;
+    vector<Mesh_desc>  mesh_data;
     uint32_t           total_vertices = 0;
     uint32_t           total_indices  = 0;
 
@@ -180,7 +180,7 @@ Scene_data_buffer Raytrace_renderer::build_scene_attrib_buffer()
             throw;
         }
 
-        Mesh_data mesh;
+        Mesh_desc mesh;
         mesh.m_num_vertices    = found->second->vertices_fat.size();
         mesh.m_num_indices     = found->second->indices_raw->m_indices32.size();
         mesh.m_offset_vertices = total_vertices;

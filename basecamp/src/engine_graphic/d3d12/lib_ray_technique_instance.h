@@ -30,6 +30,7 @@ class Lib_ray_technique {
     // create pipeline object
     void create_ray_tracing_pipeline_state_object();
     void create_shader_table();
+    void prepare_cbuffer_bindings();
 
     void create_root_signature(CD3DX12_STATE_OBJECT_DESC& raytrace_pso, Lib_ray_reflection& reflection);
     void create_root_signature_subobject(
@@ -47,6 +48,9 @@ class Lib_ray_technique {
     vector<CD3DX12_ROOT_PARAMETER>               m_root_parameter_slots;
     vector<unique_ptr<CD3DX12_DESCRIPTOR_RANGE>> m_descriptor_ranges;
     vector<string>                               m_descriptor_table_names;
+
+    // unique cbuffer infos;
+    vector<const Cbuffer_info*> m_cbuffer_infos;
 
     // sub object (Local root signature)
     Lib_ray_sub_technique m_raygen_sub_technique;
@@ -79,7 +83,7 @@ class Lib_ray_technique_instance {
     void set_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
 
   private:
-    void init_dynamic_cbuffer(const string& name);
+    void init_cbuffer(const string& name);
 
     const D3D12_SHADER_VARIABLE_DESC* get_cbuffer_var_info(const string& cbuffer_name, const string& var_name);
     void                              set_root_signature_parameters(ID3D12GraphicsCommandList& command_list, Lib_ray_technique& technique);

@@ -228,7 +228,7 @@ CD3DX12_GPU_DESCRIPTOR_HANDLE Resource_manager::create_srv(Buffer& buffer)
         view_desc.ViewDimension                   = D3D12_SRV_DIMENSION_BUFFER;
         view_desc.Buffer.FirstElement             = 0;
         view_desc.Buffer.StructureByteStride      = buffer.m_struct_stride;
-        view_desc.Buffer.NumElements              = buffer.m_d3d_desc.Width / buffer.m_struct_stride;
+        view_desc.Buffer.NumElements              = (uint32_t)buffer.m_d3d_desc.Width / buffer.m_struct_stride;
 
         m_device.m_device->CreateShaderResourceView(buffer.m_buffer.Get(), &view_desc, handle);
     }

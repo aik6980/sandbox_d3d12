@@ -51,34 +51,42 @@ Compute_pipeline_state_desc Technique::get_compute_pipeline_state_desc()
     return pso_desc;
 }
 
-const Cbuffer_info* Technique::get_cbuffer_info(const string& shader_name, const string& cbuffer_name)
+void Technique::prepare_cbuffer_bindings()
 {
-    auto&& shader_vs   = m_shader_mgr.get_shader(shader_name);
-    auto&& shader_info = shader_vs->m_reflection;
-
-    auto&& cbuffer_desc = shader_info->get_infos().get_cbuffer_desc(cbuffer_name);
-    return cbuffer_desc;
+    build_unique_cbuffer_info(m_vs);
+    build_unique_cbuffer_info(m_ps);
+    build_unique_cbuffer_info(m_cs);
 }
 
-const D3D12_SHADER_VARIABLE_DESC* Technique::get_cbuffer_var_info(const string& shader_name, const string& cbuffer_name, const string& var_name)
+void Technique::build_unique_cbuffer_info(const string& shader_name)
 {
-    auto&& cbuffer_desc = get_cbuffer_info(shader_name, cbuffer_name);
-    if (cbuffer_desc) {
-        auto&& found_var = cbuffer_desc->m_variable_infos.find(var_name);
-        if (found_var != cbuffer_desc->m_variable_infos.end()) {
-            return &found_var->second;
-        }
+    auto&& shader = m_shader_mgr.get_shader(shader_name);
+    if (!shader) {
+        return;
     }
 
-    return nullptr;
+    auto&& shader_info = shader->m_reflection;
+
+    auto&& cbuffer_bindings = shader_info->get_infos().cbuffer_binding_desc();
+    for (auto&& cbuffer_binding : cbuffer_bindings) {
+        string name         = cbuffer_binding.Name;
+        auto&& cbuffer_desc = shader_info->get_infos().get_cbuffer_desc(name);
+        if (cbuffer_desc) {
+            // only add if it is not in the list
+            auto&& found = std::find_if(
+                m_cbuffer_infos.begin(), m_cbuffer_infos.end(), [&name](const Cbuffer_info* a) { return strcmp(a->m_desc.Name, name.c_str()) == 0; });
+            if (found == m_cbuffer_infos.end()) {
+                m_cbuffer_infos.emplace_back(cbuffer_desc);
+            }
+        }
+    }
 }
 
 void Technique_instance::init(const string& technique_name)
 {
     m_technique_handle = m_shader_mgr.get_render_technique(technique_name);
     if (auto&& technique = m_technique_handle.lock()) {
-        init_dynamic_cbuffer(technique->m_vs);
-        init_dynamic_cbuffer(technique->m_ps);
+        init_cbuffer();
     }
 }
 
@@ -235,6 +243,19 @@ void Technique_instance::set_compute_root_signature_parameters(ID3D12GraphicsCom
     }
 }
 
+void Technique_instance::init_cbuffer()
+{
+    auto&& technique = m_technique_handle.lock();
+    if (technique) {
+        for (auto&& info : technique->m_cbuffer_infos) {
+            auto&& name         = info->m_desc.Name;
+            auto&& cbuffer_data = m_device.create_cbuffer(info->m_desc.Size, name);
+            m_cbuffer.insert(std::make_pair(name, cbuffer_data));
+            m_cbuffer_infos.insert(std::make_pair(name, info));
+        }
+    }
+}
+
 const D3D12_SHADER_VARIABLE_DESC* Technique_instance::get_cbuffer_var_info(const string& cbuffer_name, const string& var_name)
 {
     auto&& found_cbuffer_info = m_cbuffer_infos.find(cbuffer_name);
@@ -251,28 +272,28 @@ const D3D12_SHADER_VARIABLE_DESC* Technique_instance::get_cbuffer_var_info(const
     return nullptr;
 }
 
-void Technique_instance::init_dynamic_cbuffer(const string& shader_name)
-{
-    auto&& shader = m_shader_mgr.get_shader(shader_name);
-    if (!shader) {
-        return;
-    }
-
-    auto&& shader_info = shader->m_reflection;
-
-    auto&& cbuffer_bindings = shader_info->get_infos().cbuffer_binding_desc();
-    for (auto&& cbuffer_binding : cbuffer_bindings) {
-        string name         = cbuffer_binding.Name;
-        auto&& cbuffer_desc = shader_info->get_infos().get_cbuffer_desc(name);
-        if (cbuffer_desc) {
-            // only add if it is not in the list
-            if (m_cbuffer.find(name) == m_cbuffer.end()) {
-                auto&& cbuffer_data = m_device.create_cbuffer(cbuffer_desc->m_desc.Size, name);
-                m_cbuffer.insert(std::make_pair(name, cbuffer_data));
-                m_cbuffer_infos.insert(std::make_pair(name, cbuffer_desc));
-            }
-        }
-    }
-}
+// void Technique_instance::init_dynamic_cbuffer(const string& shader_name)
+//{
+//     auto&& shader = m_shader_mgr.get_shader(shader_name);
+//     if (!shader) {
+//         return;
+//     }
+//
+//     auto&& shader_info = shader->m_reflection;
+//
+//     auto&& cbuffer_bindings = shader_info->get_infos().cbuffer_binding_desc();
+//     for (auto&& cbuffer_binding : cbuffer_bindings) {
+//         string name         = cbuffer_binding.Name;
+//         auto&& cbuffer_desc = shader_info->get_infos().get_cbuffer_desc(name);
+//         if (cbuffer_desc) {
+//             // only add if it is not in the list
+//             if (m_cbuffer.find(name) == m_cbuffer.end()) {
+//                 auto&& cbuffer_data = m_device.create_cbuffer(cbuffer_desc->m_desc.Size, name);
+//                 m_cbuffer.insert(std::make_pair(name, cbuffer_data));
+//                 m_cbuffer_infos.insert(std::make_pair(name, cbuffer_desc));
+//             }
+//         }
+//     }
+// }
 
 } // namespace D3D12

@@ -18,10 +18,11 @@ class Mesh_buffer {
     MESH_LOCATION m_mesh_location;
 
     // Data about the buffers.
-    uint32_t    vtx_bytes_stride = 0;
-    uint32_t    vb_bytes_size    = 0;
-    DXGI_FORMAT idx_format       = DXGI_FORMAT_R32_UINT;
-    uint32_t    ib_bytes_size    = 0;
+    uint32_t               vtx_bytes_stride = 0;
+    uint32_t               vb_bytes_size    = 0;
+    DXGI_FORMAT            idx_format       = DXGI_FORMAT_R32_UINT;
+    uint32_t               ib_bytes_size    = 0;
+    D3D_PRIMITIVE_TOPOLOGY prim_topology    = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
     D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view() const
     {

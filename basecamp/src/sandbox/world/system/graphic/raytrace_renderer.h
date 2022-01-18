@@ -8,8 +8,8 @@ class Engine;
 class Frame_pipeline;
 
 struct Mesh_data_raw {
-    unique_ptr<MeshVertexArray> vertices_raw;
-    unique_ptr<MeshIndexArray>  indices_raw;
+    unique_ptr<Mesh_vertex_array> vertices_raw;
+    unique_ptr<Mesh_index_array>  indices_raw;
 
     vector<Fat_vertex> vertices_fat;
 };

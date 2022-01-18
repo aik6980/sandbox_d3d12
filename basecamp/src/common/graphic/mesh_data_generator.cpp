@@ -1,7 +1,7 @@
 #include "mesh_data_generator.h"
 #include "graphic_cpp.h"
 
-void MeshDataGenerator::create_unit_quad(MeshVertexArray& vertex_array, MeshIndexArray& index_array)
+void MeshDataGenerator::create_unit_quad(Mesh_vertex_array& vertex_array, Mesh_index_array& index_array)
 {
     vertex_array.reset_vertices(4);
     index_array.reset_indices(6);
@@ -20,10 +20,10 @@ void MeshDataGenerator::create_unit_quad(MeshVertexArray& vertex_array, MeshInde
     index_array.m_indices32[5] = 3;
 }
 
-tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_unit_cube()
+tuple<Mesh_vertex_array, Mesh_index_array> MeshDataGenerator::create_unit_cube()
 {
-    MeshVertexArray vertex_array;
-    MeshIndexArray  index_array;
+    Mesh_vertex_array vertex_array;
+    Mesh_index_array  index_array;
     vertex_array.reset_vertices(4 * 6);
     index_array.reset_indices(6 * 6);
 
@@ -40,8 +40,8 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_unit_cube()
     vertex_array.m_position[7] = XMFLOAT3(0.5f, 0.5f, -0.5f);
 
     for (int i = offset; i < offset + 4; ++i) {
-        vertex_array.m_colour[i]     = XMFLOAT3(1.0f, 0.1f, 0.1f);
-        vertex_array.m_colour[i + 4] = XMFLOAT3(0.5f, 0.1f, 0.1f);
+        vertex_array.m_colour[i]     = Color(1.0f, 0.1f, 0.1f, 1.0f);
+        vertex_array.m_colour[i + 4] = Color(0.5f, 0.1f, 0.1f, 1.0f);
     }
 
     // +/- y
@@ -57,8 +57,8 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_unit_cube()
     vertex_array.m_position[offset + 7] = XMFLOAT3(0.5f, -0.5f, -0.5f);
 
     for (int i = offset; i < offset + 4; ++i) {
-        vertex_array.m_colour[i]     = XMFLOAT3(0.1f, 1.0f, 0.1f);
-        vertex_array.m_colour[i + 4] = XMFLOAT3(0.1f, 0.5f, 0.1f);
+        vertex_array.m_colour[i]     = Color(0.1f, 1.0f, 0.1f, 1.0f);
+        vertex_array.m_colour[i + 4] = Color(0.1f, 0.5f, 0.1f, 1.0f);
     }
 
     // +/-z
@@ -74,8 +74,8 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_unit_cube()
     vertex_array.m_position[offset + 7] = XMFLOAT3(0.5f, -0.5f, 0.5f);
 
     for (int i = offset; i < offset + 4; ++i) {
-        vertex_array.m_colour[i]     = XMFLOAT3(0.1f, 0.1f, 1.0f);
-        vertex_array.m_colour[i + 4] = XMFLOAT3(0.1f, 0.1f, 0.5f);
+        vertex_array.m_colour[i]     = Color(0.1f, 0.1f, 1.0f, 1.0f);
+        vertex_array.m_colour[i + 4] = Color(0.1f, 0.1f, 0.5f, 1.0f);
     }
 
     // indices
@@ -130,7 +130,7 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_unit_cube()
     return tuple(vertex_array, index_array);
 }
 
-tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_grid(float width, float depth, uint32_t m, uint32_t n)
+tuple<Mesh_vertex_array, Mesh_index_array> MeshDataGenerator::create_grid(float width, float depth, uint32_t m, uint32_t n)
 {
     uint32_t vertex_count = m * n;
     uint32_t face_count   = (m - 1) * (n - 1) * 2;
@@ -148,7 +148,7 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_grid(float widt
     float du = 1.0f / (n - 1);
     float dv = 1.0f / (m - 1);
 
-    MeshVertexArray vertices;
+    Mesh_vertex_array vertices;
     vertices.reset_vertices(vertex_count);
 
     for (uint32_t i = 0; i < m; ++i) {
@@ -159,7 +159,7 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_grid(float widt
             uint32_t idx = i * n + j;
 
             vertices.m_position[idx] = XMFLOAT3(x, 0.0f, z);
-            vertices.m_colour[idx]   = XMFLOAT3(0.6f, 0.6f, 0.6f);
+            vertices.m_colour[idx]   = Color(0.6f, 0.6f, 0.6f, 1.0f);
             // vertices[i * n + j].Normal   = XMFLOAT3(0.0f, 1.0f, 0.0f);
             // vertices[i * n + j].TangentU = XMFLOAT3(1.0f, 0.0f, 0.0f);
 
@@ -173,7 +173,7 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_grid(float widt
     // Create the indices.
     //
 
-    MeshIndexArray indices;
+    Mesh_index_array indices;
     indices.reset_indices(face_count * 3); // 3 indices per face
 
     // Iterate over each quad and compute indices.
@@ -195,20 +195,20 @@ tuple<MeshVertexArray, MeshIndexArray> MeshDataGenerator::create_grid(float widt
     return tuple(vertices, indices);
 }
 
-vector<Fat_vertex> MeshDataGenerator::to_fat(MeshVertexArray& vertex_array)
+vector<Fat_vertex> MeshDataGenerator::to_fat(const Mesh_vertex_array& vertex_array)
 {
     vector<Fat_vertex> output;
     output.resize(vertex_array.m_position.size());
     for (uint32_t i = 0; i < vertex_array.m_position.size(); ++i) {
         XMStoreFloat3(&output[i].m_position, XMLoadFloat3(&vertex_array.m_position[i]));
-        XMStoreFloat4(&output[i].m_colour, XMLoadFloat3(&vertex_array.m_colour[i]));
+        XMStoreFloat4(&output[i].m_colour, vertex_array.m_colour[i]);
         XMStoreFloat3(&output[i].m_normal, XMLoadFloat3(&vertex_array.m_normal[i]));
     }
 
     return output;
 }
 
-vector<RT_vertex> MeshDataGenerator::to_rt(MeshVertexArray& vertex_array)
+vector<RT_vertex> MeshDataGenerator::to_rt(const Mesh_vertex_array& vertex_array)
 {
     vector<RT_vertex> output;
     output.resize(vertex_array.m_position.size());
@@ -219,7 +219,7 @@ vector<RT_vertex> MeshDataGenerator::to_rt(MeshVertexArray& vertex_array)
     return output;
 }
 
-vector<P1_vertex> MeshDataGenerator::to_p1(MeshVertexArray& vertex_array)
+vector<P1_vertex> MeshDataGenerator::to_p1(const Mesh_vertex_array& vertex_array)
 {
     vector<P1_vertex> output;
     output.resize(vertex_array.m_position.size());
@@ -230,13 +230,13 @@ vector<P1_vertex> MeshDataGenerator::to_p1(MeshVertexArray& vertex_array)
     return output;
 }
 
-vector<P1C1_vertex> MeshDataGenerator::to_p1c1(MeshVertexArray& vertex_array)
+vector<P1C1_vertex> MeshDataGenerator::to_p1c1(const Mesh_vertex_array& vertex_array)
 {
     vector<P1C1_vertex> output;
     output.resize(vertex_array.m_position.size());
     for (uint32_t i = 0; i < vertex_array.m_position.size(); ++i) {
         XMStoreFloat4(&output[i].m_position, XMLoadFloat3(&vertex_array.m_position[i]));
-        XMStoreFloat4(&output[i].m_colour, XMLoadFloat3(&vertex_array.m_colour[i]));
+        XMStoreFloat4(&output[i].m_colour, vertex_array.m_colour[i]);
     }
 
     return output;

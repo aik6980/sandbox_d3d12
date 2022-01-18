@@ -33,5 +33,7 @@ using namespace DirectX::PackedVector;
 #include "helper/helper.h"
 #include "helper/math.h"
 #include "helper/string_pool.h"
+#include "math/directxtk/SimpleMath.h"
+using namespace DirectX::SimpleMath;
 
 #include "graphic/graphic.h"

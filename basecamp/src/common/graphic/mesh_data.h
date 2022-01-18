@@ -1,15 +1,17 @@
 #pragma once
 
-struct MeshVertexArray {
+using Mesh_data = tuple<Mesh_vertex_array, Mesh_index_array>;
+
+struct Mesh_vertex_array {
     // vertices
-    vector<XMFLOAT3> m_position;
-    vector<XMFLOAT3> m_normal;
-    vector<XMFLOAT3> m_colour;
+    vector<Vector3> m_position;
+    vector<Vector3> m_normal;
+    vector<Color>   m_colour;
 
     void reset_vertices(UINT n);
 };
 
-struct MeshIndexArray {
+struct Mesh_index_array {
     // indices
     vector<uint32_t> m_indices32;
 

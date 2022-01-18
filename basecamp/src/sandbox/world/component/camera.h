@@ -13,7 +13,7 @@ struct Camera {
     float           m_z_far;
     float           m_orthographic_height;
 
-    XMMATRIX m_view;
+    Matrix   m_view;
     XMMATRIX m_projection;
     XMVECTOR m_position;
 
@@ -29,6 +29,12 @@ struct Camera {
         XMFLOAT4X4 result;
         XMStoreFloat4x4(&result, m_view);
         return result;
+    }
+
+    Matrix world()
+    {
+        auto&& world = m_view.Invert();
+        return world;
     }
 
     XMFLOAT4X4 projection()

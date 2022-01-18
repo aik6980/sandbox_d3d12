@@ -21,6 +21,14 @@ void Frame_pipeline::load_resource()
     m_render_pass_main->load_resource();
     m_render_pass_shadow_map = make_unique<Render_pass_shadow_map>();
     m_render_pass_shadow_map->load_resource();
+
+    // setup camera
+    auto&& render_device = m_engine.render_device();
+    auto&& viewport      = render_device.get_window_viewport();
+    auto&& aspect_ratio  = viewport.Width / viewport.Height;
+
+    XMMATRIX projection   = Matrix::CreatePerspectiveFieldOfViewLH(0.4f * XM_PI, aspect_ratio, 1.0f, 1000.0f);
+    m_camera.m_projection = projection;
 }
 
 void Frame_pipeline::update()

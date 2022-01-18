@@ -28,6 +28,7 @@ class Frame_pipeline : public Engine_client {
     unique_ptr<Render_pass_raytrace_main> m_render_pass_raytrace_main;
 
     Camera m_camera;
+    Matrix m_test_world;
 
   private:
     Engine& m_engine;

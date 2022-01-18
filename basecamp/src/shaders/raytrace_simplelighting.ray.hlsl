@@ -28,7 +28,7 @@ cbuffer Camera_cb : register(b1)
 };
 
 StructuredBuffer<Instance_data> Instance_data_srv : register(t1);
-StructuredBuffer<Mesh_data> Mesh_data_srv : register(t2);
+StructuredBuffer<Mesh_desc> Mesh_data_srv : register(t2);
 StructuredBuffer<Fat_vertex> Vertices_srv : register(t3);
 Buffer<uint> Indices_srv : register(t4);
 
@@ -70,6 +70,9 @@ void raygen_entry()
 	uint3 launch_index = DispatchRaysIndex();
     uint2 dimensions = DispatchRaysDimensions().xy;
     float2 lerp_val = launch_index.xy / (float2) dimensions;
+
+    //Output_uav[launch_index.xy] = float4(1.0, 0.0, 1.0, 1.0);
+    //return;
 
 	// viewport
     float left	= Main_vp.x;
@@ -125,7 +128,7 @@ void closethit_entry(inout Payload_st payload, in Tri_attributes attr)
 	//payload.colour = float4(barycentrics, 1.0);
     uint instance_index = InstanceIndex();
     uint mesh_id = Instance_data_srv[instance_index].m_mesh_id;
-    Mesh_data mesh_data = Mesh_data_srv[mesh_id];
+    Mesh_desc mesh_data = Mesh_data_srv[mesh_id];
 
     // Get the base index of the triangle's first 16 bit index.
     uint index_size_in_bytes = 4;
@@ -138,6 +141,9 @@ void closethit_entry(inout Payload_st payload, in Tri_attributes attr)
 
 
     payload.colour = vertices[0].m_colour;
+
+    //float3 barycentrics = float3(1.0 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
+    //payload.colour = float4(barycentrics, 1.0);
 
 }
 

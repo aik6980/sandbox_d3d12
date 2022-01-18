@@ -1,5 +1,4 @@
 #pragma once
 
 entt::entity Make_player(entt::registry& reg);
-
-void Make_camera();
+entt::entity Make_camera(entt::registry& reg);

@@ -164,6 +164,7 @@ void Shader_manager::register_technique(const string& name, const TechniqueInit&
     t->m_cs  = init_data.m_cs;
 
     build_root_signature(*t);
+    t->prepare_cbuffer_bindings();
 
     m_render_technique_list[name] = t;
 }
@@ -175,6 +176,7 @@ void Shader_manager::register_lib_ray_technique(const string& name, const string
 
     t->create_ray_tracing_pipeline_state_object();
     t->create_shader_table();
+    t->prepare_cbuffer_bindings();
 
     m_lib_ray_technique_list[name] = t;
 }
@@ -205,23 +207,31 @@ void append_root_parameter_slot(vector<CD3DX12_ROOT_PARAMETER>& root_parameter_s
     };
 
     for (int i = 0; i < num_cbuffer; ++i) {
-        auto&& name = sh.cbuffer_binding_desc()[i].Name;
-        append_root_parameter_func(i, name, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, visibility);
+        auto&& desc = sh.cbuffer_binding_desc()[i];
+        auto&& name = desc.Name;
+        auto&& id   = desc.BindPoint;
+        append_root_parameter_func(id, name, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, visibility);
     }
 
     for (int i = 0; i < num_srv; ++i) {
-        auto&& name = sh.srv_binding_desc()[i].Name;
-        append_root_parameter_func(i, name, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, visibility);
+        auto&& desc = sh.srv_binding_desc()[i];
+        auto&& name = desc.Name;
+        auto&& id   = desc.BindPoint;
+        append_root_parameter_func(id, name, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, visibility);
     }
 
     for (int i = 0; i < num_uav; ++i) {
-        auto&& name = sh.uav_binding_desc()[i].Name;
-        append_root_parameter_func(i, name, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, visibility);
+        auto&& desc = sh.uav_binding_desc()[i];
+        auto&& name = desc.Name;
+        auto&& id   = desc.BindPoint;
+        append_root_parameter_func(id, name, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, visibility);
     }
 
     for (int i = 0; i < num_sampler; ++i) {
-        auto&& name = sh.sampler_binding_desc()[i].Name;
-        append_root_parameter_func(i, name, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, visibility);
+        auto&& desc = sh.sampler_binding_desc()[i];
+        auto&& name = desc.Name;
+        auto&& id   = desc.BindPoint;
+        append_root_parameter_func(id, name, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, visibility);
     }
 }
 

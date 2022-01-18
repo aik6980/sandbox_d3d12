@@ -10,7 +10,7 @@ extern string g_shadowmap_depth_buffer_id;
 extern string g_point_sampler_id;
 
 template <class T>
-string build_mesh(const vector<T>& mesh_verts, const MeshIndexArray& mesh_indices, const string& name, Engine& engine)
+string build_mesh(const vector<T>& mesh_verts, const Mesh_index_array& mesh_indices, const string& name, Engine& engine)
 {
     // upload data to the GPU
     auto&& vtx_data = mesh_verts.data();

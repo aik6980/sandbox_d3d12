@@ -15,6 +15,8 @@ class Technique {
   public:
     Technique(Shader_manager& shader_mgr) : m_shader_mgr(shader_mgr) {}
 
+    void prepare_cbuffer_bindings();
+
     const INPUT_LAYOUT_DESC* get_input_layout_desc();
 
     Graphics_pipeline_state_desc get_graphic_pipeline_state_desc();
@@ -30,9 +32,11 @@ class Technique {
     vector<unique_ptr<CD3DX12_DESCRIPTOR_RANGE>> m_descriptor_ranges;
     vector<string>                               m_descriptor_table_names;
 
+    // unique cbuffer infos;
+    vector<const Cbuffer_info*> m_cbuffer_infos;
+
   private:
-    const Cbuffer_info*               get_cbuffer_info(const string& shader_name, const string& cbuffer_name);
-    const D3D12_SHADER_VARIABLE_DESC* get_cbuffer_var_info(const string& shader_name, const string& cbuffer_name, const string& var_name);
+    void build_unique_cbuffer_info(const string& shader_name);
 
     Shader_manager& m_shader_mgr;
 };
@@ -73,7 +77,8 @@ class Technique_instance {
     void set_raster_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
     void set_compute_root_signature_parameters(ID3D12GraphicsCommandList& command_list);
 
-    void init_dynamic_cbuffer(const string& shader_name);
+    // void init_dynamic_cbuffer(const string& shader_name);
+    void init_cbuffer();
 
     Device&         m_device;
     Shader_manager& m_shader_mgr;

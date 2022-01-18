@@ -34,6 +34,7 @@ class Mesh_renderer {
     Engine&         m_engine;
     Frame_pipeline& m_frame_pipeline;
 
+    string m_duck_white_mesh;
     string m_unit_quad_name;
     string m_unit_cube_name;
     string m_grid_mesh;

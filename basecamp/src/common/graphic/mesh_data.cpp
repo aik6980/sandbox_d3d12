@@ -1,13 +1,13 @@
 #include "mesh_data.h"
 
-void MeshVertexArray::reset_vertices(UINT n)
+void Mesh_vertex_array::reset_vertices(UINT n)
 {
     m_position.resize(n);
     m_normal.resize(n);
     m_colour.resize(n);
 }
 
-void MeshIndexArray::reset_indices(UINT n)
+void Mesh_index_array::reset_indices(UINT n)
 {
     m_indices32.resize(n);
 }
