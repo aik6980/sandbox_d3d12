@@ -7,7 +7,8 @@ class Arcball {
 
     Vector3 npos_to_vector(const Vector2& npos);
 
-    Matrix view();
+    Vector3 pos();
+    Matrix  view();
 
     enum State
     {
@@ -17,10 +18,9 @@ class Arcball {
 
     State m_state = State_idle;
 
-    Vector3    m_begin_mouse_pos;
-    Quaternion m_begin_orient;
+    Vector2 m_begin_mouse_pos;
 
-    Vector3    m_pos, m_target;
+    Vector3    m_target;
     Quaternion m_orient;
     float      m_radius_screen_space = 0.9f; // arcball's radius in screen space;
     float      m_zoom;

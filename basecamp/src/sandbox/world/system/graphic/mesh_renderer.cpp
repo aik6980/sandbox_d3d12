@@ -409,7 +409,8 @@ void Post_renderer::draw()
 
         uint32_t dispatch_x = (uint32_t)ceilf(rt_buffer->m_d3d_desc.Width / (float)threadgroup_size);
         uint32_t dispatch_y = (uint32_t)ceilf(rt_buffer->m_d3d_desc.Height / (float)threadgroup_size);
-        command_list()->Dispatch(dispatch_x, dispatch_y, 1);
+        //[skip the postprocess]
+        // command_list()->Dispatch(dispatch_x, dispatch_y, 1);
     }
 
     // copy to back buffer

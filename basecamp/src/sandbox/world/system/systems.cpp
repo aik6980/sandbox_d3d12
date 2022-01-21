@@ -35,9 +35,8 @@ void Camera_update(entt::registry& reg)
         auto&& arcball = view.get<Arcball>(e);
         arcball.update();
 
-        App::m_renderer->m_camera.m_position = arcball.m_pos;
-        // auto&& view                      = Matrix::CreateLookAtLH(arcball.m_pos, Vector3::Zero, Vector3::Up);
-        App::m_renderer->m_camera.m_view = arcball.view();
+        App::m_renderer->m_camera.m_position = arcball.pos();
+        App::m_renderer->m_camera.m_view     = arcball.view();
 
         auto&& world = Matrix::CreateFromQuaternion(arcball.m_orient);
         // world.Translation(arcball.m_pos * 0.5f);

@@ -13,7 +13,8 @@ class Input_manager {
 
     bool is_keydown(OIS::KeyCode key) { return m_keyboard->isKeyDown(key); }
 
-    bool mouse_down(OIS::MouseButtonID button) const { return m_curr_mouse_state.buttonDown(button); }
+    bool  mouse_down(OIS::MouseButtonID button) const { return m_curr_mouse_state.buttonDown(button); }
+    float mouse_scroll() const { return m_curr_mouse_state.Z.abs - m_prev_mouse_state.Z.abs; }
     // return normalized mouse position (NDC - Normalized device coords)
     Vector2 mouse_npos() const;
 
