@@ -2,7 +2,7 @@
 ; Note: shader requires additional functionality:
 ;       UAVs at every shader stage
 ;
-; shader hash: a7ffc25272181125eb9585a1c140400a
+; shader hash: 921aa186a9415115f00fd4145f820dd9
 ;
 ; Buffer Definitions:
 ;
@@ -237,7 +237,7 @@ attributes #2 = { nounwind readonly }
 !dx.shaderModel = !{!2}
 !dx.resources = !{!3}
 !dx.typeAnnotations = !{!12}
-!dx.entryPoints = !{!20, !22, !25, !27}
+!dx.entryPoints = !{!20, !23, !25, !27}
 
 !0 = !{!"clang version 3.7 (tags/RELEASE_370/final)"}
 !1 = !{i32 1, i32 5}
@@ -260,11 +260,11 @@ attributes #2 = { nounwind readonly }
 !18 = !{i32 0, !15, !15}
 !19 = !{!14, !17}
 !20 = !{null, !"", null, !3, !21}
-!21 = !{i32 0, i64 65537}
-!22 = !{void (%struct.Payload_st*, %struct.BuiltInTriangleIntersectionAttributes*)* @"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z", !"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z", null, null, !23}
-!23 = !{i32 8, i32 10, i32 6, i32 16, i32 7, i32 8, i32 5, !24}
-!24 = !{i32 0}
+!21 = !{i32 0, i64 65537, i32 5, !22}
+!22 = !{i32 0}
+!23 = !{void (%struct.Payload_st*, %struct.BuiltInTriangleIntersectionAttributes*)* @"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z", !"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z", null, null, !24}
+!24 = !{i32 8, i32 10, i32 6, i32 16, i32 7, i32 8, i32 5, !22}
 !25 = !{void (%struct.Payload_st*)* @"\01?miss_entry@@YAXUPayload_st@@@Z", !"\01?miss_entry@@YAXUPayload_st@@@Z", null, null, !26}
-!26 = !{i32 8, i32 11, i32 6, i32 16, i32 5, !24}
+!26 = !{i32 8, i32 11, i32 6, i32 16, i32 5, !22}
 !27 = !{void ()* @"\01?raygen_entry@@YAXXZ", !"\01?raygen_entry@@YAXXZ", null, null, !28}
-!28 = !{i32 8, i32 7, i32 5, !24}
+!28 = !{i32 8, i32 7, i32 5, !22}

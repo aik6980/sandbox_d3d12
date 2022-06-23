@@ -1,4 +1,5 @@
 #include "model_loader.h"
+#include "math/aabb.h"
 #include "mesh_data.h"
 
 void Model_loader::load(const string& file)
@@ -33,6 +34,8 @@ Mesh_data Model_loader::process_mesh(aiMesh* mesh, const aiScene* scene)
 {
     Mesh_vertex_array vertices;
     vertices.reset_vertices(mesh->mNumVertices);
+
+    Aabb3 aabb;
     // Walk through each of the mesh's vertices
     for (UINT i = 0; i < mesh->mNumVertices; i++) {
 
@@ -41,6 +44,8 @@ Mesh_data Model_loader::process_mesh(aiMesh* mesh, const aiScene* scene)
         auto&& normal = vertices.m_normal[i];
 
         pos = XMFLOAT3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+        // expand aabb
+        aabb.expand(pos);
 
         if (mesh->mColors[0]) {
             auto&& ai_colour = mesh->mColors[0][i]; // rgba float
@@ -83,5 +88,10 @@ Mesh_data Model_loader::process_mesh(aiMesh* mesh, const aiScene* scene)
     //	textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
     // }
 
-    return tie(vertices, indices);
+    Mesh_data mesh_data;
+    mesh_data.m_vertices = vertices;
+    mesh_data.m_indices  = indices;
+    mesh_data.m_aabb     = aabb;
+
+    return mesh_data;
 }

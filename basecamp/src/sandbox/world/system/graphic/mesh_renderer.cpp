@@ -73,16 +73,16 @@ void Mesh_renderer::load_resource()
     model_loader.load("..\\assets\\DuckWhite.fbx");
     {
         auto&& mesh_data  = model_loader.meshes();
-        auto&& mesh_verts = MeshDataGenerator::to_p1c1(get<Mesh_vertex_array>(mesh_data));
-        m_duck_white_mesh = build_mesh(mesh_verts, get<Mesh_index_array>(mesh_data), "duck_white_mesh", m_engine);
+        auto&& mesh_verts = MeshDataGenerator::to_p1c1(mesh_data.m_vertices);
+        m_duck_white_mesh = build_mesh(mesh_verts, mesh_data.m_indices, "duck_white_mesh", m_engine);
     }
 
     build_quad_mesh();
     build_cube_mesh();
 
     auto&& mesh_data  = MeshDataGenerator::create_grid(25.0, 25.0, 10, 10);
-    auto&& mesh_verts = MeshDataGenerator::to_p1c1(get<Mesh_vertex_array>(mesh_data));
-    m_grid_mesh       = build_mesh(mesh_verts, get<Mesh_index_array>(mesh_data), "grid_mesh", m_engine);
+    auto&& mesh_verts = MeshDataGenerator::to_p1c1(mesh_data.m_vertices);
+    m_grid_mesh       = build_mesh(mesh_verts, mesh_data.m_indices, "grid_mesh", m_engine);
 
     build_texture();
 
@@ -270,24 +270,18 @@ void Mesh_renderer::draw()
 
 void Mesh_renderer::build_quad_mesh()
 {
-    Mesh_vertex_array verts;
-    Mesh_index_array  indices;
+    auto&&            mesh_data  = MeshDataGenerator::create_unit_quad();
+    vector<P1_vertex> mesh_verts = MeshDataGenerator::to_p1(mesh_data.m_vertices);
 
-    MeshDataGenerator::create_unit_quad(verts, indices);
-    vector<P1_vertex> mesh_verts = MeshDataGenerator::to_p1(verts);
-
-    m_unit_quad_name = build_mesh(mesh_verts, indices, "unit_quad", m_engine);
+    m_unit_quad_name = build_mesh(mesh_verts, mesh_data.m_indices, "unit_quad", m_engine);
 }
 
 void Mesh_renderer::build_cube_mesh()
 {
-    Mesh_vertex_array verts;
-    Mesh_index_array  indices;
+    auto&&            mesh_data  = MeshDataGenerator::create_unit_cube();
+    vector<PC_vertex> mesh_verts = MeshDataGenerator::to_p1c1(mesh_data.m_vertices);
 
-    tie(verts, indices)            = MeshDataGenerator::create_unit_cube();
-    vector<P1C1_vertex> mesh_verts = MeshDataGenerator::to_p1c1(verts);
-
-    m_unit_cube_name = build_mesh(mesh_verts, indices, "unit_cube", m_engine);
+    m_unit_cube_name = build_mesh(mesh_verts, mesh_data.m_indices, "unit_cube", m_engine);
 }
 
 void Mesh_renderer::build_texture()
@@ -410,7 +404,7 @@ void Post_renderer::draw()
         uint32_t dispatch_x = (uint32_t)ceilf(rt_buffer->m_d3d_desc.Width / (float)threadgroup_size);
         uint32_t dispatch_y = (uint32_t)ceilf(rt_buffer->m_d3d_desc.Height / (float)threadgroup_size);
         //[skip the postprocess]
-        // command_list()->Dispatch(dispatch_x, dispatch_y, 1);
+        command_list()->Dispatch(dispatch_x, dispatch_y, 1);
     }
 
     // copy to back buffer

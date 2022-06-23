@@ -2,7 +2,7 @@
 ; Note: shader requires additional functionality:
 ;       UAVs at every shader stage
 ;
-; shader hash: 17b24499bf8cfd20954cd66c53601ead
+; shader hash: b4a110bc0d75b3b330c7906c6b691f9a
 ;
 ; Buffer Definitions:
 ;
@@ -47,7 +47,7 @@
 ; Resource bind info for Mesh_data_srv
 ; {
 ;
-;   struct struct.Mesh_data
+;   struct struct.Mesh_desc
 ;   {
 ;
 ;       uint m_num_vertices;                          ; Offset:    0
@@ -94,8 +94,8 @@ target triple = "dxil-ms-dx"
 %"class.RWTexture2D<vector<float, 4> >" = type { <4 x float> }
 %"class.StructuredBuffer<Instance_data>" = type { %struct.Instance_data }
 %struct.Instance_data = type { i32 }
-%"class.StructuredBuffer<Mesh_data>" = type { %struct.Mesh_data }
-%struct.Mesh_data = type { i32, i32, i32, i32 }
+%"class.StructuredBuffer<Mesh_desc>" = type { %struct.Mesh_desc }
+%struct.Mesh_desc = type { i32, i32, i32, i32 }
 %"class.StructuredBuffer<Fat_vertex>" = type { %struct.Fat_vertex }
 %struct.Fat_vertex = type { <3 x float>, <4 x float>, <3 x float> }
 %"class.Buffer<unsigned int>" = type { i32 }
@@ -112,7 +112,7 @@ target triple = "dxil-ms-dx"
 @"\01?Scene_srv@@3URaytracingAccelerationStructure@@A" = external constant %struct.RaytracingAccelerationStructure, align 4
 @"\01?Output_uav@@3V?$RWTexture2D@V?$vector@M$03@@@@A" = external constant %"class.RWTexture2D<vector<float, 4> >", align 4
 @"\01?Instance_data_srv@@3V?$StructuredBuffer@UInstance_data@@@@A" = external constant %"class.StructuredBuffer<Instance_data>", align 4
-@"\01?Mesh_data_srv@@3V?$StructuredBuffer@UMesh_data@@@@A" = external constant %"class.StructuredBuffer<Mesh_data>", align 4
+@"\01?Mesh_data_srv@@3V?$StructuredBuffer@UMesh_desc@@@@A" = external constant %"class.StructuredBuffer<Mesh_desc>", align 4
 @"\01?Vertices_srv@@3V?$StructuredBuffer@UFat_vertex@@@@A" = external constant %"class.StructuredBuffer<Fat_vertex>", align 4
 @"\01?Indices_srv@@3V?$Buffer@I@@A" = external constant %"class.Buffer<unsigned int>", align 4
 @Raygen_cb = external constant %Raygen_cb
@@ -325,7 +325,7 @@ define void @"\01?raygen_entry@@YAXXZ"() #0 {
 define void @"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z"(%struct.Payload_st* noalias %payload, %struct.BuiltInTriangleIntersectionAttributes* %attr) #0 {
   %1 = load %"class.Buffer<unsigned int>", %"class.Buffer<unsigned int>"* @"\01?Indices_srv@@3V?$Buffer@I@@A"
   %2 = load %"class.StructuredBuffer<Fat_vertex>", %"class.StructuredBuffer<Fat_vertex>"* @"\01?Vertices_srv@@3V?$StructuredBuffer@UFat_vertex@@@@A"
-  %3 = load %"class.StructuredBuffer<Mesh_data>", %"class.StructuredBuffer<Mesh_data>"* @"\01?Mesh_data_srv@@3V?$StructuredBuffer@UMesh_data@@@@A"
+  %3 = load %"class.StructuredBuffer<Mesh_desc>", %"class.StructuredBuffer<Mesh_desc>"* @"\01?Mesh_data_srv@@3V?$StructuredBuffer@UMesh_desc@@@@A"
   %4 = load %"class.StructuredBuffer<Instance_data>", %"class.StructuredBuffer<Instance_data>"* @"\01?Instance_data_srv@@3V?$StructuredBuffer@UInstance_data@@@@A"
   %5 = alloca [3 x float]
   %6 = alloca [3 x float]
@@ -337,7 +337,7 @@ define void @"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionA
   %12 = call %dx.types.ResRet.i32 @dx.op.rawBufferLoad.i32(i32 139, %dx.types.Handle %11, i32 %9, i32 0, i8 1, i32 4)  ; RawBufferLoad(srv,index,elementOffset,mask,alignment)
   %13 = extractvalue %dx.types.ResRet.i32 %12, 0
   %14 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
-  %15 = call %dx.types.Handle @"dx.op.createHandleForLib.class.StructuredBuffer<Mesh_data>"(i32 160, %"class.StructuredBuffer<Mesh_data>" %3)  ; CreateHandleForLib(Resource)
+  %15 = call %dx.types.Handle @"dx.op.createHandleForLib.class.StructuredBuffer<Mesh_desc>"(i32 160, %"class.StructuredBuffer<Mesh_desc>" %3)  ; CreateHandleForLib(Resource)
   %16 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
   %17 = call %dx.types.ResRet.i32 @dx.op.rawBufferLoad.i32(i32 139, %dx.types.Handle %15, i32 %13, i32 8, i8 1, i32 4)  ; RawBufferLoad(srv,index,elementOffset,mask,alignment)
   %18 = extractvalue %dx.types.ResRet.i32 %17, 0
@@ -490,7 +490,7 @@ declare %dx.types.Handle @"dx.op.createHandleForLib.class.RWTexture2D<vector<flo
 declare %dx.types.Handle @"dx.op.createHandleForLib.class.StructuredBuffer<Instance_data>"(i32, %"class.StructuredBuffer<Instance_data>") #2
 
 ; Function Attrs: nounwind readonly
-declare %dx.types.Handle @"dx.op.createHandleForLib.class.StructuredBuffer<Mesh_data>"(i32, %"class.StructuredBuffer<Mesh_data>") #2
+declare %dx.types.Handle @"dx.op.createHandleForLib.class.StructuredBuffer<Mesh_desc>"(i32, %"class.StructuredBuffer<Mesh_desc>") #2
 
 ; Function Attrs: nounwind readonly
 declare %dx.types.Handle @"dx.op.createHandleForLib.class.Buffer<unsigned int>"(i32, %"class.Buffer<unsigned int>") #2
@@ -511,7 +511,7 @@ attributes #2 = { nounwind readonly }
 !dx.shaderModel = !{!2}
 !dx.resources = !{!3}
 !dx.typeAnnotations = !{!21}
-!dx.entryPoints = !{!29, !31, !34, !36}
+!dx.entryPoints = !{!29, !32, !34, !36}
 
 !0 = !{!"clang version 3.7 (tags/RELEASE_370/final)"}
 !1 = !{i32 1, i32 5}
@@ -522,7 +522,7 @@ attributes #2 = { nounwind readonly }
 !6 = !{i32 0, i32 4}
 !7 = !{i32 1, %"class.StructuredBuffer<Instance_data>"* @"\01?Instance_data_srv@@3V?$StructuredBuffer@UInstance_data@@@@A", !"Instance_data_srv", i32 0, i32 1, i32 1, i32 12, i32 0, !8}
 !8 = !{i32 1, i32 4}
-!9 = !{i32 2, %"class.StructuredBuffer<Mesh_data>"* @"\01?Mesh_data_srv@@3V?$StructuredBuffer@UMesh_data@@@@A", !"Mesh_data_srv", i32 0, i32 2, i32 1, i32 12, i32 0, !10}
+!9 = !{i32 2, %"class.StructuredBuffer<Mesh_desc>"* @"\01?Mesh_data_srv@@3V?$StructuredBuffer@UMesh_desc@@@@A", !"Mesh_data_srv", i32 0, i32 2, i32 1, i32 12, i32 0, !10}
 !10 = !{i32 1, i32 16}
 !11 = !{i32 3, %"class.StructuredBuffer<Fat_vertex>"* @"\01?Vertices_srv@@3V?$StructuredBuffer@UFat_vertex@@@@A", !"Vertices_srv", i32 0, i32 3, i32 1, i32 12, i32 0, !12}
 !12 = !{i32 1, i32 40}
@@ -543,11 +543,11 @@ attributes #2 = { nounwind readonly }
 !27 = !{i32 0, !24, !24}
 !28 = !{!23, !26}
 !29 = !{null, !"", null, !3, !30}
-!30 = !{i32 0, i64 65553}
-!31 = !{void (%struct.Payload_st*, %struct.BuiltInTriangleIntersectionAttributes*)* @"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z", !"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z", null, null, !32}
-!32 = !{i32 8, i32 10, i32 6, i32 16, i32 7, i32 8, i32 5, !33}
-!33 = !{i32 0}
+!30 = !{i32 0, i64 65553, i32 5, !31}
+!31 = !{i32 0}
+!32 = !{void (%struct.Payload_st*, %struct.BuiltInTriangleIntersectionAttributes*)* @"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z", !"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionAttributes@@@Z", null, null, !33}
+!33 = !{i32 8, i32 10, i32 6, i32 16, i32 7, i32 8, i32 5, !31}
 !34 = !{void (%struct.Payload_st*)* @"\01?miss_entry@@YAXUPayload_st@@@Z", !"\01?miss_entry@@YAXUPayload_st@@@Z", null, null, !35}
-!35 = !{i32 8, i32 11, i32 6, i32 16, i32 5, !33}
+!35 = !{i32 8, i32 11, i32 6, i32 16, i32 5, !31}
 !36 = !{void ()* @"\01?raygen_entry@@YAXXZ", !"\01?raygen_entry@@YAXXZ", null, null, !37}
-!37 = !{i32 8, i32 7, i32 5, !33}
+!37 = !{i32 8, i32 7, i32 5, !31}

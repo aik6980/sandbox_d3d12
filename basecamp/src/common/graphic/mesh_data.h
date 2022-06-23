@@ -1,7 +1,5 @@
 #pragma once
 
-using Mesh_data = tuple<Mesh_vertex_array, Mesh_index_array>;
-
 struct Mesh_vertex_array {
     // vertices
     vector<Vector3> m_position;
@@ -16,6 +14,13 @@ struct Mesh_index_array {
     vector<uint32_t> m_indices32;
 
     void reset_indices(UINT n);
+};
+
+struct Mesh_data {
+    Mesh_vertex_array m_vertices;
+    Mesh_index_array  m_indices;
+
+    Aabb3 m_aabb;
 };
 
 struct TextureData {
@@ -34,9 +39,4 @@ struct RT_vertex {
 
 struct P1_vertex {
     XMFLOAT4 m_position;
-};
-
-struct P1C1_vertex {
-    XMFLOAT4 m_position;
-    XMFLOAT4 m_colour;
 };

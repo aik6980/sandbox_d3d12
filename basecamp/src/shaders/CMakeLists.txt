@@ -34,7 +34,7 @@ macro(Dxc_compile src_files profile)
 		set(OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}/${file_wle})
 		add_custom_command(OUTPUT ${OUTPUT_FILENAME}.obj
 			PRE_BUILD 
-			COMMAND ${DXC} -T ${profile} -Ni -Od -Fo ${OUTPUT_FILENAME}.obj -Fc ${OUTPUT_FILENAME}.asm -Zpr ${var}
+			COMMAND ${DXC} -T ${profile} -auto-binding-space 0 -Ni -Od -Fo ${OUTPUT_FILENAME}.obj -Fc ${OUTPUT_FILENAME}.asm -Zpr ${var}
 			#COMMAND echo Effect Compiler ${var}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			MAIN_DEPENDENCY ${var}
@@ -64,6 +64,7 @@ set(DXC "${CMAKE_SOURCE_DIR}/ext/dxc/dxc.exe")
 set(GLSLANG "C:/VulkanSDK/1.2.135.0/Bin/glslangValidator.exe")
 
 file(MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME})
+
 foreach(var ${VS_FILES})
 	get_filename_component(file_we ${var} NAME_WE)
 	add_custom_command(TARGET ${PROJECT_NAME}

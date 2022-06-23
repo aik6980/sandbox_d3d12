@@ -39,25 +39,25 @@ void Raytrace_renderer::load_resource()
     {
         auto&& mesh_name  = "grid_mesh_rt";
         auto&& mesh_data  = MeshDataGenerator::create_grid(25.0, 25.0, 10, 10);
-        auto&& mesh_verts = MeshDataGenerator::to_rt(get<Mesh_vertex_array>(mesh_data));
-        m_grid_mesh       = build_mesh(mesh_verts, get<Mesh_index_array>(mesh_data), mesh_name, m_engine);
+        auto&& mesh_verts = MeshDataGenerator::to_rt(mesh_data.m_vertices);
+        m_grid_mesh       = build_mesh(mesh_verts, mesh_data.m_indices, mesh_name, m_engine);
 
         m_mesh_list[mesh_name]               = make_unique<Mesh_data_raw>();
-        m_mesh_list[mesh_name]->vertices_raw = make_unique<Mesh_vertex_array>(get<Mesh_vertex_array>(mesh_data));
-        m_mesh_list[mesh_name]->indices_raw  = make_unique<Mesh_index_array>(get<Mesh_index_array>(mesh_data));
-        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(get<Mesh_vertex_array>(mesh_data));
+        m_mesh_list[mesh_name]->vertices_raw = make_unique<Mesh_vertex_array>(mesh_data.m_vertices);
+        m_mesh_list[mesh_name]->indices_raw  = make_unique<Mesh_index_array>(mesh_data.m_indices);
+        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(mesh_data.m_vertices);
     }
 
     {
         auto&& mesh_name  = "cube_mesh_rt";
         auto&& mesh_data  = MeshDataGenerator::create_unit_cube();
-        auto&& mesh_verts = MeshDataGenerator::to_rt(get<Mesh_vertex_array>(mesh_data));
-        m_unit_cube_name  = build_mesh(mesh_verts, get<Mesh_index_array>(mesh_data), "cube_mesh_rt", m_engine);
+        auto&& mesh_verts = MeshDataGenerator::to_rt(mesh_data.m_vertices);
+        m_unit_cube_name  = build_mesh(mesh_verts, mesh_data.m_indices, "cube_mesh_rt", m_engine);
 
         m_mesh_list[mesh_name]               = make_unique<Mesh_data_raw>();
-        m_mesh_list[mesh_name]->vertices_raw = make_unique<Mesh_vertex_array>(get<Mesh_vertex_array>(mesh_data));
-        m_mesh_list[mesh_name]->indices_raw  = make_unique<Mesh_index_array>(get<Mesh_index_array>(mesh_data));
-        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(get<Mesh_vertex_array>(mesh_data));
+        m_mesh_list[mesh_name]->vertices_raw = make_unique<Mesh_vertex_array>(mesh_data.m_vertices);
+        m_mesh_list[mesh_name]->indices_raw  = make_unique<Mesh_index_array>(mesh_data.m_indices);
+        m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(mesh_data.m_vertices);
     }
 
     m_scene_data = make_unique<D3D12::Scene_data>();

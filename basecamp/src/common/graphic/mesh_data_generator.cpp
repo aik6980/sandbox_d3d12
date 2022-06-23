@@ -1,8 +1,12 @@
 #include "mesh_data_generator.h"
 #include "graphic_cpp.h"
 
-void MeshDataGenerator::create_unit_quad(Mesh_vertex_array& vertex_array, Mesh_index_array& index_array)
+Mesh_data MeshDataGenerator::create_unit_quad()
 {
+    Mesh_data mesh_data;
+    auto&&    vertex_array = mesh_data.m_vertices;
+    auto&&    index_array  = mesh_data.m_indices;
+
     vertex_array.reset_vertices(4);
     index_array.reset_indices(6);
 
@@ -18,12 +22,16 @@ void MeshDataGenerator::create_unit_quad(Mesh_vertex_array& vertex_array, Mesh_i
     index_array.m_indices32[3] = 2;
     index_array.m_indices32[4] = 1;
     index_array.m_indices32[5] = 3;
+
+    return mesh_data;
 }
 
-tuple<Mesh_vertex_array, Mesh_index_array> MeshDataGenerator::create_unit_cube()
+Mesh_data MeshDataGenerator::create_unit_cube()
 {
-    Mesh_vertex_array vertex_array;
-    Mesh_index_array  index_array;
+    Mesh_data mesh_data;
+    auto&&    vertex_array = mesh_data.m_vertices;
+    auto&&    index_array  = mesh_data.m_indices;
+
     vertex_array.reset_vertices(4 * 6);
     index_array.reset_indices(6 * 6);
 
@@ -127,10 +135,10 @@ tuple<Mesh_vertex_array, Mesh_index_array> MeshDataGenerator::create_unit_cube()
     index_array.m_indices32[ioffset + 10] = voffset2 + 1;
     index_array.m_indices32[ioffset + 11] = voffset2 + 2;
 
-    return tuple(vertex_array, index_array);
+    return mesh_data;
 }
 
-tuple<Mesh_vertex_array, Mesh_index_array> MeshDataGenerator::create_grid(float width, float depth, uint32_t m, uint32_t n)
+Mesh_data MeshDataGenerator::create_grid(float width, float depth, uint32_t m, uint32_t n)
 {
     uint32_t vertex_count = m * n;
     uint32_t face_count   = (m - 1) * (n - 1) * 2;
@@ -192,7 +200,11 @@ tuple<Mesh_vertex_array, Mesh_index_array> MeshDataGenerator::create_grid(float 
         }
     }
 
-    return tuple(vertices, indices);
+    Mesh_data mesh_data;
+    mesh_data.m_vertices = vertices;
+    mesh_data.m_indices  = indices;
+
+    return mesh_data;
 }
 
 vector<Fat_vertex> MeshDataGenerator::to_fat(const Mesh_vertex_array& vertex_array)
@@ -230,13 +242,13 @@ vector<P1_vertex> MeshDataGenerator::to_p1(const Mesh_vertex_array& vertex_array
     return output;
 }
 
-vector<P1C1_vertex> MeshDataGenerator::to_p1c1(const Mesh_vertex_array& vertex_array)
+vector<PC_vertex> MeshDataGenerator::to_p1c1(const Mesh_vertex_array& vertex_array)
 {
-    vector<P1C1_vertex> output;
+    vector<PC_vertex> output;
     output.resize(vertex_array.m_position.size());
     for (uint32_t i = 0; i < vertex_array.m_position.size(); ++i) {
-        XMStoreFloat4(&output[i].m_position, XMLoadFloat3(&vertex_array.m_position[i]));
-        XMStoreFloat4(&output[i].m_colour, vertex_array.m_colour[i]);
+        XMStoreFloat4(&output[i].position, XMLoadFloat3(&vertex_array.m_position[i]));
+        XMStoreFloat4(&output[i].colour, vertex_array.m_colour[i]);
     }
 
     return output;

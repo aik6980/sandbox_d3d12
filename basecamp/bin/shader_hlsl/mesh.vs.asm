@@ -3,8 +3,8 @@
 ;
 ; Name                 Index   Mask Register SysValue  Format   Used
 ; -------------------- ----- ------ -------- -------- ------- ------
-; Position                 0   xyz         0     NONE   float   xyz 
-; Colour                   0   xyz         1     NONE   float   xyz 
+; Position                 0   xyzw        0     NONE   float   xyz 
+; Colour                   0   xyzw        1     NONE   float   xyz 
 ;
 ;
 ; Output signature:
@@ -16,7 +16,7 @@
 ; Texcoord                 0   xyzw        2     NONE   float       
 ; Texcoord                 1   xyzw        3     NONE   float   xyzw
 ;
-; shader hash: 0563cf6b1a6264209a5df37bdb3357db
+; shader hash: 5bc0ac0f1bdd261eaf3a484920b17b3b
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -93,7 +93,7 @@
 ;
 ; ViewId state:
 ;
-; Number of inputs: 7, outputs: 16
+; Number of inputs: 8, outputs: 16
 ; Outputs dependent on ViewId: {  }
 ; Inputs contributing to computation of Outputs:
 ;   output 0 depends on inputs: { 0, 1, 2 }
@@ -408,14 +408,14 @@ attributes #2 = { nounwind readonly }
 !6 = !{i32 0, %hostlayout.Light_cb* undef, !"", i32 0, i32 0, i32 1, i32 132, null}
 !7 = !{i32 1, %hostlayout.Camera_cb* undef, !"", i32 0, i32 1, i32 1, i32 128, null}
 !8 = !{i32 2, %hostlayout.Object_cb* undef, !"", i32 0, i32 2, i32 1, i32 64, null}
-!9 = !{[9 x i32] [i32 7, i32 16, i32 61455, i32 61455, i32 61455, i32 0, i32 16, i32 32, i32 64]}
+!9 = !{[10 x i32] [i32 8, i32 16, i32 61455, i32 61455, i32 61455, i32 0, i32 16, i32 32, i32 64, i32 0]}
 !10 = !{void ()* @main, !"main", !11, !4, !24}
 !11 = !{!12, !17, null}
 !12 = !{!13, !16}
-!13 = !{i32 0, !"Position", i8 9, i8 0, !14, i8 0, i32 1, i8 3, i32 0, i8 0, !15}
+!13 = !{i32 0, !"Position", i8 9, i8 0, !14, i8 0, i32 1, i8 4, i32 0, i8 0, !15}
 !14 = !{i32 0}
 !15 = !{i32 3, i32 7}
-!16 = !{i32 1, !"Colour", i8 9, i8 0, !14, i8 0, i32 1, i8 3, i32 1, i8 0, !15}
+!16 = !{i32 1, !"Colour", i8 9, i8 0, !14, i8 0, i32 1, i8 4, i32 1, i8 0, !15}
 !17 = !{!18, !20, !21, !22}
 !18 = !{i32 0, !"SV_Position", i8 9, i8 3, !14, i8 4, i32 1, i8 4, i32 0, i8 0, !19}
 !19 = !{i32 3, i32 15}

@@ -9,7 +9,18 @@ using float4x4 = XMFLOAT4X4;
 using float4   = XMFLOAT4;
 using float3   = XMFLOAT3;
 using uint     = uint32_t;
+
+#define Position_sematic
+#define Colour_sematic
+#else
+#define Position_sematic : Position
+#define Colour_sematic : Colour
 #endif
+
+struct PC_vertex {
+    float4 position Position_sematic;
+    float4 colour   Colour_sematic;
+};
 
 struct Camera_st {
     float4x4 View;

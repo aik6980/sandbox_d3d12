@@ -1,18 +1,13 @@
 #include "mesh.inc.hlsl"
 #include "camera.inc.hlsl"
 
-struct VS_INPUT
-{
-	float3 position : Position;
-	float3 colour	: Colour;
-};
 
 cbuffer Object_cb
 {
 	float4x4 World;
 };
 
-VS_OUTPUT main(VS_INPUT input)
+VS_OUTPUT main(PC_vertex input)
 {
 	float4 pos = float4(input.position.xyz, 1.0);
     pos = mul(pos, World);

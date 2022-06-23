@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -37,3 +38,4 @@ using namespace DirectX::PackedVector;
 using namespace DirectX::SimpleMath;
 
 #include "graphic/graphic.h"
+#include "math/aabb.h"

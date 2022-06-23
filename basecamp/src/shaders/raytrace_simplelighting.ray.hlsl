@@ -12,25 +12,45 @@
 //    float4 Stencil_vp;
 //};
 
-RaytracingAccelerationStructure Scene_srv : register(t0);
-RWTexture2D<float4> Output_uav : register(u0);
+RaytracingAccelerationStructure Scene_srv;
+RWTexture2D<float4> Output_uav;
 
-cbuffer Raygen_cb : register(b0)
+cbuffer Raygen_cb
 {
 	float4 Main_vp;
 	float4 Stencil_vp;
 };
 
-cbuffer Camera_cb : register(b1)
+cbuffer Camera_cb
 {
     float4x4 Camera_projection_to_world;
     float3 Camera_world_pos;
 };
 
-StructuredBuffer<Instance_data> Instance_data_srv : register(t1);
-StructuredBuffer<Mesh_desc> Mesh_data_srv : register(t2);
-StructuredBuffer<Fat_vertex> Vertices_srv : register(t3);
-Buffer<uint> Indices_srv : register(t4);
+StructuredBuffer<Instance_data> Instance_data_srv;
+StructuredBuffer<Mesh_desc> Mesh_data_srv;
+StructuredBuffer<Fat_vertex> Vertices_srv;
+Buffer<uint> Indices_srv;
+
+//RaytracingAccelerationStructure Scene_srv : register(t0);
+//RWTexture2D<float4> Output_uav : register(u0);
+//
+//cbuffer Raygen_cb : register(b0)
+//{
+//    float4 Main_vp;
+//    float4 Stencil_vp;
+//};
+//
+//cbuffer Camera_cb : register(b1)
+//{
+//    float4x4 Camera_projection_to_world;
+//    float3 Camera_world_pos;
+//};
+//
+//StructuredBuffer<Instance_data> Instance_data_srv : register(t1);
+//StructuredBuffer<Mesh_desc> Mesh_data_srv : register(t2);
+//StructuredBuffer<Fat_vertex> Vertices_srv : register(t3);
+//Buffer<uint> Indices_srv : register(t4);
 
 bool Is_inside_viewport(float2 pos, float4 vp)
 {

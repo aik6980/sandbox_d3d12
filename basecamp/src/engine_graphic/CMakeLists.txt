@@ -11,6 +11,6 @@ target_link_libraries(${PROJECT_NAME} common d3d12 dxgi dxguid d3dcompiler ${LIB
 set(INC_ASSIMP ${CMAKE_SOURCE_DIR}/ext/assimp/include)
 include_directories(${CMAKE_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${INC_ASSIMP})
 
-ADD_DEFINITIONS(-DUNICODE -D_UNICODE -DCOMPILE_CPP)
+ADD_DEFINITIONS(-DUNICODE -D_UNICODE -DCOMPILE_CPP -DNOMINMAX)
 
 func_group_src("${PROJECT_FILES}")
