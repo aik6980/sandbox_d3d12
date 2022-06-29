@@ -45,3 +45,5 @@ add_subdirectory(src/common)
 add_subdirectory(src/engine_graphic)
 add_subdirectory(src/sandbox)
 add_subdirectory(src/shaders)
+
+add_subdirectory(src/vulkan_test)
