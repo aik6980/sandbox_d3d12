@@ -98,6 +98,6 @@ add_custom_command(TARGET ${PROJECT_NAME}
 Dxc_compile("${VS_FILES}" ${DXC} "vs_6_0" "-spirv")
 Dxc_compile("${PS_FILES}" ${DXC} "ps_6_0" "-spirv")
 Dxc_compile("${CS_FILES}" ${DXC} "cs_6_0" "-spirv")
-#Dxc_compile("${RAY_FILES}" "lib_6_5" "-spirv")
+Dxc_compile("${RAY_FILES}" ${DXC} "lib_6_5" "-spirv -fspv-target-env=\"vulkan1.1spirv1.4\" ")
 
 func_group_src("${ALL_FILES}")

@@ -412,9 +412,9 @@ void Device::draw()
 
     auto&& image_available_semaphore = m_frame_resource[frame_resource_idx].m_image_available_semaphore;
     auto&& render_finished_semaphore = m_frame_resource[frame_resource_idx].m_render_finished_semaphore;
-    auto&& inflight_fence            = m_frame_resource[0].m_inflight_fence;
+    auto&& inflight_fence            = m_frame_resource[frame_resource_idx].m_inflight_fence;
 
-    auto&& command_buffer = m_frame_resource[0].m_command_buffer;
+    auto&& command_buffer = m_frame_resource[frame_resource_idx].m_command_buffer;
 
     // UINT64_MAX, which effectively disables the timeout.
     auto&& result = m_device.waitForFences(inflight_fence, VK_TRUE, UINT64_MAX);
@@ -425,6 +425,7 @@ void Device::draw()
     uint32_t buffer_id = 0;
     result             = m_device.acquireNextImageKHR(m_swapchain, m_fence_timeout, image_available_semaphore, nullptr, &buffer_id);
     if (result == vk::Result::eErrorOutOfDateKHR) {
+        // recreate swapchain
         return;
     }
     else if (result != vk::Result::eSuccess) {
