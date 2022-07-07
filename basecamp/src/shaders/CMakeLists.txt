@@ -42,7 +42,7 @@ macro(Dxc_compile src_files dxc_path profile spirv_opt)
 		get_filename_component(file_wle ${var} NAME_WLE)
 		set(OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}/${file_wle})
 		add_custom_command(
-			OUTPUT ${OUTPUT_FILENAME}.obj
+			OUTPUT ${OUTPUT_FILENAME}.obj ${OUTPUT_FILENAME}.asm
 			PRE_BUILD 
 			COMMAND ${dxc_path} -T ${profile} ${spirv_opt} -auto-binding-space 0 -Ni -Od -Fo ${OUTPUT_FILENAME}.obj -Fc ${OUTPUT_FILENAME}.asm -Zpr ${var}
 			#COMMAND echo Effect Compiler ${var}
@@ -94,10 +94,14 @@ add_custom_command(TARGET ${PROJECT_NAME}
 		WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}
 		VERBATIM
 		)
+		
+#set(SPIRV_OPTS "-spirv -fspv-reflect -fspv-target-env=\"vulkan1.1spirv1.4\"")
+set(SPIRV_OPTS "-spirv -fspv-target-env=\"vulkan1.1spirv1.4\"")
+message(${SPIRV_OPTS})
 
-Dxc_compile("${VS_FILES}" ${DXC} "vs_6_0" "-spirv")
-Dxc_compile("${PS_FILES}" ${DXC} "ps_6_0" "-spirv")
-Dxc_compile("${CS_FILES}" ${DXC} "cs_6_0" "-spirv")
-Dxc_compile("${RAY_FILES}" ${DXC} "lib_6_5" "-spirv -fspv-target-env=\"vulkan1.1spirv1.4\" ")
+Dxc_compile("${VS_FILES}" ${DXC} "vs_6_0" ${SPIRV_OPTS})
+Dxc_compile("${PS_FILES}" ${DXC} "ps_6_0" ${SPIRV_OPTS})
+Dxc_compile("${CS_FILES}" ${DXC} "cs_6_0" ${SPIRV_OPTS})
+Dxc_compile("${RAY_FILES}" ${DXC} "lib_6_5" ${SPIRV_OPTS})
 
 func_group_src("${ALL_FILES}")

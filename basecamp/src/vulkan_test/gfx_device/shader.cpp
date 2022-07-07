@@ -8,9 +8,7 @@ void Shader::destroy()
 {
     auto&& device = m_gfx_device.m_device;
 
-    device.destroyPipelineLayout(m_pipeline_layout);
-
-    spvReflectDestroyShaderModule(&m_reflection);
+    spvReflectDestroyShaderModule(&m_reflection_module);
 
     device.destroyShaderModule(m_shader_module);
 }
@@ -51,16 +49,55 @@ void Shader::create_shader(const std::string& filename)
 
 void Shader::create_shader_reflection()
 {
-    SpvReflectShaderModule module = {};
-    SpvReflectResult       result = spvReflectCreateShaderModule(m_bin_data.size(), m_bin_data.data(), &module);
+    SpvReflectResult result = spvReflectCreateShaderModule(m_bin_data.size(), m_bin_data.data(), &m_reflection_module);
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
+    create_vertex_input();
+
+    // usign reflection
+    auto&& module = m_reflection_module;
+
     uint32_t count = 0;
-    result         = spvReflectEnumerateInputVariables(&module, &count, NULL);
+    result         = spvReflectEnumerateDescriptorSets(&module, &count, NULL);
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+    std::vector<SpvReflectDescriptorSet*> sets(count);
+    result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+    // Demonstrates how to generate all necessary data structures to create a
+    // VkDescriptorSetLayout for each descriptor set in this shader.
+    auto&& set_layouts = m_descriptorset_layoutdata;
+    set_layouts.resize(sets.size());
+    for (size_t i_set = 0; i_set < sets.size(); ++i_set) {
+        const SpvReflectDescriptorSet& refl_set = *(sets[i_set]);
+        Descriptorset_layoutdata&      layout   = set_layouts[i_set];
+        layout.bindings.resize(refl_set.binding_count);
+        for (uint32_t i_binding = 0; i_binding < refl_set.binding_count; ++i_binding) {
+            const SpvReflectDescriptorBinding& refl_binding   = *(refl_set.bindings[i_binding]);
+            vk::DescriptorSetLayoutBinding&    layout_binding = layout.bindings[i_binding];
+            layout_binding.binding                            = refl_binding.binding;
+            layout_binding.descriptorType                     = static_cast<vk::DescriptorType>(refl_binding.descriptor_type);
+            layout_binding.descriptorCount                    = 1;
+            for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
+                layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
+            }
+            layout_binding.stageFlags = static_cast<vk::ShaderStageFlagBits>(module.shader_stage);
+        }
+        layout.set_number               = refl_set.set;
+        layout.create_info.bindingCount = refl_set.binding_count;
+        layout.create_info.pBindings    = layout.bindings.data();
+    }
+}
+
+void Shader::create_vertex_input()
+{
+    uint32_t count  = 0;
+    auto&&   result = spvReflectEnumerateInputVariables(&m_reflection_module, &count, NULL);
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
     std::vector<SpvReflectInterfaceVariable*> input_vars(count);
-    result = spvReflectEnumerateInputVariables(&module, &count, input_vars.data());
+    result = spvReflectEnumerateInputVariables(&m_reflection_module, &count, input_vars.data());
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
     // generate vertexinput

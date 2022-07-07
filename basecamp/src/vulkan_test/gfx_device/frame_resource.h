@@ -1,13 +1,35 @@
 #pragma once
 
-namespace VKN {
-class Frame_resource {
-  public:
-    vk::CommandBuffer m_command_buffer;
+#include "descriptor_pool.h"
 
-    vk::Semaphore m_image_available_semaphore;
-    vk::Semaphore m_render_finished_semaphore;
-    vk::Fence     m_inflight_fence;
-};
+namespace VKN {
+
+    class Device;
+    class Buffer;
+    class Frame_resource {
+      public:
+        Frame_resource(Device& gfx_device)
+            : m_gfx_device(gfx_device)
+            , m_descriptor_pool(gfx_device)
+        {
+        }
+
+        void begin_frame();
+
+        vk::CommandBuffer m_command_buffer;
+
+        vk::Semaphore m_image_available_semaphore;
+        vk::Semaphore m_render_finished_semaphore;
+        vk::Fence     m_inflight_fence;
+
+        // descriptor pool per flight
+        Descriptor_pool m_descriptor_pool;
+
+        // per flight resources
+        std::vector<std::shared_ptr<Buffer>> m_buffers;
+
+      private:
+        Device& m_gfx_device;
+    };
 
 } // namespace VKN

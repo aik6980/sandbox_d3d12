@@ -5,6 +5,8 @@
 
 #include "common/common_cpp.h"
 #include "gfx_device/device.h"
+#include "gfx_device/resource_manager.h"
+#include "gfx_device/shader_manager.h"
 
 std::chrono::time_point<std::chrono::steady_clock> App::m_time_begin_app;
 std::chrono::time_point<std::chrono::steady_clock> App::m_time_begin_frame;
@@ -30,6 +32,7 @@ void App::on_init(HINSTANCE hInstance, HWND hWnd)
     //}));
 
     device.create(m_hInstance, m_hWnd);
+    device.load_resources();
 
     // device.draw();
 }
