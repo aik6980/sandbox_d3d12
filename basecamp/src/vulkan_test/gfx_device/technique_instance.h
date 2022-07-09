@@ -2,7 +2,7 @@
 
 namespace VKN {
     class Technique;
-    class Buffer;
+    struct Buffer;
 
     class Technique_instance {
       public:
@@ -12,6 +12,8 @@ namespace VKN {
         }
 
         void set_constant(const std::string name, const void* data, size_t size);
+
+        void set_descriptor_set_parameters();
 
         Technique& m_tech;
 

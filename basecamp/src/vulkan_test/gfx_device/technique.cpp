@@ -12,10 +12,10 @@ namespace VKN {
         device.destroyPipeline(m_pipeline);
         device.destroyPipelineLayout(m_pipeline_layout);
 
-        for (auto&& d : m_decriptorset_layouts) {
+        for (auto&& d : m_descriptorset_layouts) {
             device.destroyDescriptorSetLayout(d);
         }
-        m_decriptorset_layouts.clear();
+        m_descriptorset_layouts.clear();
     }
 
     void Technique::create_pipeline()
@@ -39,13 +39,15 @@ namespace VKN {
         // Create a pipeline layout from Shader stages
         auto&& num_descriptorset = vs.m_descriptorset_layoutdata.size() + ps.m_descriptorset_layoutdata.size();
         if (num_descriptorset > 0) {
-            m_decriptorset_layouts.reserve(vs.m_descriptorset_layoutdata.size() + ps.m_descriptorset_layoutdata.size());
+            m_descriptorset_layouts.reserve(num_descriptorset);
+            m_descriptorset_infos.reserve(num_descriptorset);
 
             {
                 auto&& shader_stage = vs;
                 for (auto&& layout_data : shader_stage.m_descriptorset_layoutdata) {
                     auto&& layout = device.createDescriptorSetLayout(layout_data.create_info);
-                    m_decriptorset_layouts.emplace_back(layout);
+                    m_descriptorset_layouts.emplace_back(layout);
+                    m_descriptorset_infos.emplace_back(&layout_data);
                 }
             }
 
@@ -53,11 +55,12 @@ namespace VKN {
                 auto&& shader_stage = ps;
                 for (auto&& layout_data : shader_stage.m_descriptorset_layoutdata) {
                     auto&& layout = device.createDescriptorSetLayout(layout_data.create_info);
-                    m_decriptorset_layouts.emplace_back(layout);
+                    m_descriptorset_layouts.emplace_back(layout);
+                    m_descriptorset_infos.emplace_back(&layout_data);
                 }
             }
 
-            m_pipeline_layout = device.createPipelineLayout(vk::PipelineLayoutCreateInfo({}, m_decriptorset_layouts));
+            m_pipeline_layout = device.createPipelineLayout(vk::PipelineLayoutCreateInfo({}, m_descriptorset_layouts));
         }
         else {
             m_pipeline_layout = device.createPipelineLayout(vk::PipelineLayoutCreateInfo(vk::PipelineLayoutCreateFlags()));

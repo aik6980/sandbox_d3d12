@@ -10,7 +10,12 @@ namespace VKN {
         {
         }
 
+        void create_pool();
+        void destroy_resources();
+
         void reset();
+
+        vk::DescriptorSet& create_descriptor_set(const vk::DescriptorSetLayout& layout);
 
         vk::DescriptorPool             m_descriptor_pool;
         std::vector<vk::DescriptorSet> m_descriptor_sets;

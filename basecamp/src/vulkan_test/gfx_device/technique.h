@@ -4,6 +4,13 @@ namespace VKN {
 
     class Device;
 
+    struct Descriptorset_layoutdata;
+
+    struct Technique_desc {
+        std::string m_vs;
+        std::string m_ps;
+    };
+
     class Technique {
 
       public:
@@ -19,9 +26,11 @@ namespace VKN {
       public:
         Device& m_gfx_device;
 
-        std::vector<vk::DescriptorSetLayout> m_decriptorset_layouts;
-        vk::PipelineLayout                   m_pipeline_layout;
-        vk::Pipeline                         m_pipeline;
+        std::vector<vk::DescriptorSetLayout>   m_descriptorset_layouts;
+        std::vector<Descriptorset_layoutdata*> m_descriptorset_infos;
+
+        vk::PipelineLayout m_pipeline_layout;
+        vk::Pipeline       m_pipeline;
     };
 
 } // namespace VKN

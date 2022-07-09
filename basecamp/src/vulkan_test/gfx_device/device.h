@@ -14,6 +14,7 @@ namespace VKN {
       public:
         friend class Resource_manager;
         friend class Shader_manager;
+        friend class Frame_resource;
         friend class Technique;
         friend class Technique_instance;
         friend class Shader;
@@ -137,7 +138,8 @@ namespace VKN {
         std::vector<vk::Framebuffer> m_frame_buffers;
 
         // Render pipeline
-        vk::Pipeline m_pipeline;
+        vk::PipelineLayout m_pipeline_layout;
+        vk::Pipeline       m_pipeline;
 
         // Syncronization
         const uint64_t m_fence_timeout = 100000000;

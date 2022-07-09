@@ -5,7 +5,7 @@
 namespace VKN {
 
     class Device;
-    class Buffer;
+    struct Buffer;
     class Frame_resource {
       public:
         Frame_resource(Device& gfx_device)
@@ -13,6 +13,8 @@ namespace VKN {
             , m_descriptor_pool(gfx_device)
         {
         }
+
+        void destroy_resources();
 
         void begin_frame();
 

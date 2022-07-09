@@ -5,6 +5,7 @@
 #include "common/common_cpp.h"
 #include "resource_manager.h"
 #include "shader_manager.h"
+#include "technique_instance.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -61,6 +62,7 @@ namespace VKN {
         destroy_sync_object();
 
         // destroy pipeline
+        m_device.destroyPipelineLayout(m_pipeline_layout);
         m_device.destroyPipeline(m_pipeline);
 
         // destroy render pass
@@ -73,6 +75,7 @@ namespace VKN {
         m_shader_manager->destroy_resources();
 
         // destroy resources
+        m_resource_manager->destroy();
         destroy_resource(m_depth_buffer);
 
         // destroy the imageViews, the swapChain,and the surface
@@ -86,6 +89,7 @@ namespace VKN {
         // freeing the commandBuffer is optional, as it will automatically freed when the corresponding CommandPool is destroyed.
         for (uint32_t i = 0; i < m_frame_resource.size(); ++i) {
             m_device.freeCommandBuffers(m_command_pool, m_frame_resource[i]->m_command_buffer);
+            m_frame_resource[i]->destroy_resources();
         }
         // destroy the commandPool
         m_device.destroyCommandPool(m_command_pool);
@@ -353,12 +357,8 @@ namespace VKN {
 
     void Device::create_descriptor_pool()
     {
-        auto&& pool_size   = vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, Descriptor_pool::m_max_descriptor);
-        auto&& create_info = vk::DescriptorPoolCreateInfo({}, Descriptor_pool::m_max_descriptor, pool_size);
-
-        for (uint32_t i = 0; i < m_frame_resource.size(); ++i) {
-            auto&& descriptor_pool                                   = m_device.createDescriptorPool(create_info);
-            m_frame_resource[i]->m_descriptor_pool.m_descriptor_pool = descriptor_pool;
+        for (auto&& frame_resource : m_frame_resource) {
+            frame_resource->m_descriptor_pool.create_pool();
         }
     }
 
@@ -448,7 +448,12 @@ namespace VKN {
         command_buffer.draw(3, 1, 0, 0);
 
         // 2nd draw
+        auto&& technique_instance = Technique_instance(m_shader_manager->m_technique);
+        float  data[]             = {4.0f, 1.0f};
+        technique_instance.set_constant("Data_cbv", data, sizeof(data));
+
         command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_shader_manager->m_technique.m_pipeline);
+        technique_instance.set_descriptor_set_parameters();
 
         command_buffer.bindVertexBuffers(0, m_resource_manager->m_vertex_buffer.m_buffer, {0});
         command_buffer.bindIndexBuffer(m_resource_manager->m_index_buffer.m_buffer, 0, vk::IndexType::eUint32);
@@ -915,7 +920,7 @@ namespace VKN {
         assert(m_swapchain_buffer_idx < m_frame_buffers.size());
 
         // destroy per flight resources
-        m_device.resetDescriptorPool(frame_resource->m_descriptor_pool.m_descriptor_pool);
+        frame_resource->begin_frame();
 
         command_buffer.reset();
         command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlags()));
@@ -1329,7 +1334,8 @@ namespace VKN {
             assert(false); // should never happen
         }
 
-        m_pipeline = pipeline;
+        m_pipeline_layout = pipeline_layout;
+        m_pipeline        = pipeline;
     }
 
     void Device::destroy_resource(Image& resource)

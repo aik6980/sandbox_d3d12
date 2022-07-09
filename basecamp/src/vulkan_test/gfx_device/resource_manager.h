@@ -13,6 +13,8 @@ namespace VKN {
         {
         }
 
+        void destroy();
+
         // test function
         void create_mesh();
 
@@ -26,6 +28,8 @@ namespace VKN {
 
       private:
         Device& m_gfx_device;
+
+        std::vector<Buffer> m_staging_buffers;
     };
 
 } // namespace VKN

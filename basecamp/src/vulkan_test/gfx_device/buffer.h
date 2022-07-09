@@ -11,10 +11,11 @@ namespace VKN {
         size_t      m_size;
     };
 
-    class Buffer {
-      public:
+    struct Buffer {
         vk::Buffer      m_buffer;
         vma::Allocation m_allocation;
+
+        size_t m_size;
     };
 
     struct Image {

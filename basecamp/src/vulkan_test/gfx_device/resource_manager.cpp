@@ -6,6 +6,16 @@
 #include "vma/vma.h"
 
 namespace VKN {
+    void Resource_manager::destroy()
+    {
+        destroy_buffer(m_vertex_buffer);
+        destroy_buffer(m_index_buffer);
+
+        for (auto&& buffer : m_staging_buffers) {
+            destroy_buffer(buffer);
+        }
+    }
+
     void Resource_manager::create_mesh()
     {
         auto&& mesh = MeshDataGenerator::create_unit_cube();
@@ -26,7 +36,7 @@ namespace VKN {
 
     void Resource_manager::destroy_buffer(Buffer& buffer)
     {
-        buffer.m_buffer = VK_NULL_HANDLE;
+        m_gfx_device.m_device.destroyBuffer(buffer.m_buffer);
         m_gfx_device.m_vma_allocator.freeMemory(buffer.m_allocation);
     }
 
@@ -54,6 +64,8 @@ namespace VKN {
 
             // copy src data
             std::memcpy(buffer_alloc_info.pMappedData, data, size);
+
+            m_staging_buffers.emplace_back(Buffer{.m_buffer = staging_buffer, .m_allocation = staging_buffer_alloc});
         }
 
         vk::Buffer      buffer;
@@ -91,7 +103,7 @@ namespace VKN {
         // copy src data
         std::memcpy(buffer_alloc_info.pMappedData, src_data, size);
 
-        return Buffer{.m_buffer = buffer, .m_allocation = buffer_alloc};
+        return Buffer{.m_buffer = buffer, .m_allocation = buffer_alloc, .m_size = buffer_alloc_info.size};
     }
 
 } // namespace VKN
