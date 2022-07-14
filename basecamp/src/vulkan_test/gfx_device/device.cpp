@@ -61,10 +61,6 @@ namespace VKN {
         // destroy sync object
         destroy_sync_object();
 
-        // destroy pipeline
-        m_device.destroyPipelineLayout(m_pipeline_layout);
-        m_device.destroyPipeline(m_pipeline);
-
         // destroy render pass
         for (auto framebuffer : m_frame_buffers) {
             m_device.destroyFramebuffer(framebuffer);
@@ -150,6 +146,10 @@ namespace VKN {
         // find device extension
         auto&& device_extensions = get_device_extensions();
 
+        // enable dynamic rendering
+        auto& requested_dynamic_rendering            = request_extension_features<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>();
+        requested_dynamic_rendering.dynamicRendering = VK_TRUE;
+
         std::vector<const char*> enabled_extensions;
         enabled_extensions.reserve(device_extensions.size());
         for (auto&& ext : device_extensions) {
@@ -159,7 +159,7 @@ namespace VKN {
         // create a Device
         float                     queue_priority = 0.0f;
         vk::DeviceQueueCreateInfo device_queue_createinfo(vk::DeviceQueueCreateFlags(), m_graphics_queue_family_index, 1, &queue_priority);
-        vk::DeviceCreateInfo      device_createinfo({}, device_queue_createinfo, {}, enabled_extensions, nullptr);
+        vk::DeviceCreateInfo      device_createinfo({}, device_queue_createinfo, {}, enabled_extensions, nullptr, m_last_requested_extension_feature);
 
         vk::Device device = m_physical_device.createDevice(device_createinfo);
 
@@ -362,72 +362,75 @@ namespace VKN {
         }
     }
 
-    void Device::draw_once()
-    {
-        auto&& image_available_semaphore = m_frame_resource[0]->m_image_available_semaphore;
-        auto&& inflight_fence            = m_frame_resource[0]->m_inflight_fence;
-
-        auto&& command_buffer = m_frame_resource[0]->m_command_buffer;
-
-        // Get the index of the next available swapchain image:
-        vk::ResultValue<uint32_t> current_buffer = m_device.acquireNextImageKHR(m_swapchain, m_fence_timeout, image_available_semaphore, nullptr);
-        assert(current_buffer.result == vk::Result::eSuccess);
-        assert(current_buffer.value < m_frame_buffers.size());
-
-        command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlags()));
-
-        std::array<vk::ClearValue, 2> clear_values;
-        clear_values[0].color        = vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}}));
-        clear_values[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
-
-        auto&& r        = get_window_rect();
-        auto&& extent2d = vk::Extent2D(r.Width(), r.Height());
-
-        vk::RenderPassBeginInfo renderPassBeginInfo(
-            m_render_pass, m_frame_buffers[current_buffer.value], vk::Rect2D(vk::Offset2D(0, 0), extent2d), clear_values);
-        command_buffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-        command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
-        // m_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, descriptorSet, nullptr);
-
-        // m_command_buffer.bindVertexBuffers(0, vertexBufferData.buffer, {0});
-        command_buffer.setViewport(0, vk::Viewport(0.0f, 0.0f, static_cast<float>(extent2d.width), static_cast<float>(extent2d.height), 0.0f, 1.0f));
-        command_buffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent2d));
-
-        // m_command_buffer.draw(12 * 3, 1, 0, 0);
-        command_buffer.draw(3, 1, 0, 0);
-        command_buffer.endRenderPass();
-        command_buffer.end();
-
-        vk::PipelineStageFlags wait_destination_stage_mask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-        vk::SubmitInfo         submit_info(image_available_semaphore, wait_destination_stage_mask, command_buffer);
-
-        vk::Queue graphics_queue = m_device.getQueue(m_graphics_queue_family_index, 0);
-        graphics_queue.submit(submit_info, inflight_fence);
-
-        while (vk::Result::eTimeout == m_device.waitForFences(inflight_fence, VK_TRUE, m_fence_timeout)) {
-        };
-
-        vk::Queue  present_queue = m_device.getQueue(m_present_queue_family_index, 0);
-        vk::Result result        = present_queue.presentKHR(vk::PresentInfoKHR({}, m_swapchain, current_buffer.value));
-        switch (result) {
-        case vk::Result::eSuccess:
-            break;
-        case vk::Result::eSuboptimalKHR:
-            std::cout << "vk::Queue::presentKHR returned vk::Result::eSuboptimalKHR !\n";
-            break;
-        default:
-            assert(false); // an unexpected result is returned !
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-        m_device.waitIdle();
-    }
+    // void Device::draw_once()
+    //{
+    //     auto&& image_available_semaphore = m_frame_resource[0]->m_image_available_semaphore;
+    //     auto&& inflight_fence            = m_frame_resource[0]->m_inflight_fence;
+    //
+    //     auto&& command_buffer = m_frame_resource[0]->m_command_buffer;
+    //
+    //     // Get the index of the next available swapchain image:
+    //     vk::ResultValue<uint32_t> current_buffer = m_device.acquireNextImageKHR(m_swapchain, m_fence_timeout, image_available_semaphore, nullptr);
+    //     assert(current_buffer.result == vk::Result::eSuccess);
+    //     assert(current_buffer.value < m_frame_buffers.size());
+    //
+    //     command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlags()));
+    //
+    //     std::array<vk::ClearValue, 2> clear_values;
+    //     clear_values[0].color        = vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}}));
+    //     clear_values[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+    //
+    //     auto&& r        = get_window_rect();
+    //     auto&& extent2d = vk::Extent2D(r.Width(), r.Height());
+    //
+    //     vk::RenderPassBeginInfo renderPassBeginInfo(
+    //         m_render_pass, m_frame_buffers[current_buffer.value], vk::Rect2D(vk::Offset2D(0, 0), extent2d), clear_values);
+    //     command_buffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+    //     command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
+    //     // m_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, descriptorSet, nullptr);
+    //
+    //     // m_command_buffer.bindVertexBuffers(0, vertexBufferData.buffer, {0});
+    //     command_buffer.setViewport(0, vk::Viewport(0.0f, 0.0f, static_cast<float>(extent2d.width), static_cast<float>(extent2d.height), 0.0f, 1.0f));
+    //     command_buffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent2d));
+    //
+    //     // m_command_buffer.draw(12 * 3, 1, 0, 0);
+    //     command_buffer.draw(3, 1, 0, 0);
+    //     command_buffer.endRenderPass();
+    //     command_buffer.end();
+    //
+    //     vk::PipelineStageFlags wait_destination_stage_mask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    //     vk::SubmitInfo         submit_info(image_available_semaphore, wait_destination_stage_mask, command_buffer);
+    //
+    //     vk::Queue graphics_queue = m_device.getQueue(m_graphics_queue_family_index, 0);
+    //     graphics_queue.submit(submit_info, inflight_fence);
+    //
+    //     while (vk::Result::eTimeout == m_device.waitForFences(inflight_fence, VK_TRUE, m_fence_timeout)) {
+    //     };
+    //
+    //     vk::Queue  present_queue = m_device.getQueue(m_present_queue_family_index, 0);
+    //     vk::Result result        = present_queue.presentKHR(vk::PresentInfoKHR({}, m_swapchain, current_buffer.value));
+    //     switch (result) {
+    //     case vk::Result::eSuccess:
+    //         break;
+    //     case vk::Result::eSuboptimalKHR:
+    //         std::cout << "vk::Queue::presentKHR returned vk::Result::eSuboptimalKHR !\n";
+    //         break;
+    //     default:
+    //         assert(false); // an unexpected result is returned !
+    //     }
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    //
+    //     m_device.waitIdle();
+    // }
 
     void Device::draw()
     {
         begin_frame();
 
         auto&& command_buffer = curr_command_buffer();
+        if (!command_buffer) {
+            return;
+        }
 
         std::array<vk::ClearValue, 2> clear_values;
         clear_values[0].color        = vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}}));
@@ -435,32 +438,35 @@ namespace VKN {
 
         vk::RenderPassBeginInfo renderPassBeginInfo(
             m_render_pass, m_frame_buffers[m_swapchain_buffer_idx], vk::Rect2D(vk::Offset2D(0, 0), m_swapchain_image_size), clear_values);
-        command_buffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-        command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
+        command_buffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+        command_buffer->setViewport(
+            0, vk::Viewport(0.0f, 0.0f, static_cast<float>(m_swapchain_image_size.width), static_cast<float>(m_swapchain_image_size.height), 0.0f, 1.0f));
+        command_buffer->setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), m_swapchain_image_size));
+
+        auto&& t0 = m_shader_manager->get_technique("t0").lock();
+        command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, t0->m_pipeline);
         // m_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, descriptorSet, nullptr);
 
-        // m_command_buffer.bindVertexBuffers(0, vertexBufferData.buffer, {0});
-        command_buffer.setViewport(
-            0, vk::Viewport(0.0f, 0.0f, static_cast<float>(m_swapchain_image_size.width), static_cast<float>(m_swapchain_image_size.height), 0.0f, 1.0f));
-        command_buffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), m_swapchain_image_size));
+        // command_buffer.bindVertexBuffers(0, 0, nullptr, nullptr);
 
         // m_command_buffer.draw(12 * 3, 1, 0, 0);
-        command_buffer.draw(3, 1, 0, 0);
+        command_buffer->draw(3, 1, 0, 0);
 
         // 2nd draw
-        auto&& technique_instance = Technique_instance(m_shader_manager->m_technique);
+        auto&& technique          = m_shader_manager->get_technique("t1").lock();
+        auto&& technique_instance = Technique_instance(*technique);
         float  data[]             = {4.0f, 1.0f};
         technique_instance.set_constant("Data_cbv", data, sizeof(data));
 
-        command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_shader_manager->m_technique.m_pipeline);
+        command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, technique->m_pipeline);
         technique_instance.set_descriptor_set_parameters();
 
-        command_buffer.bindVertexBuffers(0, m_resource_manager->m_vertex_buffer.m_buffer, {0});
-        command_buffer.bindIndexBuffer(m_resource_manager->m_index_buffer.m_buffer, 0, vk::IndexType::eUint32);
+        command_buffer->bindVertexBuffers(0, m_resource_manager->m_vertex_buffer.m_buffer, {0});
+        command_buffer->bindIndexBuffer(m_resource_manager->m_index_buffer.m_buffer, 0, vk::IndexType::eUint32);
 
-        command_buffer.drawIndexed(36, 1, 0, 0, 0);
+        command_buffer->drawIndexed(36, 1, 0, 0, 0);
 
-        command_buffer.endRenderPass();
+        command_buffer->endRenderPass();
 
         end_frame();
     }
@@ -850,22 +856,7 @@ namespace VKN {
 
     void Device::load_resources()
     {
-        // create shaders
-        m_shader_manager->m_vertex_shader.create_shader("hello_triangle.vs");
-        m_shader_manager->m_vertex_shader_2.create_shader("hello_triangle_mesh.vs");
-        m_shader_manager->m_pixel_shader.create_shader("hello_triangle.ps");
-
         create_render_pass();
-
-        create_pipeline_state_object();
-        m_shader_manager->m_technique.create_pipeline();
-
-        begin_single_command_submission();
-
-        // create mesh
-        m_resource_manager->create_mesh();
-
-        end_single_command_submission();
     }
 
     void Device::begin_single_command_submission()
@@ -900,8 +891,6 @@ namespace VKN {
         auto&& render_finished_semaphore = frame_resource->m_render_finished_semaphore;
         auto&& inflight_fence            = frame_resource->m_inflight_fence;
 
-        auto&& command_buffer = m_frame_resource[frame_resource_idx]->m_command_buffer;
-
         // UINT64_MAX, which effectively disables the timeout.
         auto&& result = m_device.waitForFences(inflight_fence, VK_TRUE, UINT64_MAX);
         m_device.resetFences(inflight_fence);
@@ -910,6 +899,8 @@ namespace VKN {
         // https://github.com/KhronosGroup/Vulkan-Hpp/issues/599
         result = m_device.acquireNextImageKHR(m_swapchain, m_fence_timeout, image_available_semaphore, nullptr, &m_swapchain_buffer_idx);
         if (result == vk::Result::eErrorOutOfDateKHR) {
+            auto&& command_buffer = m_frame_resource[frame_resource_idx]->m_command_buffer;
+            command_buffer.reset();
             // recreate swapchain
             return;
         }
@@ -921,9 +912,6 @@ namespace VKN {
 
         // destroy per flight resources
         frame_resource->begin_frame();
-
-        command_buffer.reset();
-        command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlags()));
     }
 
     void Device::end_frame()
@@ -936,8 +924,7 @@ namespace VKN {
 
         auto&& command_buffer = m_frame_resource[frame_resource_idx]->m_command_buffer;
 
-        // close command buffer
-        command_buffer.end();
+        m_frame_resource[frame_resource_idx]->end_frame();
 
         // submit the queue
         vk::PipelineStageFlags wait_destination_stage_mask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
@@ -1147,17 +1134,28 @@ namespace VKN {
 
     std::vector<std::string> Device::get_instance_extensions()
     {
-        std::vector<std::string> extensions;
-        extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+        std::vector<std::string> extensions = {
+            VK_KHR_SURFACE_EXTENSION_NAME
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-        extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+            ,
+            VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 #endif
+            ,
+            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
+        };
         return extensions;
+    }
+
+    bool Device::is_instance_extension_enabled(const std::string& name)
+    {
+        auto&& instance_extensions = get_instance_extensions();
+        return std::find_if(instance_extensions.begin(), instance_extensions.end(),
+                   [name](const std::string enabled_extension) { return strcmp(name.c_str(), enabled_extension.c_str()) == 0; }) != instance_extensions.end();
     }
 
     std::vector<std::string> Device::get_device_extensions()
     {
-        return {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        return {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME};
     }
 
     vk::SurfaceFormatKHR Device::pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats)
@@ -1204,138 +1202,12 @@ namespace VKN {
         return *m_frame_resource[frame_resource_idx];
     }
 
-    vk::CommandBuffer& Device::curr_command_buffer()
+    vk::CommandBuffer* Device::curr_command_buffer()
     {
         // note: need to address when we are recording using m_single_command as well
         auto&& frame_resource_idx = curr_frame_resource_idx();
-        return m_frame_resource[frame_resource_idx]->m_command_buffer;
-    }
 
-    void Device::create_pipeline_state_object()
-    {
-        auto&& device = m_device;
-
-        // Render pass
-        auto&& render_pass = m_render_pass;
-
-        // Programable state -----------
-        std::array<vk::PipelineShaderStageCreateInfo, 2> pipeline_shader_stage_createinfo = {
-            vk::PipelineShaderStageCreateInfo(
-                vk::PipelineShaderStageCreateFlags(), vk::ShaderStageFlagBits::eVertex, m_shader_manager->m_vertex_shader.m_shader_module, "main"),
-            vk::PipelineShaderStageCreateInfo(
-                vk::PipelineShaderStageCreateFlags(), vk::ShaderStageFlagBits::eFragment, m_shader_manager->m_pixel_shader.m_shader_module, "main")};
-
-        // vk::VertexInputBindingDescription                  vertexInputBindingDescription(0, sizeof(coloredCubeData[0]));
-        // std::array<vk::VertexInputAttributeDescription, 2> vertexInputAttributeDescriptions = {
-        //     vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32A32Sfloat, 0),
-        //     vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32A32Sfloat, 16)};
-        // vk::PipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo(vk::PipelineVertexInputStateCreateFlags(), // flags
-        //     vertexInputBindingDescription,                                                                                   // vertexBindingDescriptions
-        //     vertexInputAttributeDescriptions                                                                                 // vertexAttributeDescriptions
-        //);
-
-        // blank layout, no shader resources
-        auto&& pipeline_layout = device.createPipelineLayout(vk::PipelineLayoutCreateInfo(vk::PipelineLayoutCreateFlags()));
-
-        // vk::PipelineVertexInputStateCreateInfo pipeline_vertex_input_state_createinfo(vk::PipelineVertexInputStateCreateFlags(), // flags
-        //     vertexInputBindingDescription,                                                                                       // vertexBindingDescriptions
-        //     vertexInputAttributeDescriptions                                                                                     //
-        //     vertexAttributeDescriptions
-        //);
-
-        vk::PipelineVertexInputStateCreateInfo pipeline_vertex_input_state_createinfo(vk::PipelineVertexInputStateCreateFlags(), // flags
-            0, nullptr, 0, nullptr);
-
-        // ----------
-
-        // Fixed pipeline state -----------
-        vk::PipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_createinfo(
-            vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::eTriangleList);
-
-        vk::PipelineViewportStateCreateInfo pipeline_viewport_state_createinfo(vk::PipelineViewportStateCreateFlags(), 1, nullptr, 1, nullptr);
-
-        vk::PipelineRasterizationStateCreateInfo pipeline_rasterization_state_createinfo(vk::PipelineRasterizationStateCreateFlags(), // flags
-            false,                                                                                                                    // depthClampEnable
-            false,                                                                                                                    // rasterizerDiscardEnable
-            vk::PolygonMode::eFill,                                                                                                   // polygonMode
-            vk::CullModeFlagBits::eBack,                                                                                              // cullMode
-            vk::FrontFace::eClockwise,                                                                                                // frontFace
-            false,                                                                                                                    // depthBiasEnable
-            0.0f,                                                                                                                     // depthBiasConstantFactor
-            0.0f,                                                                                                                     // depthBiasClamp
-            0.0f,                                                                                                                     // depthBiasSlopeFactor
-            1.0f                                                                                                                      // lineWidth
-        );
-
-        vk::PipelineMultisampleStateCreateInfo pipeline_multisample_state_createinfo(vk::PipelineMultisampleStateCreateFlags(), // flags
-            vk::SampleCountFlagBits::e1                                                                                         // rasterizationSamples
-                                                                                                                                // other values can be default
-        );
-
-        vk::StencilOpState                      stencil_op_state(vk::StencilOp::eKeep, vk::StencilOp::eKeep, vk::StencilOp::eKeep, vk::CompareOp::eAlways);
-        vk::PipelineDepthStencilStateCreateInfo pipeline_depth_stencil_state_createinfo(vk::PipelineDepthStencilStateCreateFlags(), // flags
-            true,                                                                                                                   // depthTestEnable
-            true,                                                                                                                   // depthWriteEnable
-            vk::CompareOp::eLessOrEqual,                                                                                            // depthCompareOp
-            false,                                                                                                                  // depthBoundTestEnable
-            false,                                                                                                                  // stencilTestEnable
-            stencil_op_state,                                                                                                       // front
-            stencil_op_state                                                                                                        // back
-        );
-
-        vk::ColorComponentFlags color_component_flags(
-            vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-        vk::PipelineColorBlendAttachmentState pipeline_color_blend_attachment_state(false, // blendEnable
-            vk::BlendFactor::eZero,                                                        // srcColorBlendFactor
-            vk::BlendFactor::eZero,                                                        // dstColorBlendFactor
-            vk::BlendOp::eAdd,                                                             // colorBlendOp
-            vk::BlendFactor::eZero,                                                        // srcAlphaBlendFactor
-            vk::BlendFactor::eZero,                                                        // dstAlphaBlendFactor
-            vk::BlendOp::eAdd,                                                             // alphaBlendOp
-            color_component_flags                                                          // colorWriteMask
-        );
-
-        vk::PipelineColorBlendStateCreateInfo pipeline_color_blend_state_createinfo(vk::PipelineColorBlendStateCreateFlags(), // flags
-            false,                                                                                                            // logicOpEnable
-            vk::LogicOp::eNoOp,                                                                                               // logicOp
-            pipeline_color_blend_attachment_state,                                                                            // attachments
-            {{1.0f, 1.0f, 1.0f, 1.0f}}                                                                                        // blendConstants
-        );
-
-        std::array<vk::DynamicState, 2>    dynamic_states = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
-        vk::PipelineDynamicStateCreateInfo pipeline_dynamic_state_createinfo(vk::PipelineDynamicStateCreateFlags(), dynamic_states);
-        // -----------
-
-        vk::GraphicsPipelineCreateInfo graphics_pipeline_createinfo(vk::PipelineCreateFlags(), // flags
-            pipeline_shader_stage_createinfo,                                                  // stages
-            &pipeline_vertex_input_state_createinfo,                                           // pVertexInputState
-            &pipeline_input_assembly_state_createinfo,                                         // pInputAssemblyState
-            nullptr,                                                                           // pTessellationState
-            &pipeline_viewport_state_createinfo,                                               // pViewportState
-            &pipeline_rasterization_state_createinfo,                                          // pRasterizationState
-            &pipeline_multisample_state_createinfo,                                            // pMultisampleState
-            &pipeline_depth_stencil_state_createinfo,                                          // pDepthStencilState
-            &pipeline_color_blend_state_createinfo,                                            // pColorBlendState
-            &pipeline_dynamic_state_createinfo,                                                // pDynamicState
-            pipeline_layout,                                                                   // layout
-            render_pass                                                                        // renderPass
-        );
-
-        vk::Result   result;
-        vk::Pipeline pipeline;
-        std::tie(result, pipeline) = device.createGraphicsPipeline(nullptr, graphics_pipeline_createinfo);
-        switch (result) {
-        case vk::Result::eSuccess:
-            break;
-        case vk::Result::ePipelineCompileRequiredEXT:
-            // something meaningfull here
-            break;
-        default:
-            assert(false); // should never happen
-        }
-
-        m_pipeline_layout = pipeline_layout;
-        m_pipeline        = pipeline;
+        return m_frame_resource[frame_resource_idx]->m_command_buffer_opened ? &m_frame_resource[frame_resource_idx]->m_command_buffer : nullptr;
     }
 
     void Device::destroy_resource(Image& resource)

@@ -13,8 +13,14 @@
 // templated version of Case_insensitive_equal so it could work with both char and wchar_t
 template <typename charT>
 struct Case_insensitive_equal {
-    Case_insensitive_equal(const std::locale& loc) : loc_(loc) {}
-    bool operator()(charT ch1, charT ch2) { return std::tolower(ch1, loc_) == std::tolower(ch2, loc_); }
+    Case_insensitive_equal(const std::locale& loc)
+        : loc_(loc)
+    {
+    }
+    bool operator()(charT ch1, charT ch2)
+    {
+        return std::tolower(ch1, loc_) == std::tolower(ch2, loc_);
+    }
 
   private:
     const std::locale& loc_;

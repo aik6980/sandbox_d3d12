@@ -26,5 +26,18 @@ namespace VKN {
         m_buffers.clear();
 
         m_descriptor_pool.reset();
+
+        m_command_buffer.reset();
+        m_command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlags()));
+        m_command_buffer_opened = true;
+    }
+
+    void Frame_resource::end_frame()
+    {
+        if (m_command_buffer_opened) {
+            m_command_buffer.end();
+        }
+
+        m_command_buffer_opened = false;
     }
 } // namespace VKN

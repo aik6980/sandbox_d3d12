@@ -24,10 +24,11 @@ namespace VKN {
         void destroy();
 
         void create_shader(const std::string& filename);
-        void create_shader_reflection();
 
       private:
+        void create_shader_reflection();
         void create_vertex_input();
+        void create_descriptorset_layoutdata();
 
         Device& m_gfx_device;
 

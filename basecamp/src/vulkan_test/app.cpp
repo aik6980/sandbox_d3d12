@@ -7,6 +7,7 @@
 #include "gfx_device/device.h"
 #include "gfx_device/resource_manager.h"
 #include "gfx_device/shader_manager.h"
+#include "gfx_device/technique.h"
 
 std::chrono::time_point<std::chrono::steady_clock> App::m_time_begin_app;
 std::chrono::time_point<std::chrono::steady_clock> App::m_time_begin_frame;
@@ -15,7 +16,7 @@ std::chrono::microseconds                          App::m_duration_frame;
 std::unique_ptr<std::thread> render_thread;
 std::atomic<bool>            game_running = true;
 
-VKN::Device device;
+VKN::Device m_gfx_device;
 
 void App::on_init(HINSTANCE hInstance, HWND hWnd)
 {
@@ -31,10 +32,13 @@ void App::on_init(HINSTANCE hInstance, HWND hWnd)
     //	[&]() { while (game_running) { m_engine->draw(); }
     //}));
 
-    device.create(m_hInstance, m_hWnd);
-    device.load_resources();
-
+    m_gfx_device.create(m_hInstance, m_hWnd);
     // device.draw();
+    m_gfx_device.load_resources();
+
+    m_gfx_device.begin_single_command_submission();
+    create_scene();
+    m_gfx_device.end_single_command_submission();
 }
 
 void App::on_update()
@@ -43,7 +47,7 @@ void App::on_update()
     m_duration_frame   = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_time_begin_frame);
     m_time_begin_frame = std::chrono::steady_clock::now();
 
-    device.draw();
+    m_gfx_device.draw();
 }
 
 void App::on_destroy()
@@ -51,5 +55,22 @@ void App::on_destroy()
     game_running = false;
     // render_thread->join();
 
-    device.destroy();
+    m_gfx_device.destroy();
+}
+
+void App::create_scene()
+{
+    auto&& shader_manager   = m_gfx_device.m_shader_manager;
+    auto&& resource_manager = m_gfx_device.m_resource_manager;
+
+    // create shaders
+    shader_manager->register_technique("t0", VKN::Technique_createinfo{.m_vs_name = "hello_triangle.vs", .m_ps_name = "hello_triangle.ps"});
+    shader_manager->register_technique("t1", VKN::Technique_createinfo{.m_vs_name = "hello_triangle_mesh.vs", .m_ps_name = "hello_triangle.ps"});
+
+    // create mesh
+    resource_manager->create_mesh();
+
+    // shader_manager->register_shader("hello_triangle.vs");
+    // shader_manager->register_shader("hello_triangle_mesh.vs");
+    // shader_manager->register_shader("hello_triangle.ps");
 }

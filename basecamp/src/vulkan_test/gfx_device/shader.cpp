@@ -53,46 +53,7 @@ namespace VKN {
         assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
         create_vertex_input();
-
-        // usign reflection
-        auto&& module = m_reflection_module;
-
-        uint32_t count = 0;
-        result         = spvReflectEnumerateDescriptorSets(&module, &count, NULL);
-        assert(result == SPV_REFLECT_RESULT_SUCCESS);
-
-        std::vector<SpvReflectDescriptorSet*> sets(count);
-        result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
-        assert(result == SPV_REFLECT_RESULT_SUCCESS);
-
-        // Demonstrates how to generate all necessary data structures to create a
-        // VkDescriptorSetLayout for each descriptor set in this shader.
-        auto&& set_layouts = m_descriptorset_layoutdata;
-        set_layouts.resize(sets.size());
-        for (size_t i_set = 0; i_set < sets.size(); ++i_set) {
-            const SpvReflectDescriptorSet& refl_set = *(sets[i_set]);
-            Descriptorset_layoutdata&      layout   = set_layouts[i_set];
-
-            layout.bindings.resize(refl_set.binding_count);
-            layout.binding_names.resize(refl_set.binding_count);
-
-            for (uint32_t i_binding = 0; i_binding < refl_set.binding_count; ++i_binding) {
-                const SpvReflectDescriptorBinding& refl_binding = *(refl_set.bindings[i_binding]);
-
-                layout.binding_names[i_binding]                = refl_binding.name;
-                vk::DescriptorSetLayoutBinding& layout_binding = layout.bindings[i_binding];
-                layout_binding.binding                         = refl_binding.binding;
-                layout_binding.descriptorType                  = static_cast<vk::DescriptorType>(refl_binding.descriptor_type);
-                layout_binding.descriptorCount                 = 1;
-                for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
-                    layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
-                }
-                layout_binding.stageFlags = static_cast<vk::ShaderStageFlagBits>(module.shader_stage);
-            }
-            layout.set_number               = refl_set.set;
-            layout.create_info.bindingCount = refl_set.binding_count;
-            layout.create_info.pBindings    = layout.bindings.data();
-        }
+        create_descriptorset_layoutdata();
     }
 
     void Shader::create_vertex_input()
@@ -139,6 +100,49 @@ namespace VKN {
             uint32_t format_size = Device::format_size(attribute.format);
             attribute.offset     = m_vertex_input_binding_description.stride;
             m_vertex_input_binding_description.stride += format_size;
+        }
+    }
+
+    void Shader::create_descriptorset_layoutdata()
+    {
+        // usign reflection
+        auto&& module = m_reflection_module;
+
+        uint32_t count  = 0;
+        auto&&   result = spvReflectEnumerateDescriptorSets(&module, &count, NULL);
+        assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+        std::vector<SpvReflectDescriptorSet*> sets(count);
+        result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
+        assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+        // Demonstrates how to generate all necessary data structures to create a
+        // VkDescriptorSetLayout for each descriptor set in this shader.
+        auto&& set_layouts = m_descriptorset_layoutdata;
+        set_layouts.resize(sets.size());
+        for (size_t i_set = 0; i_set < sets.size(); ++i_set) {
+            const SpvReflectDescriptorSet& refl_set = *(sets[i_set]);
+            Descriptorset_layoutdata&      layout   = set_layouts[i_set];
+
+            layout.bindings.resize(refl_set.binding_count);
+            layout.binding_names.resize(refl_set.binding_count);
+
+            for (uint32_t i_binding = 0; i_binding < refl_set.binding_count; ++i_binding) {
+                const SpvReflectDescriptorBinding& refl_binding = *(refl_set.bindings[i_binding]);
+
+                layout.binding_names[i_binding]                = refl_binding.name;
+                vk::DescriptorSetLayoutBinding& layout_binding = layout.bindings[i_binding];
+                layout_binding.binding                         = refl_binding.binding;
+                layout_binding.descriptorType                  = static_cast<vk::DescriptorType>(refl_binding.descriptor_type);
+                layout_binding.descriptorCount                 = 1;
+                for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
+                    layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
+                }
+                layout_binding.stageFlags = static_cast<vk::ShaderStageFlagBits>(module.shader_stage);
+            }
+            layout.set_number               = refl_set.set;
+            layout.create_info.bindingCount = refl_set.binding_count;
+            layout.create_info.pBindings    = layout.bindings.data();
         }
     }
 

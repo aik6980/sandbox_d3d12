@@ -17,8 +17,10 @@ namespace VKN {
         void destroy_resources();
 
         void begin_frame();
+        void end_frame();
 
         vk::CommandBuffer m_command_buffer;
+        bool              m_command_buffer_opened = false;
 
         vk::Semaphore m_image_available_semaphore;
         vk::Semaphore m_render_finished_semaphore;

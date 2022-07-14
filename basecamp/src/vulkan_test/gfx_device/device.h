@@ -53,6 +53,10 @@ namespace VKN {
         void begin_frame();
         void end_frame();
 
+        // Sub system
+        std::unique_ptr<Resource_manager> m_resource_manager;
+        std::unique_ptr<Shader_manager>   m_shader_manager;
+
       private:
         CRect get_window_rect() const;
 
@@ -72,6 +76,7 @@ namespace VKN {
         uint32_t find_present_queue_family_index();
 
         std::vector<std::string> get_instance_extensions();
+        bool                     is_instance_extension_enabled(const std::string& name);
         std::vector<std::string> get_device_extensions();
 
         vk::SurfaceFormatKHR pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats);
@@ -79,20 +84,13 @@ namespace VKN {
         uint32_t        curr_frame_resource_idx();
         Frame_resource& curr_frame_resource();
 
-        vk::CommandBuffer& curr_command_buffer();
+        vk::CommandBuffer* curr_command_buffer();
 
-        struct Buffer_create_info {
-            vk::BufferUsageFlagBits m_usage_flags;
-
-            const void* m_data = nullptr;
-            size_t      m_size;
-        };
+        template <typename Structure_type>
+        Structure_type& request_extension_features();
 
         // single
         vk::CommandBuffer m_single_use_command_buffer;
-
-        // per Technique
-        void create_pipeline_state_object();
 
         // Resource manager
         void destroy_resource(Image& resource);
@@ -107,6 +105,12 @@ namespace VKN {
         vk::DebugUtilsMessengerEXT m_debug_utils_messenger;
 
         vk::PhysicalDevice m_physical_device;
+
+        // extension features
+        // Holds the extension feature structures, we use a map to retain an order of requested structures
+        std::unordered_map<vk::StructureType, std::shared_ptr<void>> m_extension_features;
+        // The extension feature pointer
+        void* m_last_requested_extension_feature{nullptr};
 
         vk::Device m_device;
         uint32_t   m_graphics_queue_family_index = 0;
@@ -137,18 +141,58 @@ namespace VKN {
         vk::RenderPass               m_render_pass;
         std::vector<vk::Framebuffer> m_frame_buffers;
 
-        // Render pipeline
-        vk::PipelineLayout m_pipeline_layout;
-        vk::Pipeline       m_pipeline;
-
         // Syncronization
         const uint64_t m_fence_timeout = 100000000;
 
-        // Sub system
-        std::unique_ptr<Resource_manager> m_resource_manager;
-        std::unique_ptr<Shader_manager>   m_shader_manager;
-
         std::array<std::unique_ptr<Frame_resource>, MAX_FRAMES_IN_FLIGHT> m_frame_resource;
     };
+
+    /**
+     * @brief Requests a third party extension to be used by the framework
+     *
+     *        To have the features enabled, this function must be called before the logical device
+     *        is created. To do this request sample specific features inside
+     *        VulkanSample::request_gpu_features(vkb::HPPPhysicalDevice &gpu).
+     *
+     *        If the feature extension requires you to ask for certain features to be enabled, you can
+     *        modify the struct returned by this function, it will propegate the changes to the logical
+     *        device.
+     * @returns The extension feature struct
+     */
+    template <typename Structure_type>
+    Structure_type& Device::request_extension_features()
+    {
+        // We cannot request extension features if the physical device properties 2 instance extension isnt enabled
+        if (!is_instance_extension_enabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+            throw std::runtime_error(
+                "Couldn't request feature from device as " + std::string(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) + " isn't enabled!");
+        }
+
+        // If the type already exists in the map, return a casted pointer to get the extension feature struct
+        vk::StructureType structure_type        = Structure_type::structureType; // need to instantiate this value to be usable in find()!
+        auto              extension_features_it = m_extension_features.find(structure_type);
+        if (extension_features_it != m_extension_features.end()) {
+            return *static_cast<Structure_type*>(extension_features_it->second.get());
+        }
+
+        // Get the extension feature
+        vk::StructureChain<vk::PhysicalDeviceFeatures2KHR, Structure_type> feature_chain =
+            m_physical_device.getFeatures2KHR<vk::PhysicalDeviceFeatures2KHR, Structure_type>();
+
+        // Insert the extension feature into the extension feature map so its ownership is held
+        m_extension_features.insert({structure_type, std::make_shared<Structure_type>(feature_chain.template get<Structure_type>())});
+
+        // Pull out the dereferenced void pointer, we can assume its type based on the template
+        auto* extension_ptr = static_cast<Structure_type*>(m_extension_features.find(structure_type)->second.get());
+
+        // If an extension feature has already been requested, we shift the linked list down by one
+        // Making this current extension the new base pointer
+        if (m_last_requested_extension_feature) {
+            extension_ptr->pNext = m_last_requested_extension_feature;
+        }
+        m_last_requested_extension_feature = extension_ptr;
+
+        return *extension_ptr;
+    }
 
 } // namespace VKN

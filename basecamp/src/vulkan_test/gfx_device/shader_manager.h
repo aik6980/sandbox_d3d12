@@ -8,26 +8,21 @@ namespace VKN {
       public:
         Shader_manager(Device& gfx_device)
             : m_gfx_device(gfx_device)
-            , m_vertex_shader(gfx_device)
-            , m_pixel_shader(gfx_device)
-            , m_vertex_shader_2(gfx_device)
-            , m_technique(gfx_device)
         {
         }
 
         void destroy_resources();
 
-        void register_shader(std::string name);
-
-        Shader m_vertex_shader;
-        Shader m_vertex_shader_2;
-        Shader m_pixel_shader;
-
-        Technique m_technique;
+        std::weak_ptr<Technique> register_technique(std::string name, const Technique_createinfo& create_info);
+        std::weak_ptr<Technique> get_technique(std::string name);
 
       private:
+        std::weak_ptr<Shader> register_shader(std::string name);
+        std::weak_ptr<Shader> get_shader(std::string name);
+
         Device& m_gfx_device;
 
-        std::unordered_map<std::string, std::shared_ptr<Shader>> m_shader_map;
+        std::unordered_map<std::string, std::shared_ptr<Shader>>    m_shader_map;
+        std::unordered_map<std::string, std::shared_ptr<Technique>> m_technique_map;
     };
 } // namespace VKN

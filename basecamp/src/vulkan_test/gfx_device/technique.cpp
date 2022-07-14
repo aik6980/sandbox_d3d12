@@ -1,6 +1,7 @@
 #include "technique.h"
 
 #include "device.h"
+#include "shader.h"
 #include "shader_manager.h"
 
 namespace VKN {
@@ -25,26 +26,31 @@ namespace VKN {
         // Render pass
         auto&& render_pass = m_gfx_device.m_render_pass;
 
-        auto&& vs = m_gfx_device.m_shader_manager->m_vertex_shader_2;
-        auto&& ps = m_gfx_device.m_shader_manager->m_pixel_shader;
+        auto&& vs = mh_vs.lock();
+        auto&& ps = mh_ps.lock();
 
         // Programable state -----------
         std::array<vk::PipelineShaderStageCreateInfo, 2> pipeline_shader_stage_createinfo = {
-            vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlags(), vk::ShaderStageFlagBits::eVertex, vs.m_shader_module, "main"),
-            vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlags(), vk::ShaderStageFlagBits::eFragment, ps.m_shader_module, "main")};
+            vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlags(), vk::ShaderStageFlagBits::eVertex, vs->m_shader_module, "main"),
+            vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlags(), vk::ShaderStageFlagBits::eFragment, ps->m_shader_module, "main")};
 
-        vk::PipelineVertexInputStateCreateInfo pipeline_vertex_input_state_createinfo(
-            {}, vs.m_vertex_input_binding_description, vs.m_vertex_input_attribute_descriptions);
+        vk::PipelineVertexInputStateCreateInfo pipeline_vertex_input_state_createinfo;
+        if (vs->m_vertex_input_attribute_descriptions.size() > 0) {
+            pipeline_vertex_input_state_createinfo = {{}, vs->m_vertex_input_binding_description, vs->m_vertex_input_attribute_descriptions};
+        }
+        else {
+            pipeline_vertex_input_state_createinfo = {{}, 0, nullptr, 0, nullptr};
+        }
 
         // Create a pipeline layout from Shader stages
-        auto&& num_descriptorset = vs.m_descriptorset_layoutdata.size() + ps.m_descriptorset_layoutdata.size();
+        auto&& num_descriptorset = vs->m_descriptorset_layoutdata.size() + ps->m_descriptorset_layoutdata.size();
         if (num_descriptorset > 0) {
             m_descriptorset_layouts.reserve(num_descriptorset);
             m_descriptorset_infos.reserve(num_descriptorset);
 
             {
                 auto&& shader_stage = vs;
-                for (auto&& layout_data : shader_stage.m_descriptorset_layoutdata) {
+                for (auto&& layout_data : shader_stage->m_descriptorset_layoutdata) {
                     auto&& layout = device.createDescriptorSetLayout(layout_data.create_info);
                     m_descriptorset_layouts.emplace_back(layout);
                     m_descriptorset_infos.emplace_back(&layout_data);
@@ -53,7 +59,7 @@ namespace VKN {
 
             {
                 auto&& shader_stage = ps;
-                for (auto&& layout_data : shader_stage.m_descriptorset_layoutdata) {
+                for (auto&& layout_data : shader_stage->m_descriptorset_layoutdata) {
                     auto&& layout = device.createDescriptorSetLayout(layout_data.create_info);
                     m_descriptorset_layouts.emplace_back(layout);
                     m_descriptorset_infos.emplace_back(&layout_data);
