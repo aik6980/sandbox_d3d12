@@ -130,6 +130,7 @@ namespace VKN {
         std::vector<vk::ImageView> m_swapchain_image_views;
         vk::SwapchainKHR           m_swapchain;
         vk::Extent2D               m_swapchain_image_size;
+        vk::Format                 m_swapchain_format;
 
         // VMA Allocator
         vma::Allocator m_vma_allocator;

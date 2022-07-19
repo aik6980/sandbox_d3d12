@@ -110,8 +110,8 @@ void Mesh_renderer::draw_meshes_shadow_map()
     auto&& technique_instance = m_engine.shader_mgr().create_technique_instance(m_technique_shadow_map, rt_fmt, ds_fmt);
     if (technique_instance) {
 
-        technique_instance->set_cbv("Camera_cb", "View", &camera.view(), sizeof(camera.view()));
-        technique_instance->set_cbv("Camera_cb", "Projection", &camera.projection(), sizeof(camera.projection()));
+        technique_instance->set_cbv("Camera_cb", "View", camera.view());
+        technique_instance->set_cbv("Camera_cb", "Projection", camera.projection());
 
         XMMATRIX world = XMMatrixTranslation(0.0f, 1.0f, 0.0f);
         technique_instance->set_cbv("Object_cb", "World", &world, sizeof(world));
@@ -122,8 +122,10 @@ void Mesh_renderer::draw_meshes_shadow_map()
         command_list()->SetPipelineState(technique_instance->m_pso.Get());
         technique_instance->set_root_signature_parameters(*command_list());
 
-        command_list()->IASetVertexBuffers(0, 1, &mesh_buffer->vertex_buffer_view());
-        command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
+        auto&& vbv = mesh_buffer->vertex_buffer_view();
+        command_list()->IASetVertexBuffers(0, 1, &vbv);
+        auto&& ibv = mesh_buffer->index_buffer_view();
+        command_list()->IASetIndexBuffer(&ibv);
         command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         auto&& index_count = mesh_buffer->m_mesh_location.index_count;
@@ -133,8 +135,10 @@ void Mesh_renderer::draw_meshes_shadow_map()
 
 void Draw_indexed_mesh(D3D12::Command_list& command_list, D3D12::Technique_instance& technique_instance, D3D12::Mesh_buffer& mesh_buffer)
 {
-    command_list()->IASetVertexBuffers(0, 1, &mesh_buffer.vertex_buffer_view());
-    command_list()->IASetIndexBuffer(&mesh_buffer.index_buffer_view());
+    auto&& vbv = mesh_buffer.vertex_buffer_view();
+    command_list()->IASetVertexBuffers(0, 1, &vbv);
+    auto&& ibv = mesh_buffer.index_buffer_view();
+    command_list()->IASetIndexBuffer(&ibv);
     command_list()->IASetPrimitiveTopology(mesh_buffer.prim_topology);
 
     auto&& index_count = mesh_buffer.m_mesh_location.index_count;
@@ -162,8 +166,8 @@ void Mesh_renderer::draw_meshes()
         auto&& technique_instance = m_engine.shader_mgr().create_technique_instance(m_technique_mesh, rt_fmt, ds_fmt);
         if (technique_instance) {
 
-            technique_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
-            technique_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
+            technique_instance->set_cbv("Camera_cb", "View", cam.view());
+            technique_instance->set_cbv("Camera_cb", "Projection", cam.projection());
 
             technique_instance->set_cbv("Light_cb", "Receive_shadow", 0);
 
@@ -209,7 +213,8 @@ void Mesh_renderer::draw_meshes()
                 mesh_buffer->vertex_buffer_view(), m_engine.resource_mgr().request_instance_buffer_view(m_instance_data_buffer_name, sizeof(Instance_data))};
 
             command_list()->IASetVertexBuffers(0, (uint32_t)vb_views.size(), vb_views.data());
-            command_list()->IASetIndexBuffer(&mesh_buffer->index_buffer_view());
+            auto&& ibv = mesh_buffer->index_buffer_view();
+            command_list()->IASetIndexBuffer(&ibv);
             command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
             auto&& index_count = mesh_buffer->m_mesh_location.index_count;
@@ -226,12 +231,12 @@ void Mesh_renderer::draw_meshes()
         auto&& technique_instance = m_engine.shader_mgr().create_technique_instance(m_technique_mesh, rt_fmt, ds_fmt);
         {
 
-            technique_instance->set_cbv("Camera_cb", "View", &cam.view(), sizeof(cam.view()));
-            technique_instance->set_cbv("Camera_cb", "Projection", &cam.projection(), sizeof(cam.projection()));
+            technique_instance->set_cbv("Camera_cb", "View", cam.view());
+            technique_instance->set_cbv("Camera_cb", "Projection", cam.projection());
 
             technique_instance->set_cbv("Light_cb", "Receive_shadow", 1);
-            technique_instance->set_cbv("Light_cb", "Light_view", &m_light.view(), sizeof(m_light.view()));
-            technique_instance->set_cbv("Light_cb", "Light_projection", &m_light.projection(), sizeof(m_light.projection()));
+            technique_instance->set_cbv("Light_cb", "Light_view", m_light.view());
+            technique_instance->set_cbv("Light_cb", "Light_projection", m_light.projection());
             auto&& shadow_map_tex = m_frame_pipeline.m_render_pass_shadow_map->depth_stencil_buffer();
             technique_instance->set_srv("Shadow_map_srv", shadow_map_tex);
 
@@ -247,8 +252,10 @@ void Mesh_renderer::draw_meshes()
             command_list()->SetPipelineState(technique_instance->m_pso.Get());
             technique_instance->set_root_signature_parameters(*command_list());
 
-            command_list()->IASetVertexBuffers(0, 1, &grid_mesh_buffer->vertex_buffer_view());
-            command_list()->IASetIndexBuffer(&grid_mesh_buffer->index_buffer_view());
+            auto&& vbv = grid_mesh_buffer->vertex_buffer_view();
+            command_list()->IASetVertexBuffers(0, 1, &vbv);
+            auto&& ibv = grid_mesh_buffer->index_buffer_view();
+            command_list()->IASetIndexBuffer(&ibv);
             command_list()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
             auto&& index_count = grid_mesh_buffer->m_mesh_location.index_count;

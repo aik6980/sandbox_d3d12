@@ -42,13 +42,18 @@ void Render_pass_main::begin_render()
         render_device.buffer_state_transition(*rt_buffer.lock(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 
         command_list()->ClearRenderTargetView(view, m_main_colour_buffer_clear_val.Color, 0, nullptr);
-        command_list()->OMSetRenderTargets(1, &view, true, &render_device.curr_backbuffer_depth_stencil_view());
-        command_list()->RSSetViewports(1, &render_device.get_window_viewport());
-        command_list()->RSSetScissorRects(1, &render_device.get_window_rect());
+        auto&& dsv = render_device.curr_backbuffer_depth_stencil_view();
+        command_list()->OMSetRenderTargets(1, &view, true, &dsv);
+        auto&& vp = render_device.get_window_viewport();
+        command_list()->RSSetViewports(1, &vp);
+        auto&& rect = render_device.get_window_rect();
+        command_list()->RSSetScissorRects(1, &rect);
     }
 }
 
-void Render_pass_main::end_render() {}
+void Render_pass_main::end_render()
+{
+}
 
 DXGI_FORMAT Render_pass_main::render_target_format()
 {
@@ -104,8 +109,10 @@ void Render_pass_shadow_map::begin_render()
 
         command_list()->ClearDepthStencilView(depth_stencil_view, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
         command_list()->OMSetRenderTargets(0, nullptr, true, &std::get<CD3DX12_CPU_DESCRIPTOR_HANDLE>(cpu_descriptor_handle));
-        command_list()->RSSetViewports(1, &render_device.get_window_viewport());
-        command_list()->RSSetScissorRects(1, &render_device.get_window_rect());
+        auto&& vp = render_device.get_window_viewport();
+        command_list()->RSSetViewports(1, &vp);
+        auto&& rect = render_device.get_window_rect();
+        command_list()->RSSetScissorRects(1, &rect);
     }
 }
 
