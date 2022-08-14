@@ -6,17 +6,29 @@ class Frame_pipeline;
 
 class App {
   public:
-    static Engine&         engine() { return *m_engine; }
-    static entt::registry& entt_reg() { return m_reg; }
+    static Engine& engine()
+    {
+        return *m_engine;
+    }
+    static entt::registry& entt_reg()
+    {
+        return m_reg;
+    }
 
-    static Input_manager& input() { return *m_input_manager; }
+    static Input_manager& input()
+    {
+        return *m_input_manager;
+    }
 
     static float get_duration_app()
     {
         return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_time_begin_app).count() * 1e-6f;
     }
 
-    static float get_duration_frame() { return m_duration_frame.count() * (float)1e-6; }
+    static float get_duration_frame()
+    {
+        return m_duration_frame.count() * (float)1e-6;
+    }
 
     void on_init(HINSTANCE hInstance, HWND hWnd);
     void on_update();
@@ -24,6 +36,7 @@ class App {
 
     void on_event_msg(const MSG msg){};
 
+    void load_world_assets();
     void create_world();
 
     static Frame_pipeline* m_renderer;

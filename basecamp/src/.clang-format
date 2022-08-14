@@ -1,8 +1,10 @@
 # Format Style Options - Created with Clang Power Tools
 ---
 BasedOnStyle: Microsoft
+UseTab: Always
 IndentWidth: 4
 ColumnLimit: 160
+# IndentAccessModifiers: True
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveDeclarations: Consecutive
 PointerAlignment: Left

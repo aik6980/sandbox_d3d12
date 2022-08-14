@@ -128,7 +128,7 @@ namespace D3D12 {
         // If not, wait until the GPU has completed commands up to this fence point.
         auto&& curr_frame_resource = frame_resource();
         if (curr_frame_resource.m_fence != 0 && m_fence->GetCompletedValue() < curr_frame_resource.m_fence) {
-            HANDLE event_handle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+            HANDLE event_handle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
             DBG::throw_hr(m_fence->SetEventOnCompletion(curr_frame_resource.m_fence, event_handle));
             WaitForSingleObject(event_handle, INFINITE);
 

@@ -3,14 +3,19 @@
 #include "common/common.h"
 
 struct Transform {
-    XMFLOAT3 m_pos    = Vec3::Origin;
-    XMFLOAT4 m_orient = Quat::Identity;
-    XMFLOAT3 m_scale  = Vec3::One;
+	Vector3	   pos	  = Vec3::Origin;
+	Quaternion orient = Quat::Identity;
+	Vector3	   scale  = Vec3::One;
 };
 
-struct Player {
-};
+struct Player {};
 
-struct Light {
+struct Light {};
 
+struct Animation_comp {};
+
+struct Object_renderer_comp {
+	std::string name;
+	bool		cast_shadow	   = false;
+	bool		receive_shadow = false;
 };

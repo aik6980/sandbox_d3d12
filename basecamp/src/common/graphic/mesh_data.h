@@ -1,5 +1,7 @@
 #pragma once
 
+#include "math/aabb.h"
+
 struct Mesh_vertex_array {
     // vertices
     vector<Vector3> m_position;
@@ -30,7 +32,10 @@ struct TextureData {
 
     void reset(uint32_t w, uint32_t h);
     void set_data(uint32_t x, uint32_t y, const XMCOLOR& val);
-    int  pixel_size_in_byte() const { return sizeof(decltype(*m_data.begin())); }
+    int  pixel_size_in_byte() const
+    {
+        return sizeof(decltype(*m_data.begin()));
+    }
 };
 
 struct RT_vertex {

@@ -2,6 +2,8 @@
 
 #include "shaders/hlsl_shared_struct.h"
 
+#include "mesh_data.h"
+
 struct Mesh_vertex_array;
 struct Mesh_index_array;
 
