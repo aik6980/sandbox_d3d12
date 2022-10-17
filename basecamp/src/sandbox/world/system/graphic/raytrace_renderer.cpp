@@ -67,7 +67,6 @@ void Raytrace_renderer::load_resource()
 		m_grid_mesh		  = build_mesh(mesh_verts, mesh_data->m_indices, mesh_name, m_engine);
 
 		m_mesh_list[mesh_name]				 = make_unique<Mesh_data_raw>();
-		m_mesh_list[mesh_name]->vertices_raw = make_unique<Mesh_vertex_array>(mesh_data->m_vertices);
 		m_mesh_list[mesh_name]->indices_raw	 = make_unique<Mesh_index_array>(mesh_data->m_indices);
 		m_mesh_list[mesh_name]->vertices_fat = MeshDataGenerator::to_fat(mesh_data->m_vertices);
 	}
@@ -79,23 +78,6 @@ void Raytrace_renderer::update()
 {
 	// update scene
 	m_scene_data->m_instance_transforms.clear();
-
-	// auto&& t = App::get_duration_app();
-	//// add instances
-	// uint32_t num_instances = 5;
-	// for (uint32_t i = 0; i < num_instances; ++i) {
-	//     float    phase = i * XM_2PI / num_instances;
-	//     XMVECTOR pos   = XMVectorSet(4.0f * sin(phase), 4.0f + sin(phase + t * 1.5f), 4.0f * cos(phase), 0.0f);
-	//
-	//     auto&& trans_mat = XMMatrixTranslationFromVector(pos);
-	//     m_scene_data->add_instance(m_unit_cube_name, trans_mat);
-	// }
-	//
-	// auto&& trans_mat = XMMatrixIdentity();
-	// m_scene_data->add_instance(m_grid_mesh, trans_mat);
-	//
-	// auto&& cube_trans_mat = XMMatrixTranslation(0.0f, 1.0f, 0.0f);
-	// m_scene_data->add_instance(m_unit_cube_name, cube_trans_mat);
 
 	auto&& scene_container = m_frame_pipeline.m_scene_container;
 	for (auto&& kvp : scene_container.m_scene_instances) {
