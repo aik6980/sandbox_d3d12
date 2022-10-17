@@ -21,3 +21,15 @@ entt::entity Make_camera(entt::registry& reg)
 
     return e;
 }
+
+entt::entity Make_object(entt::registry& reg, const Vector3& pos, const std::string& mesh)
+{
+    const entt::entity e = reg.create();
+
+    auto&& transform = reg.emplace<Transform>(e);
+    transform.pos    = pos;
+
+    reg.emplace<Object_renderer_comp>(e, mesh);
+
+    return e;
+}

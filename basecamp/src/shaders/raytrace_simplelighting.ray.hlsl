@@ -160,7 +160,8 @@ void closethit_entry(inout Payload_st payload, in Tri_attributes attr)
     Fat_vertex vertices[3] = { Vertices_srv[indices.x], Vertices_srv[indices.y], Vertices_srv[indices.z] };
 
 
-    payload.colour = vertices[0].m_colour;
+    float3 barycentrics = float3(1.0 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
+    payload.colour = vertices[0].m_colour * barycentrics.x + vertices[1].m_colour * barycentrics.y + vertices[2].m_colour * barycentrics.z;
 
     //float3 barycentrics = float3(1.0 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
     //payload.colour = float4(barycentrics, 1.0);

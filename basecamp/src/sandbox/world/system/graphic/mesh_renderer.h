@@ -24,8 +24,8 @@ class Mesh_renderer {
     void draw_meshes_shadow_map();
     void draw_meshes();
 
-    void build_quad_mesh();
-    void build_cube_mesh();
+    // void build_quad_mesh();
+    // void build_cube_mesh();
 
     void build_texture();
 
@@ -34,10 +34,10 @@ class Mesh_renderer {
     Engine&         m_engine;
     Frame_pipeline& m_frame_pipeline;
 
-    string m_duck_white_mesh;
-    string m_unit_quad_name;
-    string m_unit_cube_name;
-    string m_grid_mesh;
+    // string m_duck_white_mesh;
+    // string m_unit_quad_name;
+    // string m_unit_cube_name;
+    // string m_grid_mesh;
 
     string m_texture_name              = "checkerboard_texture";
     string m_point_sampler             = "point_sampler";

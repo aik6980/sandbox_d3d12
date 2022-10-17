@@ -2,7 +2,7 @@
 ; Note: shader requires additional functionality:
 ;       UAVs at every shader stage
 ;
-; shader hash: b4a110bc0d75b3b330c7906c6b691f9a
+; shader hash: 48a9e480e13248d6f2568d3a713944aa
 ;
 ; Buffer Definitions:
 ;
@@ -410,22 +410,73 @@ define void @"\01?closethit_entry@@YAXUPayload_st@@UBuiltInTriangleIntersectionA
   store float %73, float* %66
   store float %74, float* %67
   store float %75, float* %68
-  %76 = getelementptr [3 x float], [3 x float]* %5, i32 0, i32 0
-  %77 = getelementptr [3 x float], [3 x float]* %6, i32 0, i32 0
-  %78 = getelementptr [3 x float], [3 x float]* %7, i32 0, i32 0
-  %79 = getelementptr [3 x float], [3 x float]* %8, i32 0, i32 0
-  %80 = load float, float* %76
-  %81 = insertelement <4 x float> undef, float %80, i64 0
-  %82 = load float, float* %77
-  %83 = insertelement <4 x float> %81, float %82, i64 1
-  %84 = load float, float* %78
-  %85 = insertelement <4 x float> %83, float %84, i64 2
-  %86 = load float, float* %79
-  %87 = insertelement <4 x float> %85, float %86, i64 3
-  %88 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
-  %89 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
-  %90 = getelementptr inbounds %struct.Payload_st, %struct.Payload_st* %payload, i32 0, i32 0
-  store <4 x float> %87, <4 x float>* %90
+  %76 = getelementptr inbounds %struct.BuiltInTriangleIntersectionAttributes, %struct.BuiltInTriangleIntersectionAttributes* %attr, i32 0, i32 0
+  %77 = load <2 x float>, <2 x float>* %76, align 4
+  %78 = extractelement <2 x float> %77, i32 0
+  %79 = fsub fast float 1.000000e+00, %78
+  %80 = getelementptr inbounds %struct.BuiltInTriangleIntersectionAttributes, %struct.BuiltInTriangleIntersectionAttributes* %attr, i32 0, i32 0
+  %81 = load <2 x float>, <2 x float>* %80, align 4
+  %82 = extractelement <2 x float> %81, i32 1
+  %83 = fsub fast float %79, %82
+  %84 = getelementptr inbounds %struct.BuiltInTriangleIntersectionAttributes, %struct.BuiltInTriangleIntersectionAttributes* %attr, i32 0, i32 0
+  %85 = load <2 x float>, <2 x float>* %84, align 4
+  %86 = extractelement <2 x float> %85, i32 0
+  %87 = getelementptr inbounds %struct.BuiltInTriangleIntersectionAttributes, %struct.BuiltInTriangleIntersectionAttributes* %attr, i32 0, i32 0
+  %88 = load <2 x float>, <2 x float>* %87, align 4
+  %89 = extractelement <2 x float> %88, i32 1
+  %90 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
+  %91 = getelementptr [3 x float], [3 x float]* %5, i32 0, i32 0
+  %92 = getelementptr [3 x float], [3 x float]* %6, i32 0, i32 0
+  %93 = getelementptr [3 x float], [3 x float]* %7, i32 0, i32 0
+  %94 = getelementptr [3 x float], [3 x float]* %8, i32 0, i32 0
+  %95 = load float, float* %91
+  %96 = load float, float* %92
+  %97 = load float, float* %93
+  %98 = load float, float* %94
+  %99 = fmul fast float %95, %83
+  %100 = fmul fast float %96, %83
+  %101 = fmul fast float %97, %83
+  %102 = fmul fast float %98, %83
+  %103 = getelementptr [3 x float], [3 x float]* %5, i32 0, i32 1
+  %104 = getelementptr [3 x float], [3 x float]* %6, i32 0, i32 1
+  %105 = getelementptr [3 x float], [3 x float]* %7, i32 0, i32 1
+  %106 = getelementptr [3 x float], [3 x float]* %8, i32 0, i32 1
+  %107 = load float, float* %103
+  %108 = load float, float* %104
+  %109 = load float, float* %105
+  %110 = load float, float* %106
+  %111 = fmul fast float %107, %86
+  %112 = fmul fast float %108, %86
+  %113 = fmul fast float %109, %86
+  %114 = fmul fast float %110, %86
+  %115 = fadd fast float %99, %111
+  %116 = fadd fast float %100, %112
+  %117 = fadd fast float %101, %113
+  %118 = fadd fast float %102, %114
+  %119 = getelementptr [3 x float], [3 x float]* %5, i32 0, i32 2
+  %120 = getelementptr [3 x float], [3 x float]* %6, i32 0, i32 2
+  %121 = getelementptr [3 x float], [3 x float]* %7, i32 0, i32 2
+  %122 = getelementptr [3 x float], [3 x float]* %8, i32 0, i32 2
+  %123 = load float, float* %119
+  %124 = load float, float* %120
+  %125 = load float, float* %121
+  %126 = load float, float* %122
+  %127 = fmul fast float %123, %89
+  %128 = fmul fast float %124, %89
+  %129 = fmul fast float %125, %89
+  %130 = fmul fast float %126, %89
+  %131 = fadd fast float %115, %127
+  %132 = fadd fast float %116, %128
+  %133 = fadd fast float %117, %129
+  %134 = fadd fast float %118, %130
+  %135 = insertelement <4 x float> undef, float %131, i32 0
+  %136 = insertelement <4 x float> %135, float %132, i32 1
+  %137 = insertelement <4 x float> %136, float %133, i32 2
+  %138 = insertelement <4 x float> %137, float %134, i32 3
+  %139 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
+  %140 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
+  %141 = getelementptr inbounds %struct.Payload_st, %struct.Payload_st* %payload, i32 0, i32 0
+  store <4 x float> %138, <4 x float>* %141
   ret void
 }
 
