@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common/math/aabb.h"
+
 struct Mesh_vertex_array {
     // vertices
     vector<Vector3> m_position;

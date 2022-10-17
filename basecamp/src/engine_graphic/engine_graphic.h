@@ -57,6 +57,7 @@ struct Buffer;
 struct Dynamic_buffer;
 struct Sampler;
 struct Scene_data;
+struct Mesh_index_array;
 
 class Technique;
 class Technique_instance;
