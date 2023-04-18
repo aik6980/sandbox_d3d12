@@ -14,6 +14,8 @@
 #include "world/system/graphic/render_pass/render_pass_main.h"
 #include "world/system/systems.h"
 
+#include <future>
+
 std::unique_ptr<Engine>		   App::m_engine;
 std::unique_ptr<Input_manager> App::m_input_manager;
 entt::registry				   App::m_reg;
@@ -26,6 +28,8 @@ std::chrono::microseconds						   App::m_duration_frame;
 
 std::unique_ptr<std::thread> render_thread;
 std::atomic<bool>			 game_running = true;
+
+std::future<int> fut_val;
 
 void App::on_init(HINSTANCE hInstance, HWND hWnd)
 {
@@ -60,6 +64,8 @@ void App::on_init(HINSTANCE hInstance, HWND hWnd)
 	// render_thread.reset(new std::thread(
 	//	[&]() { while (game_running) { m_engine->draw(); }
 	//}));
+
+	// fut_val = prom_val.get_future();
 }
 
 void App::on_update()
@@ -77,6 +83,16 @@ void App::on_update()
 
 	Animation_update(m_reg);
 
+	if (App::input().is_keydown(OIS::KC_SPACE)) {
+		std::promise<int> prom_val;
+		prom_val.set_value(10);
+		fut_val = prom_val.get_future();
+	}
+
+	// if (fut_val.valid()) {
+	//	DBG::OutputString("promised fulfill %d", fut_val.get());
+	// }
+
 	// pre render
 	m_renderer->m_scene_container.clear();
 	Object_render(m_reg);
@@ -87,6 +103,10 @@ void App::on_update()
 
 void App::on_destroy()
 {
+	if (fut_val.valid()) {
+		DBG::OutputString("promised fulfill %d", fut_val.get());
+	}
+
 	game_running = false;
 	// render_thread->join();
 

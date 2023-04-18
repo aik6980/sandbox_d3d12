@@ -13,7 +13,7 @@
 ; SV_Position              0   xyzw        0      POS   float   xyzw
 ; Colour                   0   xyzw        1     NONE   float       
 ;
-; shader hash: 5849da66e628009eeaf5db49a3bb6ec4
+; shader hash: 6e9a1d8b78da1b194a1f898c37405fe9
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -138,11 +138,12 @@ define void @main() {
   %40 = getelementptr [9 x float], [9 x float]* @tri.v.1dim, i32 0, i32 %39
   %41 = load float, float* %40, align 4
   %42 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
+  %43 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %31)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %36)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %41)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 3, float 1.000000e+00)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  %43 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
+  %44 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
   ret void
 }
 
@@ -170,9 +171,9 @@ attributes #2 = { nounwind readonly }
 !dx.viewIdState = !{!8}
 !dx.entryPoints = !{!9}
 
-!0 = !{!"clang version 3.7 (tags/RELEASE_370/final)"}
+!0 = !{!"dxcoob 1.7.2212.40 (e043f4a12)"}
 !1 = !{i32 1, i32 0}
-!2 = !{i32 1, i32 5}
+!2 = !{i32 1, i32 7}
 !3 = !{!"vs", i32 6, i32 0}
 !4 = !{null, null, !5, null}
 !5 = !{!6, !7}

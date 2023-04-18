@@ -18,7 +18,7 @@
 ; Texcoord                 0   xyzw        2     NONE   float       
 ; Texcoord                 1   xyzw        3     NONE   float   xyzw
 ;
-; shader hash: e5abdb7af6e630770c400ada42261a35
+; shader hash: 5de5dc185dfe3693fe650c2afc557078
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -210,15 +210,7 @@ define void @main() {
   %91 = call float @dx.op.tertiary.f32(i32 46, float %54, float %75, float %90)  ; FMad(a,b,c)
   %92 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
   %93 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %79)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %83)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %87)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 3, float %91)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   %94 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
-  call void @dx.op.storeOutput.f32(i32 5, i32 1, i32 0, i8 0, float %7)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 1, i32 0, i8 1, float %8)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 1, i32 0, i8 2, float %9)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 1, i32 0, i8 3, float 1.000000e+00)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   %95 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
   %96 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
   %97 = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59, %dx.types.Handle %2, i32 0)  ; CBufferLoadLegacy(handle,regIndex)
@@ -296,11 +288,20 @@ define void @main() {
   %169 = call float @dx.op.tertiary.f32(i32 46, float %132, float %153, float %168)  ; FMad(a,b,c)
   %170 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
   %171 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
+  %172 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %79)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %83)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %87)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 3, float %91)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 1, i32 0, i8 0, float %7)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 1, i32 0, i8 1, float %8)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 1, i32 0, i8 2, float %9)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 1, i32 0, i8 3, float 1.000000e+00)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 3, i32 0, i8 0, float %157)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 3, i32 0, i8 1, float %161)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 3, i32 0, i8 2, float %165)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 3, i32 0, i8 3, float %169)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  %172 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
+  %173 = load i32, i32* getelementptr inbounds ([1 x i32], [1 x i32]* @dx.nothing.a, i32 0, i32 0)
   ret void
 }
 
@@ -331,9 +332,9 @@ attributes #2 = { nounwind readonly }
 !dx.viewIdState = !{!8}
 !dx.entryPoints = !{!9}
 
-!0 = !{!"clang version 3.7 (tags/RELEASE_370/final)"}
+!0 = !{!"dxcoob 1.7.2212.40 (e043f4a12)"}
 !1 = !{i32 1, i32 0}
-!2 = !{i32 1, i32 5}
+!2 = !{i32 1, i32 7}
 !3 = !{!"vs", i32 6, i32 0}
 !4 = !{null, null, !5, null}
 !5 = !{!6, !7}
