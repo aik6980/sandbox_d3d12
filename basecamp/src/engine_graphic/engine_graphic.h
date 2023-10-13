@@ -45,38 +45,38 @@ using Microsoft::WRL::ComPtr;
 class Engine;
 
 namespace D3D12 {
-struct MESH_LOCATION;
+	struct MESH_LOCATION;
 
-class Device;
-class FrameResource;
-class Resource_manager;
-class Shader_manager;
-class Mesh_buffer;
-struct Buffer_request;
-struct Buffer;
-struct Dynamic_buffer;
-struct Sampler;
-struct Scene_data;
-struct Mesh_index_array;
+	class Device;
+	class FrameResource;
+	class Resource_manager;
+	class Shader_manager;
+	class Mesh_buffer;
+	struct Buffer_request;
+	struct Buffer;
+	struct Dynamic_buffer;
+	struct Sampler;
+	struct Scene_data;
+	struct Mesh_index_array;
 
-class Technique;
-class Technique_instance;
-class Lib_ray_technique;
-class Lib_ray_technique_instance;
+	class Technique;
+	class Technique_instance;
+	class Lib_ray_technique;
+	class Lib_ray_technique_instance;
 
-struct TechniqueInit {
-    string m_vs;
-    string m_ps;
-    string m_cs;
-};
+	struct TechniqueInit {
+		string m_vs;
+		string m_ps;
+		string m_cs;
+	};
 
 } // namespace D3D12
 
 class Engine_client {
   public:
-    virtual void load_resource() = 0;
-    virtual void update()        = 0;
-    virtual void draw()          = 0;
+	virtual void load_resource() = 0;
+	virtual void update()		 = 0;
+	virtual void draw()			 = 0;
 
-    string m_name;
+	string m_name;
 };

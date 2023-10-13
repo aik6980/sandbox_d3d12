@@ -1,6 +1,6 @@
 
 
-#include "mesh_renderer.h"
+#include "mesh_novb_renderer.h"
 
 #include "app.h"
 #include "common/common_cpp.h"
@@ -9,7 +9,7 @@
 #include "global.h"
 #include "world/component/camera.h"
 
-void Mesh_renderer::load_resource()
+void Mesh_novb_renderer::load_resource()
 {
 	auto&& device		  = m_engine.render_device();
 	auto&& shader_manager = m_engine.shader_mgr();
@@ -24,18 +24,6 @@ void Mesh_renderer::load_resource()
 		m_technique_mesh = "mesh";
 		D3D12::TechniqueInit t{.m_vs = "mesh.vs", .m_ps = "mesh.ps"};
 		m_engine.shader_mgr().register_technique(m_technique_mesh, t);
-	}
-
-	{
-		m_technique_shadow_map = "mesh_shadow_map";
-		D3D12::TechniqueInit t{.m_vs = "mesh.vs", .m_ps = ""};
-		m_engine.shader_mgr().register_technique(m_technique_shadow_map, t);
-	}
-
-	{
-		m_technique_mesh_instancing = "mesh_instancing";
-		D3D12::TechniqueInit t{.m_vs = "mesh_instancing.vs", .m_ps = "mesh.ps"};
-		m_engine.shader_mgr().register_technique(m_technique_mesh_instancing, t);
 	}
 
 	// build a mesh
