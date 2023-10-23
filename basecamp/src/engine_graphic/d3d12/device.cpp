@@ -5,9 +5,9 @@
 #include "common/debug/debug_output.h"
 #include "common/debug/debug_util.h"
 
-#include "imgui/backends/imgui_impl_dx12.h"
-#include "imgui/backends/imgui_impl_win32.h"
-#include "imgui/imgui.h"
+#include "imgui.h"
+#include "imgui/imgui_impl_dx12.h"
+#include "imgui/imgui_impl_win32.h"
 
 #include "resource_manager.h"
 
@@ -537,6 +537,10 @@ namespace D3D12 {
 
 	void Device::imgui_render()
 	{
+		auto&& rtv = curr_backbuffer_view();
+		auto&& dsv = curr_backbuffer_depth_stencil_view();
+		m_commandList()->OMSetRenderTargets(1, &rtv, true, &dsv);
+
 		ID3D12DescriptorHeap* heaps[] = {m_imgui_srv_descriptor_heap.Get()};
 
 		commmand_list()()->SetDescriptorHeaps(1, heaps);

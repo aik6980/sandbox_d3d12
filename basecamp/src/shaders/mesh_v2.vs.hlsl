@@ -21,7 +21,7 @@ VS_OUTPUT main(uint vertex_id : SV_VertexID, uint instance_id : SV_InstanceID)
 
 	VS_OUTPUT output;
 	output.position = pos;
-	output.colour	= float4(input.colour.rgb, 1.0); //float4(input.colour.xyz, 1.0);
+	output.colour	= float4(1.0, 1.0, 1.0, 1.0); //float4(input.colour.xyz, 1.0);
 
 	//float2 uv = pos.xy / pos.w;
 	//uv = uv * 0.5 + 0.5;

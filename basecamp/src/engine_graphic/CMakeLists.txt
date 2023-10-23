@@ -8,7 +8,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE stdafx.h)
 set(LIB_DXC ${PROJECT_SOURCE_DIR}/d3d12/dxc/dxcompiler.lib)
 target_link_libraries(${PROJECT_NAME} common d3d12 dxgi dxguid d3dcompiler ${LIB_DXC})
 
-set(INC_IMGUI ${CMAKE_SOURCE_DIR}/ext/imgui/src)
+set(INC_IMGUI ${CMAKE_SOURCE_DIR}/ext/imgui/include)
 set(INC_ASSIMP ${CMAKE_SOURCE_DIR}/ext/assimp/include)
 include_directories(${CMAKE_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${INC_IMGUI} ${INC_ASSIMP})
 

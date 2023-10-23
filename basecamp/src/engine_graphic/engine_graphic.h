@@ -37,9 +37,9 @@ using Microsoft::WRL::ComPtr;
 #include "d3d12/resource_state.h"
 #include "d3d12/sampler_desc.h"
 #include "d3d12/shader_reflection.h"
-#include "imgui/backends/imgui_impl_dx12.h"
-#include "imgui/backends/imgui_impl_win32.h"
-#include "imgui/imgui.h"
+#include "imgui.h"
+#include "imgui/imgui_impl_dx12.h"
+#include "imgui/imgui_impl_win32.h"
 
 // Forward Declaration
 class Engine;
