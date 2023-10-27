@@ -40,6 +40,11 @@ void Engine::update()
 	// test 2nd imgui window
 	ImGui::Begin("Editor Panel");
 	ImGui::Text("Text Label 1");
+
+	const ImU32 white_col = IM_COL32(255, 255, 255, 255);
+	ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(10, 10), 200, white_col);
+
+	ImGui::Button("Button 1");
 	ImGui::End();
 #endif
 
