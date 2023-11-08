@@ -2,11 +2,13 @@
 
 #include "common/common.h"
 #include "engine_graphic/engine_graphic.h"
+
 #include "scene_container.h"
 #include "shaders/hlsl_shared_struct.h"
 #include "world/component/camera.h"
 
 class Mesh_renderer;
+class Mesh_novb_renderer;
 class Raytrace_renderer;
 class Post_renderer;
 
@@ -43,9 +45,10 @@ class Frame_pipeline : public Engine_client {
 		return m_mesh_data_pool;
 	}
 
-	unique_ptr<Mesh_renderer>	  m_mesh_renderer;
-	unique_ptr<Raytrace_renderer> m_raytrace_renderer;
-	unique_ptr<Post_renderer>	  m_post_renderer;
+	unique_ptr<Mesh_renderer>	   m_mesh_renderer;
+	unique_ptr<Mesh_novb_renderer> m_mesh_novb_renderer;
+	unique_ptr<Raytrace_renderer>  m_raytrace_renderer;
+	unique_ptr<Post_renderer>	   m_post_renderer;
 
 	unique_ptr<Render_pass_main>		  m_render_pass_main;
 	unique_ptr<Render_pass_shadow_map>	  m_render_pass_shadow_map;

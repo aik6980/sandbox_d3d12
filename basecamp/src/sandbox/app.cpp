@@ -9,6 +9,7 @@
 #include "world/component/components.h"
 #include "world/entity/entity.h"
 #include "world/system/graphic/frame_pipeline.h"
+#include "world/system/graphic/mesh_novb_renderer.h"
 #include "world/system/graphic/mesh_renderer.h"
 #include "world/system/graphic/raytrace_renderer.h"
 #include "world/system/graphic/render_pass/render_pass_main.h"

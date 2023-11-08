@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine_graphic/engine_graphic.h"
+
 #include "render_pass/render_pass_main.h"
 #include "world/component/camera.h"
 
@@ -28,9 +29,6 @@ class Mesh_novb_renderer {
 	void draw_meshes_shadow_map();
 	void draw_meshes();
 
-	// void build_quad_mesh();
-	// void build_cube_mesh();
-
 	void build_texture();
 
 	void update_camera();
@@ -49,16 +47,5 @@ class Mesh_novb_renderer {
 
 	Camera m_light;
 
-	// shared_ptr<D3D12::Technique_instance> m_render_technique_instance;
-	// shared_ptr<D3D12::Technique_instance> m_render_technique_instance1;
-
-	// shared_ptr<D3D12::Technique_instance> m_render_technique_mesh_instance;
-	// shared_ptr<D3D12::Technique_instance> m_render_technique_grid_mesh_instance;
-	string m_technique_mesh;
-
-	// shared_ptr<D3D12::Technique_instance> m_shadow_map_technique_instance;
-	string m_technique_shadow_map;
-
-	// shared_ptr<D3D12::Technique_instance> m_mesh_instancing_technique_instance;
-	string m_technique_mesh_instancing;
+	string m_mesh_novb_technique_handle;
 };

@@ -41,8 +41,13 @@ void Engine::update()
 	ImGui::Begin("Editor Panel");
 	ImGui::Text("Text Label 1");
 
+	auto&& window_width	 = ImGui::GetContentRegionAvail().x;
+	auto&& window_height = ImGui::GetContentRegionAvail().y;
+
+	auto&& window_pos = ImGui::GetCursorScreenPos();
+
 	const ImU32 white_col = IM_COL32(255, 255, 255, 255);
-	ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(10, 10), 200, white_col);
+	ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(window_pos.x + 100, window_pos.y + 100), 50, white_col);
 
 	ImGui::Button("Button 1");
 	ImGui::End();
