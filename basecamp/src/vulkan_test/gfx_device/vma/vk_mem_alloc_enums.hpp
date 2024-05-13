@@ -10,9 +10,11 @@ namespace VMA_HPP_NAMESPACE {
     eExtMemoryBudget = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT,
     eAmdDeviceCoherentMemory = VMA_ALLOCATOR_CREATE_AMD_DEVICE_COHERENT_MEMORY_BIT,
     eBufferDeviceAddress = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
-    eExtMemoryPriority = VMA_ALLOCATOR_CREATE_EXT_MEMORY_PRIORITY_BIT
+    eExtMemoryPriority = VMA_ALLOCATOR_CREATE_EXT_MEMORY_PRIORITY_BIT,
+    eKhrMaintenance4 = VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE4_BIT
   };
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(AllocatorCreateFlagBits value) {
     if (value == AllocatorCreateFlagBits::eExternallySynchronized) return "ExternallySynchronized";
     if (value == AllocatorCreateFlagBits::eKhrDedicatedAllocation) return "KhrDedicatedAllocation";
@@ -21,22 +23,24 @@ namespace VMA_HPP_NAMESPACE {
     if (value == AllocatorCreateFlagBits::eAmdDeviceCoherentMemory) return "AmdDeviceCoherentMemory";
     if (value == AllocatorCreateFlagBits::eBufferDeviceAddress) return "BufferDeviceAddress";
     if (value == AllocatorCreateFlagBits::eExtMemoryPriority) return "ExtMemoryPriority";
+    if (value == AllocatorCreateFlagBits::eKhrMaintenance4) return "KhrMaintenance4";
     return "invalid ( " + VULKAN_HPP_NAMESPACE::toHexString(static_cast<uint32_t>(value)) + " )";
   }
+# endif
 }
 
 namespace VULKAN_HPP_NAMESPACE {
   template<> struct FlagTraits<VMA_HPP_NAMESPACE::AllocatorCreateFlagBits> {
-    enum : VkFlags {
-      allFlags =
-          VkFlags(VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eExternallySynchronized)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eKhrDedicatedAllocation)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eKhrBindMemory2)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eExtMemoryBudget)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eAmdDeviceCoherentMemory)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eBufferDeviceAddress)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eExtMemoryPriority)
-    };
+    static VULKAN_HPP_CONST_OR_CONSTEXPR bool isBitmask = true;
+    static VULKAN_HPP_CONST_OR_CONSTEXPR Flags<VMA_HPP_NAMESPACE::AllocatorCreateFlagBits> allFlags =
+        VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eExternallySynchronized
+      | VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eKhrDedicatedAllocation
+      | VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eKhrBindMemory2
+      | VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eExtMemoryBudget
+      | VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eAmdDeviceCoherentMemory
+      | VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eBufferDeviceAddress
+      | VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eExtMemoryPriority
+      | VMA_HPP_NAMESPACE::AllocatorCreateFlagBits::eKhrMaintenance4;
   };
 }
 
@@ -60,6 +64,7 @@ namespace VMA_HPP_NAMESPACE {
     return ~(AllocatorCreateFlags(bits));
   }
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(AllocatorCreateFlags value) {
     if (!value) return "{}";
     std::string result;
@@ -70,8 +75,10 @@ namespace VMA_HPP_NAMESPACE {
     if (value & AllocatorCreateFlagBits::eAmdDeviceCoherentMemory) result += "AmdDeviceCoherentMemory | ";
     if (value & AllocatorCreateFlagBits::eBufferDeviceAddress) result += "BufferDeviceAddress | ";
     if (value & AllocatorCreateFlagBits::eExtMemoryPriority) result += "ExtMemoryPriority | ";
+    if (value & AllocatorCreateFlagBits::eKhrMaintenance4) result += "KhrMaintenance4 | ";
     return "{ " + result.substr( 0, result.size() - 3 ) + " }";
   }
+# endif
 }
 
 namespace VMA_HPP_NAMESPACE {
@@ -89,6 +96,7 @@ namespace VMA_HPP_NAMESPACE {
     eAutoPreferHost = VMA_MEMORY_USAGE_AUTO_PREFER_HOST
   };
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(MemoryUsage value) {
     if (value == MemoryUsage::eUnknown) return "Unknown";
     if (value == MemoryUsage::eGpuOnly) return "GpuOnly";
@@ -102,6 +110,7 @@ namespace VMA_HPP_NAMESPACE {
     if (value == MemoryUsage::eAutoPreferHost) return "AutoPreferHost";
     return "invalid ( " + VULKAN_HPP_NAMESPACE::toHexString(static_cast<uint32_t>(value)) + " )";
   }
+# endif
 }
 
 namespace VMA_HPP_NAMESPACE {
@@ -125,6 +134,7 @@ namespace VMA_HPP_NAMESPACE {
     eStrategyFirstFit = VMA_ALLOCATION_CREATE_STRATEGY_FIRST_FIT_BIT
   };
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(AllocationCreateFlagBits value) {
     if (value == AllocationCreateFlagBits::eDedicatedMemory) return "DedicatedMemory";
     if (value == AllocationCreateFlagBits::eNeverAllocate) return "NeverAllocate";
@@ -144,29 +154,29 @@ namespace VMA_HPP_NAMESPACE {
     if (value == AllocationCreateFlagBits::eStrategyFirstFit) return "StrategyFirstFit";
     return "invalid ( " + VULKAN_HPP_NAMESPACE::toHexString(static_cast<uint32_t>(value)) + " )";
   }
+# endif
 }
 
 namespace VULKAN_HPP_NAMESPACE {
   template<> struct FlagTraits<VMA_HPP_NAMESPACE::AllocationCreateFlagBits> {
-    enum : VkFlags {
-      allFlags =
-          VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eDedicatedMemory)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eNeverAllocate)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eMapped)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eUserDataCopyString)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eUpperAddress)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eDontBind)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eWithinBudget)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eCanAlias)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eHostAccessSequentialWrite)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eHostAccessRandom)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eHostAccessAllowTransferInstead)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyMinMemory)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyMinTime)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyMinOffset)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyBestFit)
-        | VkFlags(VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyFirstFit)
-    };
+    static VULKAN_HPP_CONST_OR_CONSTEXPR bool isBitmask = true;
+    static VULKAN_HPP_CONST_OR_CONSTEXPR Flags<VMA_HPP_NAMESPACE::AllocationCreateFlagBits> allFlags =
+        VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eDedicatedMemory
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eNeverAllocate
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eMapped
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eUserDataCopyString
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eUpperAddress
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eDontBind
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eWithinBudget
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eCanAlias
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eHostAccessSequentialWrite
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eHostAccessRandom
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eHostAccessAllowTransferInstead
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyMinMemory
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyMinTime
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyMinOffset
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyBestFit
+      | VMA_HPP_NAMESPACE::AllocationCreateFlagBits::eStrategyFirstFit;
   };
 }
 
@@ -190,6 +200,7 @@ namespace VMA_HPP_NAMESPACE {
     return ~(AllocationCreateFlags(bits));
   }
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(AllocationCreateFlags value) {
     if (!value) return "{}";
     std::string result;
@@ -211,6 +222,7 @@ namespace VMA_HPP_NAMESPACE {
     if (value & AllocationCreateFlagBits::eStrategyFirstFit) result += "StrategyFirstFit | ";
     return "{ " + result.substr( 0, result.size() - 3 ) + " }";
   }
+# endif
 }
 
 namespace VMA_HPP_NAMESPACE {
@@ -220,20 +232,21 @@ namespace VMA_HPP_NAMESPACE {
     eLinearAlgorithm = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT
   };
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(PoolCreateFlagBits value) {
     if (value == PoolCreateFlagBits::eIgnoreBufferImageGranularity) return "IgnoreBufferImageGranularity";
     if (value == PoolCreateFlagBits::eLinearAlgorithm) return "LinearAlgorithm";
     return "invalid ( " + VULKAN_HPP_NAMESPACE::toHexString(static_cast<uint32_t>(value)) + " )";
   }
+# endif
 }
 
 namespace VULKAN_HPP_NAMESPACE {
   template<> struct FlagTraits<VMA_HPP_NAMESPACE::PoolCreateFlagBits> {
-    enum : VkFlags {
-      allFlags =
-          VkFlags(VMA_HPP_NAMESPACE::PoolCreateFlagBits::eIgnoreBufferImageGranularity)
-        | VkFlags(VMA_HPP_NAMESPACE::PoolCreateFlagBits::eLinearAlgorithm)
-    };
+    static VULKAN_HPP_CONST_OR_CONSTEXPR bool isBitmask = true;
+    static VULKAN_HPP_CONST_OR_CONSTEXPR Flags<VMA_HPP_NAMESPACE::PoolCreateFlagBits> allFlags =
+        VMA_HPP_NAMESPACE::PoolCreateFlagBits::eIgnoreBufferImageGranularity
+      | VMA_HPP_NAMESPACE::PoolCreateFlagBits::eLinearAlgorithm;
   };
 }
 
@@ -257,6 +270,7 @@ namespace VMA_HPP_NAMESPACE {
     return ~(PoolCreateFlags(bits));
   }
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(PoolCreateFlags value) {
     if (!value) return "{}";
     std::string result;
@@ -264,6 +278,7 @@ namespace VMA_HPP_NAMESPACE {
     if (value & PoolCreateFlagBits::eLinearAlgorithm) result += "LinearAlgorithm | ";
     return "{ " + result.substr( 0, result.size() - 3 ) + " }";
   }
+# endif
 }
 
 namespace VMA_HPP_NAMESPACE {
@@ -275,6 +290,7 @@ namespace VMA_HPP_NAMESPACE {
     eFlagAlgorithmExtensive = VMA_DEFRAGMENTATION_FLAG_ALGORITHM_EXTENSIVE_BIT
   };
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(DefragmentationFlagBits value) {
     if (value == DefragmentationFlagBits::eFlagAlgorithmFast) return "FlagAlgorithmFast";
     if (value == DefragmentationFlagBits::eFlagAlgorithmBalanced) return "FlagAlgorithmBalanced";
@@ -282,17 +298,17 @@ namespace VMA_HPP_NAMESPACE {
     if (value == DefragmentationFlagBits::eFlagAlgorithmExtensive) return "FlagAlgorithmExtensive";
     return "invalid ( " + VULKAN_HPP_NAMESPACE::toHexString(static_cast<uint32_t>(value)) + " )";
   }
+# endif
 }
 
 namespace VULKAN_HPP_NAMESPACE {
   template<> struct FlagTraits<VMA_HPP_NAMESPACE::DefragmentationFlagBits> {
-    enum : VkFlags {
-      allFlags =
-          VkFlags(VMA_HPP_NAMESPACE::DefragmentationFlagBits::eFlagAlgorithmFast)
-        | VkFlags(VMA_HPP_NAMESPACE::DefragmentationFlagBits::eFlagAlgorithmBalanced)
-        | VkFlags(VMA_HPP_NAMESPACE::DefragmentationFlagBits::eFlagAlgorithmFull)
-        | VkFlags(VMA_HPP_NAMESPACE::DefragmentationFlagBits::eFlagAlgorithmExtensive)
-    };
+    static VULKAN_HPP_CONST_OR_CONSTEXPR bool isBitmask = true;
+    static VULKAN_HPP_CONST_OR_CONSTEXPR Flags<VMA_HPP_NAMESPACE::DefragmentationFlagBits> allFlags =
+        VMA_HPP_NAMESPACE::DefragmentationFlagBits::eFlagAlgorithmFast
+      | VMA_HPP_NAMESPACE::DefragmentationFlagBits::eFlagAlgorithmBalanced
+      | VMA_HPP_NAMESPACE::DefragmentationFlagBits::eFlagAlgorithmFull
+      | VMA_HPP_NAMESPACE::DefragmentationFlagBits::eFlagAlgorithmExtensive;
   };
 }
 
@@ -316,6 +332,7 @@ namespace VMA_HPP_NAMESPACE {
     return ~(DefragmentationFlags(bits));
   }
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(DefragmentationFlags value) {
     if (!value) return "{}";
     std::string result;
@@ -325,6 +342,7 @@ namespace VMA_HPP_NAMESPACE {
     if (value & DefragmentationFlagBits::eFlagAlgorithmExtensive) result += "FlagAlgorithmExtensive | ";
     return "{ " + result.substr( 0, result.size() - 3 ) + " }";
   }
+# endif
 }
 
 namespace VMA_HPP_NAMESPACE {
@@ -335,12 +353,14 @@ namespace VMA_HPP_NAMESPACE {
     eDestroy = VMA_DEFRAGMENTATION_MOVE_OPERATION_DESTROY
   };
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(DefragmentationMoveOperation value) {
     if (value == DefragmentationMoveOperation::eCopy) return "Copy";
     if (value == DefragmentationMoveOperation::eIgnore) return "Ignore";
     if (value == DefragmentationMoveOperation::eDestroy) return "Destroy";
     return "invalid ( " + VULKAN_HPP_NAMESPACE::toHexString(static_cast<uint32_t>(value)) + " )";
   }
+# endif
 }
 
 namespace VMA_HPP_NAMESPACE {
@@ -349,18 +369,19 @@ namespace VMA_HPP_NAMESPACE {
     eLinearAlgorithm = VMA_VIRTUAL_BLOCK_CREATE_LINEAR_ALGORITHM_BIT
   };
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(VirtualBlockCreateFlagBits value) {
     if (value == VirtualBlockCreateFlagBits::eLinearAlgorithm) return "LinearAlgorithm";
     return "invalid ( " + VULKAN_HPP_NAMESPACE::toHexString(static_cast<uint32_t>(value)) + " )";
   }
+# endif
 }
 
 namespace VULKAN_HPP_NAMESPACE {
   template<> struct FlagTraits<VMA_HPP_NAMESPACE::VirtualBlockCreateFlagBits> {
-    enum : VkFlags {
-      allFlags =
-          VkFlags(VMA_HPP_NAMESPACE::VirtualBlockCreateFlagBits::eLinearAlgorithm)
-    };
+    static VULKAN_HPP_CONST_OR_CONSTEXPR bool isBitmask = true;
+    static VULKAN_HPP_CONST_OR_CONSTEXPR Flags<VMA_HPP_NAMESPACE::VirtualBlockCreateFlagBits> allFlags =
+        VMA_HPP_NAMESPACE::VirtualBlockCreateFlagBits::eLinearAlgorithm;
   };
 }
 
@@ -384,12 +405,14 @@ namespace VMA_HPP_NAMESPACE {
     return ~(VirtualBlockCreateFlags(bits));
   }
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(VirtualBlockCreateFlags value) {
     if (!value) return "{}";
     std::string result;
     if (value & VirtualBlockCreateFlagBits::eLinearAlgorithm) result += "LinearAlgorithm | ";
     return "{ " + result.substr( 0, result.size() - 3 ) + " }";
   }
+# endif
 }
 
 namespace VMA_HPP_NAMESPACE {
@@ -401,6 +424,7 @@ namespace VMA_HPP_NAMESPACE {
     eStrategyMinOffset = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT
   };
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(VirtualAllocationCreateFlagBits value) {
     if (value == VirtualAllocationCreateFlagBits::eUpperAddress) return "UpperAddress";
     if (value == VirtualAllocationCreateFlagBits::eStrategyMinMemory) return "StrategyMinMemory";
@@ -408,17 +432,17 @@ namespace VMA_HPP_NAMESPACE {
     if (value == VirtualAllocationCreateFlagBits::eStrategyMinOffset) return "StrategyMinOffset";
     return "invalid ( " + VULKAN_HPP_NAMESPACE::toHexString(static_cast<uint32_t>(value)) + " )";
   }
+# endif
 }
 
 namespace VULKAN_HPP_NAMESPACE {
   template<> struct FlagTraits<VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits> {
-    enum : VkFlags {
-      allFlags =
-          VkFlags(VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits::eUpperAddress)
-        | VkFlags(VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits::eStrategyMinMemory)
-        | VkFlags(VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits::eStrategyMinTime)
-        | VkFlags(VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits::eStrategyMinOffset)
-    };
+    static VULKAN_HPP_CONST_OR_CONSTEXPR bool isBitmask = true;
+    static VULKAN_HPP_CONST_OR_CONSTEXPR Flags<VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits> allFlags =
+        VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits::eUpperAddress
+      | VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits::eStrategyMinMemory
+      | VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits::eStrategyMinTime
+      | VMA_HPP_NAMESPACE::VirtualAllocationCreateFlagBits::eStrategyMinOffset;
   };
 }
 
@@ -442,6 +466,7 @@ namespace VMA_HPP_NAMESPACE {
     return ~(VirtualAllocationCreateFlags(bits));
   }
 
+# if !defined( VULKAN_HPP_NO_TO_STRING )
   VULKAN_HPP_INLINE std::string to_string(VirtualAllocationCreateFlags value) {
     if (!value) return "{}";
     std::string result;
@@ -451,6 +476,7 @@ namespace VMA_HPP_NAMESPACE {
     if (value & VirtualAllocationCreateFlagBits::eStrategyMinOffset) result += "StrategyMinOffset | ";
     return "{ " + result.substr( 0, result.size() - 3 ) + " }";
   }
+# endif
 }
 
 #endif
