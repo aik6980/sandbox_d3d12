@@ -236,6 +236,27 @@ void Mesh_renderer::draw_meshes()
 		}
 	}
 }
+
+void Mesh_renderer::update()
+{
+	ImGui::Begin("Rasterizer debug");
+
+	auto&& tex = m_engine.resource_mgr().request_buffer("raytrace_colour_buffer").lock();
+	if (tex) {
+		auto w = tex->m_d3d_desc.Width * 0.5f;
+		auto h = tex->m_d3d_desc.Height * 0.5f;
+		auto&& srv = m_engine.resource_mgr().create_srv(*tex);
+		ImGui::Image(reinterpret_cast<ImTextureID>(srv.ptr), ImVec2(w, h));
+		ImGui::SameLine();
+		ImGui::Image(reinterpret_cast<ImTextureID>(srv.ptr), ImVec2(w, h));
+		ImGui::Image(reinterpret_cast<ImTextureID>(srv.ptr), ImVec2(w, h));
+		ImGui::SameLine();
+		ImGui::Image(reinterpret_cast<ImTextureID>(srv.ptr), ImVec2(w, h));
+	}
+
+	ImGui::End();
+}
+
 void Mesh_renderer::draw()
 {
 	// update camera

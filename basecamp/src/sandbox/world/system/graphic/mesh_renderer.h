@@ -11,7 +11,7 @@ class Mesh_renderer {
     Mesh_renderer(Engine& engine, Frame_pipeline& frame_pipeline) : m_engine(engine), m_frame_pipeline(frame_pipeline) {}
 
     void load_resource();
-    void update(){};
+    void update();
     void draw();
 
     struct Instance_data {
