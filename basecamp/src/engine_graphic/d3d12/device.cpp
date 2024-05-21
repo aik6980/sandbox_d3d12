@@ -85,6 +85,7 @@ namespace D3D12 {
 		// create rtv and dsv
 		create_backbuffer();
 
+		// imgui now using the same srv heap as the main app - need to be intiialized after this function create_srv_descriptor_heap()
 		imgui_init();
 	}
 
@@ -146,7 +147,7 @@ namespace D3D12 {
 
 		// set descriptor heaps for SRV
 		auto&&				  curr_srv_heap		 = curr_frame_resource.m_srv_heap;
-		ID3D12DescriptorHeap* descriptor_heaps[] = {curr_srv_heap.m_descriptor_heap.Get(), m_sampler_heap.m_descriptor_heap.Get()};
+		ID3D12DescriptorHeap* descriptor_heaps[] = {curr_srv_heap.descriptor_heap(), m_sampler_heap.descriptor_heap()};
 		m_commandList()->SetDescriptorHeaps(_countof(descriptor_heaps), descriptor_heaps);
 
 		// clear statging buffers
@@ -201,7 +202,7 @@ namespace D3D12 {
 
 	D3D12_CPU_DESCRIPTOR_HANDLE Device::curr_backbuffer_depth_stencil_view() const
 	{
-		return m_dsv_heap.m_descriptor_heap->GetCPUDescriptorHandleForHeapStart();
+		return m_dsv_heap.descriptor_heap()->GetCPUDescriptorHandleForHeapStart();
 	}
 
 	DXGI_SWAP_CHAIN_DESC Device::get_swap_chain_desc() const
@@ -517,14 +518,14 @@ namespace D3D12 {
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		ImGui_ImplWin32_Init(m_hWnd);
 
-		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-		desc.Type						= D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		desc.NumDescriptors				= 1;
-		desc.Flags						= D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_imgui_srv_descriptor_heap)));
+		// get an srv descriptor from static pool
+		m_imgui_srv_descriptor_id = m_static_srv_heap.get_next_decriptor_id();
 
-		ImGui_ImplDX12_Init(m_device.Get(), m_num_frame_resources, DXGI_FORMAT_R8G8B8A8_UNORM, m_imgui_srv_descriptor_heap.Get(),
-			m_imgui_srv_descriptor_heap->GetCPUDescriptorHandleForHeapStart(), m_imgui_srv_descriptor_heap->GetGPUDescriptorHandleForHeapStart());
+		auto&& cpu_descriptor_handle = m_static_srv_heap.get_cpu_descriptor(m_imgui_srv_descriptor_id);
+		auto&& gpu_descriptor_handle = m_static_srv_heap.get_gpu_descriptor(m_imgui_srv_descriptor_id);
+
+		ImGui_ImplDX12_Init(
+			m_device.Get(), m_num_frame_resources, DXGI_FORMAT_R8G8B8A8_UNORM, m_srv_heap_resource.Get(), cpu_descriptor_handle, gpu_descriptor_handle);
 	}
 
 	void Device::imgui_begin_frame()
@@ -541,7 +542,7 @@ namespace D3D12 {
 		auto&& dsv = curr_backbuffer_depth_stencil_view();
 		m_commandList()->OMSetRenderTargets(1, &rtv, true, &dsv);
 
-		ID3D12DescriptorHeap* heaps[] = {m_imgui_srv_descriptor_heap.Get()};
+		ID3D12DescriptorHeap* heaps[] = {m_srv_heap_resource.Get()};
 
 		commmand_list()()->SetDescriptorHeaps(1, heaps);
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commmand_list()());
@@ -634,15 +635,35 @@ namespace D3D12 {
 
 	void Device::create_srv_descriptor_heap()
 	{
-		for (auto&& frame_resource : m_frame_resource_list) {
-			D3D12_DESCRIPTOR_HEAP_DESC desc;
-			desc.NumDescriptors = frame_resource->m_srv_heap.m_max_descriptor;
-			desc.Type			= D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-			desc.Flags			= D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE; // this is where we define that this heap will provide GPUDescriptorHandle
-			desc.NodeMask		= 0;
-			DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&frame_resource->m_srv_heap.m_descriptor_heap)));
+		// allocate srv heap
+		D3D12_DESCRIPTOR_HEAP_DESC desc;
+		// num_srv = n frame_resources + srv for static resources (eg ImGUI font texture)
+		uint32_t num_static_srv_descriptors = m_num_imgui_srv_descriptor;
+		desc.NumDescriptors					= Descriptor_heap::m_max_descriptor * m_frame_resource_list.size() + num_static_srv_descriptors;
+		desc.Type							= D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		desc.Flags	  = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE; // this is where we define that this heap will provide GPUDescriptorHandle
+		desc.NodeMask = 0;
+		DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_srv_heap_resource)));
 
-			frame_resource->m_srv_heap.m_descriptor_size = m_device->GetDescriptorHandleIncrementSize(desc.Type);
+		uint32_t descriptor_size = m_device->GetDescriptorHandleIncrementSize(desc.Type);
+
+		for (uint32_t i = 0; i < m_frame_resource_list.size(); ++i) {
+
+			auto&& frame_resource = m_frame_resource_list[i];
+			auto&& srv_heap		  = frame_resource->m_srv_heap;
+
+			srv_heap.m_descriptor_heap	   = m_srv_heap_resource.Get();
+			srv_heap.m_descriptor_size	   = descriptor_size;
+			srv_heap.m_begin_descriptor_id = Descriptor_heap::m_max_descriptor * i;
+		}
+
+		// setup a static srv allocation
+		{
+			auto&& srv_heap = m_static_srv_heap;
+
+			srv_heap.m_descriptor_heap	   = m_srv_heap_resource.Get();
+			srv_heap.m_descriptor_size	   = descriptor_size;
+			srv_heap.m_begin_descriptor_id = Descriptor_heap::m_max_descriptor * m_frame_resource_list.size();
 		}
 	}
 
@@ -654,7 +675,7 @@ namespace D3D12 {
 			desc.Type			= D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 			desc.Flags			= D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 			desc.NodeMask		= 0;
-			DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_rtv_heap.m_descriptor_heap)));
+			DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_rtv_heap_resource)));
 		}
 
 		{
@@ -663,10 +684,12 @@ namespace D3D12 {
 			desc.Type			= D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 			desc.Flags			= D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 			desc.NodeMask		= 0;
-			DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_dsv_heap.m_descriptor_heap)));
+			DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_dsv_heap_resource)));
 		}
 
+		m_rtv_heap.m_descriptor_heap = m_rtv_heap_resource.Get();
 		m_rtv_heap.m_descriptor_size = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		m_dsv_heap.m_descriptor_heap = m_dsv_heap_resource.Get();
 		m_dsv_heap.m_descriptor_size = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	}
 
@@ -677,8 +700,9 @@ namespace D3D12 {
 		desc.Type			= D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 		desc.Flags			= D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE; // this is where we define that this heap will provide GPUDescriptorHandle
 		desc.NodeMask		= 0;
-		DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_sampler_heap.m_descriptor_heap)));
+		DBG::throw_hr(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_sampler_heap_resource)));
 
+		m_sampler_heap.m_descriptor_heap = m_sampler_heap_resource.Get();
 		m_sampler_heap.m_descriptor_size = m_device->GetDescriptorHandleIncrementSize(desc.Type);
 	}
 } // namespace D3D12

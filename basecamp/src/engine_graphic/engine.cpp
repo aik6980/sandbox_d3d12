@@ -33,6 +33,7 @@ void Engine::destroy()
 
 void Engine::update()
 {
+
 #ifdef USING_IMGUI
 	m_render_device->imgui_begin_frame();
 	ImGui::ShowDemoWindow();
@@ -50,8 +51,8 @@ void Engine::update()
 	ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(window_pos.x + 100, window_pos.y + 100), 50, white_col);
 
 	// test draw texture
-	//auto&& tex = resource_mgr().request_buffer("main_colour_buffer").lock();
-	//if (tex) {
+	// auto&& tex = resource_mgr().request_buffer("main_colour_buffer").lock();
+	// if (tex) {
 	//	auto&& srv = resource_mgr().create_srv(*tex);
 	//	ImGui::Image(reinterpret_cast<ImTextureID>(srv.ptr), ImVec2(256, 256));
 	//}
