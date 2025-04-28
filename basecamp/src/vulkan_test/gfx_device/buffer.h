@@ -4,30 +4,30 @@
 
 namespace VKN {
 
-    struct Buffer_create_info {
-        vk::BufferUsageFlagBits m_usage_flags;
+	struct Buffer_create_info {
+		vk::BufferUsageFlagBits m_usage_flags;
 
-        const void* m_data = nullptr;
-        size_t      m_size;
-    };
+		const void* m_data = nullptr;
+		size_t		m_size;
+	};
 
-    struct Buffer {
-        vk::Buffer      m_buffer;
-        vma::Allocation m_allocation;
+	struct Buffer {
+		vk::Buffer		m_buffer;
+		vma::Allocation m_allocation;
 
-        size_t m_size;
-    };
+		size_t m_size;
+	};
 
-    struct Image {
-        vk::Format      m_format;
-        vk::Image       m_image;
-        vma::Allocation m_alloc;
-        vk::ImageView   m_view;
-    };
+	struct Image {
+		vk::Format		m_format;
+		vk::Image		m_image;
+		vma::Allocation m_alloc;
+		vk::ImageView	m_view;
+	};
 
-    struct Mesh_buffer {
-        std::unique_ptr<Buffer> m_vb;
-        std::unique_ptr<Buffer> m_ib;
-    };
+	struct Mesh_buffer {
+		std::unique_ptr<Buffer> m_vb;
+		std::unique_ptr<Buffer> m_ib;
+	};
 
 } // namespace VKN

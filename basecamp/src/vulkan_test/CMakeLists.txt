@@ -6,18 +6,19 @@ add_executable(${PROJECT_NAME} WIN32 ${PROJECT_FILES})
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE stdafx.h)
 
-#set(LIB_DXC ${PROJECT_SOURCE_DIR}/d3d12/dxc/dxcompiler.lib)
 find_package(Vulkan)
+
 target_link_libraries(${PROJECT_NAME} common ${Vulkan_LIBRARY})
 
 set(INC_ASSIMP ${CMAKE_SOURCE_DIR}/ext/assimp/include)
 include_directories(${CMAKE_SOURCE_DIR}/src 
 	${PROJECT_SOURCE_DIR} 
 	${INC_ASSIMP}
-	${Vulkan_INCLUDE_DIRS})
+	${Vulkan_INCLUDE_DIRS}
+	${Vulkan_INCLUDE_DIRS}/vma)
 	
-#message(${Vulkan_INCLUDE_DIRS})
-#message(${Vulkan_LIBRARY})
+message(${Vulkan_INCLUDE_DIRS})
+message(${Vulkan_LIBRARY})
 
 ADD_DEFINITIONS(-DUNICODE -D_UNICODE -DCOMPILE_CPP -DNOMINMAX)
 
