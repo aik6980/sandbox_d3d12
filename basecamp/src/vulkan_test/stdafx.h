@@ -22,4 +22,5 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.hpp>
 
-#include "gfx_device/spirv_reflect/spirv_reflect.h"
+#define SPIRV_REFLECT_ENABLE_ASSERTS
+#include "spirv_reflect.h"
