@@ -25,6 +25,7 @@ class Raytrace_renderer {
 		: m_engine(engine)
 		, m_frame_pipeline(frame_pipeline)
 	{
+		m_enable = false;
 	}
 
 	void load_resource();
@@ -46,6 +47,7 @@ class Raytrace_renderer {
 
 	Engine&			m_engine;
 	Frame_pipeline& m_frame_pipeline;
+	bool			m_enable;
 
 	unordered_map<string, unique_ptr<Mesh_data_raw>> m_mesh_list;
 };

@@ -79,7 +79,7 @@ namespace VKN {
 			m_device.destroyImageView(view);
 		}
 		m_device.destroySwapchainKHR(m_swapchain);
-		m_instance.destroySurfaceKHR(m_surface);
+		m_instance->destroySurfaceKHR(m_surface);
 
 		// destroy command buffer
 		// freeing the commandBuffer is optional, as it will automatically freed when the corresponding CommandPool is destroyed.
@@ -97,8 +97,7 @@ namespace VKN {
 		m_device.destroy();
 
 		// destroy
-		m_instance.destroyDebugUtilsMessengerEXT(m_debug_utils_messenger);
-		m_instance.destroy();
+		m_instance->destroyDebugUtilsMessengerEXT(m_debug_utils_messenger);
 	}
 
 	void Device::create_instance()
@@ -121,20 +120,20 @@ namespace VKN {
 		std::vector<const char*> enabled_extensions = gather_extensions(extensions, vk::enumerateInstanceExtensionProperties());
 
 		// create instance
-		m_instance = vk::createInstance(make_instance_create_info_chain(applicationInfo, enabled_layers, enabled_extensions).get<vk::InstanceCreateInfo>());
+		m_instance = vk::createInstanceUnique(make_instance_create_info_chain(applicationInfo, enabled_layers, enabled_extensions).get<vk::InstanceCreateInfo>());
 #if (VULKAN_HPP_DISPATCH_LOADER_DYNAMIC == 1)
 		// initialize function pointers for instance
-		VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(*m_instance);
 #endif
 
 		// create debug layer
-		m_debug_utils_messenger = create_debug_utils_messenger_EXT(m_instance);
+		m_debug_utils_messenger = create_debug_utils_messenger_EXT(*m_instance);
 	}
 
 	void Device::create_device()
 	{
 		// enumerate the physical devices
-		m_physical_device = m_instance.enumeratePhysicalDevices().front();
+		m_physical_device = m_instance->enumeratePhysicalDevices().front();
 
 		// get the QueueFamilyProperties of the first PhysicalDevice
 		std::vector<vk::QueueFamilyProperties> queue_family_properties = m_physical_device.getQueueFamilyProperties();
@@ -177,7 +176,7 @@ namespace VKN {
 		// set allocator properties
 		createinfo.physicalDevice	= m_physical_device;
 		createinfo.device			= m_device;
-		createinfo.instance			= m_instance;
+		createinfo.instance			= *m_instance;
 		createinfo.vulkanApiVersion = m_req_api_version;
 
 		m_vma_allocator = vma::createAllocator(createinfo);
@@ -200,7 +199,7 @@ namespace VKN {
 	void Device::create_swapchain()
 	{
 		// create Surface from Win32;
-		m_surface	= m_instance.createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR(vk::Win32SurfaceCreateFlagsKHR(), m_hinstance, m_hwnd));
+		m_surface	= m_instance->createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR(vk::Win32SurfaceCreateFlagsKHR(), m_hinstance, m_hwnd));
 		auto&& rect = get_window_rect();
 
 		// get the supported VkFormats
@@ -436,9 +435,12 @@ namespace VKN {
 		clear_values[0].color		 = vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}}));
 		clear_values[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
-		vk::RenderPassBeginInfo renderPassBeginInfo(
-			m_render_pass, m_frame_buffers[m_swapchain_buffer_idx], vk::Rect2D(vk::Offset2D(0, 0), m_swapchain_image_size), clear_values);
-		command_buffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+		//vk::RenderPassBeginInfo renderPassBeginInfo(
+		//	m_render_pass, m_frame_buffers[m_swapchain_buffer_idx], vk::Rect2D(vk::Offset2D(0, 0), m_swapchain_image_size), clear_values);
+		//command_buffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+
+		// setup RenderTarget
+		
 		command_buffer->setViewport(
 			0, vk::Viewport(0.0f, 0.0f, static_cast<float>(m_swapchain_image_size.width), static_cast<float>(m_swapchain_image_size.height), 0.0f, 1.0f));
 		command_buffer->setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), m_swapchain_image_size));
@@ -856,7 +858,8 @@ namespace VKN {
 
 	void Device::load_resources()
 	{
-		create_render_pass();
+		// use dynamic rendering
+		//create_render_pass();
 	}
 
 	void Device::begin_single_command_submission()

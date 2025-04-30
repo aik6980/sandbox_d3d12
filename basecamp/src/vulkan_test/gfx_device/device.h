@@ -101,7 +101,7 @@ namespace VKN {
 
 		// Instance
 		static const uint32_t	   m_req_api_version = VK_API_VERSION_1_3;
-		vk::Instance			   m_instance;
+		vk::UniqueInstance		   m_instance;
 		vk::DebugUtilsMessengerEXT m_debug_utils_messenger;
 
 		vk::PhysicalDevice m_physical_device;
@@ -138,8 +138,9 @@ namespace VKN {
 		// Buffer
 		Image m_depth_buffer;
 
+		// try to use Dynamic Pipeline instead of these
 		// Render pass/Frame buffer (for swapchain)
-		vk::RenderPass				 m_render_pass;
+		vk::RenderPass				 m_render_pass; 
 		std::vector<vk::Framebuffer> m_frame_buffers;
 
 		// Syncronization

@@ -29,6 +29,9 @@ void Frame_pipeline::load_resource()
 	m_render_pass_shadow_map = make_unique<Render_pass_shadow_map>();
 	m_render_pass_shadow_map->load_resource();
 
+	m_render_pass_raytrace_main = make_unique<Render_pass_raytrace_main>();
+	m_render_pass_raytrace_main->load_resource();
+
 	// setup camera
 	auto&& render_device = m_engine.render_device();
 	auto&& viewport		 = render_device.get_window_viewport();

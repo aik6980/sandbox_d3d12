@@ -23,6 +23,7 @@ namespace VKN {
         void destroy();
 
         void create_pipeline();
+        void create_pipeline(vk::Format color_format, vk::Format depth_format);
 
       public:
         Device& m_gfx_device;

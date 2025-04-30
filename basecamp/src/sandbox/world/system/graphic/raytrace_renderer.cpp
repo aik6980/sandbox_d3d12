@@ -8,6 +8,9 @@
 
 void Raytrace_renderer::load_resource()
 {
+	if(!m_enable)
+		return;
+
 	auto&& device		  = m_engine.render_device();
 	auto&& shader_manager = m_engine.shader_mgr();
 	auto&& resource_mgr	  = device.resource_manager();
@@ -19,9 +22,6 @@ void Raytrace_renderer::load_resource()
 		// m_raytrace_technique_instance = std::make_shared<D3D12::Lib_ray_technique_instance>(device, shader_manager);
 		// m_raytrace_technique_instance->init(technique_name);
 	}
-
-	m_frame_pipeline.m_render_pass_raytrace_main = make_unique<Render_pass_raytrace_main>();
-	m_frame_pipeline.m_render_pass_raytrace_main->load_resource();
 
 	// build geometry
 	// Mesh_vertex_array verts;
@@ -76,6 +76,9 @@ void Raytrace_renderer::load_resource()
 
 void Raytrace_renderer::update()
 {
+	if (!m_enable)
+		return;
+
 	// update scene
 	m_scene_data->m_instance_transforms.clear();
 
@@ -87,6 +90,9 @@ void Raytrace_renderer::update()
 
 void Raytrace_renderer::draw()
 {
+	if (!m_enable)
+		return;
+
 	auto&& render_device = m_engine.render_device();
 	auto&& resource_mgr	 = render_device.resource_manager();
 	auto&& command_list	 = render_device.commmand_list();
