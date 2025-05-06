@@ -15,7 +15,7 @@ namespace VKN {
 		m_shader_map.clear();
 	}
 
-	std::weak_ptr<Technique> Shader_manager::register_technique(std::string name, const Technique_createinfo& create_info)
+	std::weak_ptr<Technique> Shader_manager::register_technique(std::string name, const Technique_createinfo& create_info, const Targets_createinfo& targets)
 	{
 		if (auto&& t = get_technique(name); t.lock() != nullptr) {
 			return t;
@@ -27,7 +27,7 @@ namespace VKN {
 		auto&& technique = std::make_shared<Technique>(m_gfx_device);
 		technique->mh_vs = h_vs_shader;
 		technique->mh_ps = h_ps_shader;
-		technique->create_pipeline(create_info.m_color_format, create_info.m_depth_format);
+		technique->create_pipeline(targets.m_colour_format, targets.m_depth_format);
 
 		m_technique_map.insert({name, technique});
 		return technique;

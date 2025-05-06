@@ -10,9 +10,11 @@ namespace VKN {
 	struct Technique_createinfo {
 		std::string m_vs_name;
 		std::string m_ps_name;
+	};
 
-		vk::Format m_color_format;
-		vk::Format m_depth_format;
+	struct Targets_createinfo {
+		vk::Format m_colour_format = vk::Format::eUndefined;
+		vk::Format m_depth_format = vk::Format::eUndefined;
 	};
 
 	class Technique {

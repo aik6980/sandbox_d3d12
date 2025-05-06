@@ -63,9 +63,13 @@ void App::create_scene()
     auto&& shader_manager   = m_gfx_device.m_shader_manager;
     auto&& resource_manager = m_gfx_device.m_resource_manager;
 
-    // create shaders
-    shader_manager->register_technique("t0", VKN::Technique_createinfo{.m_vs_name = "hello_triangle.vs", .m_ps_name = "hello_triangle.ps"});
-    shader_manager->register_technique("t1", VKN::Technique_createinfo{.m_vs_name = "hello_triangle_mesh.vs", .m_ps_name = "hello_triangle.ps"});
+    // for each render passes
+    auto&& colour_format = m_gfx_device.get_backbuffer_colour_format();
+    auto&& depth_format = m_gfx_device.get_backbuffer_depth_format();
+    VKN::Targets_createinfo targets_info = {colour_format, depth_format};
+    // create techniques
+    shader_manager->register_technique("t0", VKN::Technique_createinfo{.m_vs_name = "hello_triangle.vs", .m_ps_name = "hello_triangle.ps"}, targets_info);
+    shader_manager->register_technique("t1", VKN::Technique_createinfo{.m_vs_name = "hello_triangle_mesh.vs", .m_ps_name = "hello_triangle.ps"}, targets_info);
 
     // create mesh
     resource_manager->create_mesh();

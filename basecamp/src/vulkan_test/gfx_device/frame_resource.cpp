@@ -28,7 +28,7 @@ namespace VKN {
         m_descriptor_pool.reset();
 
         m_command_buffer.reset();
-        m_command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlags()));
+        m_command_buffer.begin(vk::CommandBufferBeginInfo());
         m_command_buffer_opened = true;
     }
 

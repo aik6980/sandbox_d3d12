@@ -53,6 +53,15 @@ namespace VKN {
 		void begin_frame();
 		void end_frame();
 
+		// utilities
+		vk::Format get_backbuffer_colour_format() const;
+		vk::Format get_backbuffer_depth_format() const;
+
+		void transition_image_layout(vk::Image image, 
+			vk::ImageLayout dst_layout, vk::ImageLayout src_layout,
+			vk::AccessFlags2 dst_access_flags, vk::AccessFlags2 src_access_flags,
+			vk::PipelineStageFlags2 dst_stage_flags, vk::PipelineStageFlags2 src_stage_flags);
+
 		// Sub system
 		std::unique_ptr<Resource_manager> m_resource_manager;
 		std::unique_ptr<Shader_manager>	  m_shader_manager;
@@ -69,8 +78,9 @@ namespace VKN {
 
 		vk::DebugUtilsMessengerEXT			  create_debug_utils_messenger_EXT(const vk::Instance& instance);
 		vk::DebugUtilsMessengerCreateInfoEXT  make_debug_utils_messenger_create_info_EXT();
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debug_utils_messenger_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-			VkDebugUtilsMessageTypeFlagsEXT message_types, const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* /*p_user_data*/);
+
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debug_utils_messenger_callback(vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
+		vk::DebugUtilsMessageTypeFlagsEXT message_types, const vk::DebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data = nullptr);
 
 		uint32_t find_graphics_queue_family_index(const std::vector<vk::QueueFamilyProperties>& queue_family_properties);
 		uint32_t find_present_queue_family_index();
@@ -79,7 +89,7 @@ namespace VKN {
 		bool					 is_instance_extension_enabled(const std::string& name);
 		std::vector<std::string> get_device_extensions();
 
-		vk::SurfaceFormatKHR pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats);
+		vk::SurfaceFormatKHR pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats) const;
 
 		uint32_t		curr_frame_resource_idx();
 		Frame_resource& curr_frame_resource();

@@ -114,7 +114,13 @@ namespace VKN {
 		VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 #endif
 
-		vk::ApplicationInfo applicationInfo(app_name.c_str(), 1, app_name.c_str(), 1, api_version);
+		vk::ApplicationInfo applicationInfo {
+			.pApplicationName = app_name.c_str(), 
+			.applicationVersion = 1, 
+			.pEngineName = app_name.c_str(), 
+			.engineVersion = 1,
+			.apiVersion = api_version
+		};
 
 		std::vector<const char*> enabled_layers		= gather_layers(layers, vk::enumerateInstanceLayerProperties());
 		std::vector<const char*> enabled_extensions = gather_extensions(extensions, vk::enumerateInstanceExtensionProperties());
@@ -157,8 +163,20 @@ namespace VKN {
 
 		// create a Device
 		float					  queue_priority = 0.0f;
-		vk::DeviceQueueCreateInfo device_queue_createinfo(vk::DeviceQueueCreateFlags(), m_graphics_queue_family_index, 1, &queue_priority);
-		vk::DeviceCreateInfo	  device_createinfo({}, device_queue_createinfo, {}, enabled_extensions, nullptr, m_last_requested_extension_feature);
+		vk::DeviceQueueCreateInfo device_queue_createinfo {
+			.flags = vk::DeviceQueueCreateFlags(), 
+			.queueFamilyIndex = m_graphics_queue_family_index, 
+			.queueCount = 1, 
+			.pQueuePriorities = &queue_priority
+		};
+
+		vk::DeviceCreateInfo device_createinfo {
+			.pNext = &m_last_requested_extension_feature, 
+			.queueCreateInfoCount = 1,
+			.pQueueCreateInfos = &device_queue_createinfo, 
+			.enabledExtensionCount = (uint32_t)enabled_extensions.size(),
+			.ppEnabledExtensionNames = enabled_extensions.data(), 
+		};
 
 		vk::Device device = m_physical_device.createDevice(device_createinfo);
 
@@ -185,12 +203,20 @@ namespace VKN {
 	void Device::create_command_buffer()
 	{
 		// create a CommandPool to allocate a CommandBuffer from
-		m_command_pool = m_device.createCommandPool(
-			vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer), m_graphics_queue_family_index));
+		vk::CommandPoolCreateInfo command_pool_info {
+			.flags = vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer),
+			.queueFamilyIndex = m_graphics_queue_family_index
+		};
+		m_command_pool = m_device.createCommandPool(command_pool_info);
 
 		// allocate a CommandBuffer from the CommandPool
-		auto&& command_buffers =
-			m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo(m_command_pool, vk::CommandBufferLevel::ePrimary, MAX_FRAMES_IN_FLIGHT));
+		vk::CommandBufferAllocateInfo commmand_buffer_allocate_info {
+			.commandPool = m_command_pool,
+			.level = vk::CommandBufferLevel::ePrimary,
+			.commandBufferCount = MAX_FRAMES_IN_FLIGHT,
+		};
+		auto&& command_buffers = m_device.allocateCommandBuffers(commmand_buffer_allocate_info);
+
 		for (uint32_t i = 0; i < m_frame_resource.size(); ++i) {
 			m_frame_resource[i]->m_command_buffer = command_buffers[i];
 		}
@@ -199,7 +225,13 @@ namespace VKN {
 	void Device::create_swapchain()
 	{
 		// create Surface from Win32;
-		m_surface	= m_instance->createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR(vk::Win32SurfaceCreateFlagsKHR(), m_hinstance, m_hwnd));
+		vk::Win32SurfaceCreateInfoKHR win32_surface_createinfo{
+			.flags = vk::Win32SurfaceCreateFlagsKHR(),
+			.hinstance = m_hinstance,
+			.hwnd = m_hwnd,
+		};
+
+		m_surface	= m_instance->createWin32SurfaceKHR(win32_surface_createinfo);
 		auto&& rect = get_window_rect();
 
 		// get the supported VkFormats
@@ -225,6 +257,16 @@ namespace VKN {
 		// The FIFO present mode is guaranteed by the spec to be supported
 		vk::PresentModeKHR swapchain_present_mode = vk::PresentModeKHR::eFifo;
 
+		// Determine the number of VkImage's to use in the swapchain.
+		// Ideally, we desire to own 1 image at a time, the rest of the images can
+		// either be rendered to and/or being queued up for display.
+		uint32_t desired_swapchain_images = surface_capabilities.minImageCount + 1;
+		if ((surface_capabilities.maxImageCount > 0) && (desired_swapchain_images > surface_capabilities.maxImageCount))
+		{
+			// Application must settle for fewer images than desired.
+			desired_swapchain_images = surface_capabilities.maxImageCount;
+		}
+
 		vk::SurfaceTransformFlagBitsKHR pre_transform = (surface_capabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity)
 															? vk::SurfaceTransformFlagBitsKHR::eIdentity
 															: surface_capabilities.currentTransform;
@@ -235,9 +277,24 @@ namespace VKN {
 			: (surface_capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit)		  ? vk::CompositeAlphaFlagBitsKHR::eInherit
 																											  : vk::CompositeAlphaFlagBitsKHR::eOpaque;
 
-		vk::SwapchainCreateInfoKHR swapchain_create_info(vk::SwapchainCreateFlagsKHR(), m_surface, surface_capabilities.minImageCount, format,
-			vk::ColorSpaceKHR::eSrgbNonlinear, swapchain_extent, 1, vk::ImageUsageFlagBits::eColorAttachment, vk::SharingMode::eExclusive, {}, pre_transform,
-			composite_alpha, swapchain_present_mode, true, nullptr);
+		auto&& prev_swapchain = m_swapchain;
+
+		vk::SwapchainCreateInfoKHR swapchain_create_info {
+			.flags = vk::SwapchainCreateFlagsKHR(), 
+			.surface = m_surface, 
+			.minImageCount = desired_swapchain_images, 
+			.imageFormat = format,
+			.imageColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear, // todo: should get from surface caps 
+			.imageExtent = swapchain_extent,
+			.imageArrayLayers = 1, // Number of layers in each image (usually 1 unless stereoscopic)
+			.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+			.imageSharingMode = vk::SharingMode::eExclusive, // Access mode of the images (exclusive to one queue family)
+			.preTransform = pre_transform, 
+			.compositeAlpha = composite_alpha,
+			.presentMode = swapchain_present_mode,
+			.clipped = true, // Whether to clip obscured pixels (improves performance)
+			.oldSwapchain = prev_swapchain,
+		};
 
 		// find Present queue family index
 		m_present_queue_family_index = find_present_queue_family_index();
@@ -258,7 +315,20 @@ namespace VKN {
 
 		auto&& image_views = m_swapchain_image_views;
 		image_views.reserve(swapchain_images.size());
-		vk::ImageViewCreateInfo image_view_create_info({}, {}, vk::ImageViewType::e2D, format, {}, {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+		
+		vk::ImageViewCreateInfo image_view_create_info {
+			.flags = {},
+			.viewType = vk::ImageViewType::e2D,
+			.format = format,
+			.subresourceRange = vk::ImageSubresourceRange {
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1,
+			},
+		};
+		
 		for (auto&& image : swapchain_images) {
 			image_view_create_info.image = image;
 			image_views.push_back(m_device.createImageView(image_view_create_info));
@@ -283,8 +353,16 @@ namespace VKN {
 
 		auto&& r = get_window_rect();
 
-		vk::ImageCreateInfo image_createinfo(vk::ImageCreateFlags(), vk::ImageType::e2D, depth_format, vk::Extent3D(r.Width(), r.Height(), 1), 1, 1,
-			vk::SampleCountFlagBits::e1, tiling, vk::ImageUsageFlagBits::eDepthStencilAttachment);
+		vk::ImageCreateInfo image_createinfo {
+			.flags = vk::ImageCreateFlags(),
+			.imageType = vk::ImageType::e2D,
+			.extent = vk::Extent3D(r.Width(), r.Height(), 1),
+			.mipLevels = 1,
+			.arrayLayers = 1,
+			.samples = vk::SampleCountFlagBits::e1,
+			.tiling = tiling,
+			.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+		};
 
 		vma::AllocationCreateInfo alloc_createinfo;
 		alloc_createinfo.usage = vma::MemoryUsage::eAuto;
@@ -293,10 +371,25 @@ namespace VKN {
 
 		std::tie(m_depth_buffer.m_image, m_depth_buffer.m_alloc) = m_vma_allocator.createImage(image_createinfo, alloc_createinfo);
 
-		m_depth_buffer.m_view = m_device.createImageView(vk::ImageViewCreateInfo(
-			vk::ImageViewCreateFlags(), m_depth_buffer.m_image, vk::ImageViewType::e2D, depth_format, {}, {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}));
+		// create image views
+		vk::ImageViewCreateInfo image_view_createinfo {
+			.flags = vk::ImageViewCreateFlags(),
+			.image = m_depth_buffer.m_image,
+			.viewType = vk::ImageViewType::e2D,
+			.format = depth_format,
+			.subresourceRange = vk::ImageSubresourceRange {
+				.aspectMask = vk::ImageAspectFlagBits::eDepth,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1,
+			},
+		};
+
+		m_depth_buffer.m_view = m_device.createImageView(image_view_createinfo);
 	}
 
+	/*
 	void Device::create_render_pass()
 	{
 		vk::Format color_format = pick_surface_format(m_physical_device.getSurfaceFormatsKHR(m_surface)).format;
@@ -334,14 +427,20 @@ namespace VKN {
 			m_frame_buffers.push_back(m_device.createFramebuffer(framebuffer_createinfo));
 		}
 	}
+	*/
 
 	void Device::create_sync_object()
 	{
 		for (uint32_t i = 0; i < m_frame_resource.size(); ++i) {
+
 			m_frame_resource[i]->m_image_available_semaphore = m_device.createSemaphore(vk::SemaphoreCreateInfo());
 			m_frame_resource[i]->m_render_finished_semaphore = m_device.createSemaphore(vk::SemaphoreCreateInfo());
 			// initialize with the Signaled state
-			m_frame_resource[i]->m_inflight_fence = m_device.createFence(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+			vk::FenceCreateInfo fence_createinfo {
+				.flags = vk::FenceCreateFlagBits::eSignaled,
+			};
+
+			m_frame_resource[i]->m_inflight_fence = m_device.createFence(fence_createinfo);
 		}
 	}
 
@@ -431,15 +530,17 @@ namespace VKN {
 			return;
 		}
 
-		std::array<vk::ClearValue, 2> clear_values;
-		clear_values[0].color		 = vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}}));
-		clear_values[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
-
+		//std::array<vk::ClearValue, 2> clear_values;
+		//clear_values[0].color		 = vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}}));
+		//clear_values[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 		//vk::RenderPassBeginInfo renderPassBeginInfo(
 		//	m_render_pass, m_frame_buffers[m_swapchain_buffer_idx], vk::Rect2D(vk::Offset2D(0, 0), m_swapchain_image_size), clear_values);
 		//command_buffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
-		// setup RenderTarget
+		vk::ClearColorValue clear_colour { {{0.2f, 0.2f, 0.2f, 0.2f}} };
+		vk::ClearDepthStencilValue clear_depth = { .depth = 1.0f, .stencil = 0u };
+		
+
 		
 		command_buffer->setViewport(
 			0, vk::Viewport(0.0f, 0.0f, static_cast<float>(m_swapchain_image_size.width), static_cast<float>(m_swapchain_image_size.height), 0.0f, 1.0f));
@@ -864,11 +965,17 @@ namespace VKN {
 
 	void Device::begin_single_command_submission()
 	{
-		auto&& alloc_info = vk::CommandBufferAllocateInfo(m_command_pool, vk::CommandBufferLevel::ePrimary, 1);
+		auto&& alloc_info = vk::CommandBufferAllocateInfo {
+			.commandPool = m_command_pool, 
+			.level = vk::CommandBufferLevel::ePrimary,
+			.commandBufferCount = 1,
+		};
 
 		auto&& result = m_device.allocateCommandBuffers(&alloc_info, &m_single_use_command_buffer);
 
-		auto&& begin_info = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		auto&& begin_info = vk::CommandBufferBeginInfo {
+			.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+		};
 		m_single_use_command_buffer.begin(begin_info);
 	}
 
@@ -876,7 +983,11 @@ namespace VKN {
 	{
 		m_single_use_command_buffer.end();
 
-		auto&&	  submit_info	 = vk::SubmitInfo({}, {}, m_single_use_command_buffer);
+		auto&& submit_info = vk::SubmitInfo{ 
+			.commandBufferCount = 1,
+			.pCommandBuffers = &m_single_use_command_buffer,
+		};
+		
 		vk::Queue graphics_queue = m_device.getQueue(m_graphics_queue_family_index, 0);
 		graphics_queue.submit(submit_info);
 
@@ -931,7 +1042,16 @@ namespace VKN {
 
 		// submit the queue
 		vk::PipelineStageFlags wait_destination_stage_mask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-		vk::SubmitInfo		   submit_info(image_available_semaphore, wait_destination_stage_mask, command_buffer, render_finished_semaphore);
+		
+		vk::SubmitInfo submit_info {
+			.waitSemaphoreCount = 1,
+			.pWaitSemaphores = &image_available_semaphore,
+			.pWaitDstStageMask = &wait_destination_stage_mask,
+			.commandBufferCount = 1,
+			.pCommandBuffers = &command_buffer,
+			.signalSemaphoreCount = 1,
+			.pSignalSemaphores = &render_finished_semaphore,
+		};
 
 		vk::Queue graphics_queue = m_device.getQueue(m_graphics_queue_family_index, 0);
 		graphics_queue.submit(submit_info, inflight_fence);
@@ -940,7 +1060,13 @@ namespace VKN {
 
 		// workaround for eErrorOutOfDateKHR throw exception when Quiting
 		// https://github.com/KhronosGroup/Vulkan-Hpp/issues/599
-		auto&& present_info	  = vk::PresentInfoKHR(render_finished_semaphore, m_swapchain, m_swapchain_buffer_idx);
+		auto&& present_info	  = vk::PresentInfoKHR {
+			.waitSemaphoreCount = 1,
+			.pWaitSemaphores = &render_finished_semaphore, 
+			.swapchainCount = 1,
+			.pSwapchains = &m_swapchain, 
+			.pImageIndices = &m_swapchain_buffer_idx,
+		};
 		auto&& present_result = present_queue.presentKHR(&present_info);
 
 		switch (present_result) {
@@ -955,6 +1081,60 @@ namespace VKN {
 		default:
 			assert(false); // an unexpected result is returned !
 		}
+	}
+
+	vk::Format Device::get_backbuffer_colour_format() const
+	{
+		return pick_surface_format(m_physical_device.getSurfaceFormatsKHR(m_surface)).format;
+	}
+
+	vk::Format Device::get_backbuffer_depth_format() const
+	{
+		return m_depth_buffer.m_format;
+	}
+
+	void Device::transition_image_layout(vk::Image image, 
+			vk::ImageLayout dst_layout, vk::ImageLayout src_layout,
+			vk::AccessFlags2 dst_access_flags, vk::AccessFlags2 src_access_flags,
+			vk::PipelineStageFlags2 dst_stage_flags, vk::PipelineStageFlags2 src_stage_flags)
+	{
+		vk::ImageMemoryBarrier2 image_barrier {
+			// Specify the pipeline stages and access masks for the barrier
+			.srcStageMask  = src_stage_flags,      // Source pipeline stage mask
+			.srcAccessMask = src_access_flags,     // Source access mask
+			.dstStageMask  = dst_stage_flags,      // Destination pipeline stage mask
+			.dstAccessMask = dst_access_flags,     // Destination access mask
+
+			// Specify the old and new layouts of the image
+			.oldLayout = src_layout,		// Current layout of the image
+			.newLayout = dst_layout,        // Target layout of the image
+
+			// We are not changing the ownership between queues
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+
+			// Specify the image to be affected by this barrier
+			.image = image,
+
+			// Define the subresource range (which parts of the image are affected)
+			.subresourceRange = {
+				.aspectMask     = vk::ImageAspectFlagBits::eColor,  // Affects the color aspect of the image
+				.baseMipLevel   = 0,                                // Start at mip level 0
+				.levelCount     = 1,                                // Number of mip levels affected
+				.baseArrayLayer = 0,                                // Start at array layer 0
+				.layerCount     = 1                                 // Number of array layers affected
+	    }};
+
+		vk::DependencyInfo dependency_info {
+			.dependencyFlags = vk::DependencyFlags(), // No special dependency flags
+			.imageMemoryBarrierCount = 1,
+			.pImageMemoryBarriers = &image_barrier,
+		};
+
+		auto&& frame_resource_idx = curr_frame_resource_idx();
+		auto&& command_buffer = m_frame_resource[frame_resource_idx]->m_command_buffer;
+
+		command_buffer.pipelineBarrier2(&dependency_info);
 	}
 
 	std::vector<const char*> Device::gather_layers(const std::vector<std::string>& layers, const std::vector<vk::LayerProperties>& layer_properties)
@@ -1010,10 +1190,27 @@ namespace VKN {
 			vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
 		vk::DebugUtilsMessageTypeFlagsEXT messageTypeFlags(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
 														   vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
-		vk::StructureChain<vk::InstanceCreateInfo, vk::DebugUtilsMessengerCreateInfoEXT> instance_create_info(
-			{{}, &application_info, layers, extensions}, {{}, severityFlags, messageTypeFlags, &debug_utils_messenger_callback});
+		
+		vk::InstanceCreateInfo instance_createinfo {
+			.pApplicationInfo = &application_info,
+			.enabledLayerCount = (uint32_t)layers.size(),
+			.ppEnabledLayerNames = layers.data(),
+			.enabledExtensionCount = (uint32_t)extensions.size(),
+			.ppEnabledExtensionNames = extensions.data(),
+		};
 
-		return instance_create_info;
+		vk::DebugUtilsMessengerCreateInfoEXT debug_util_createinfo {
+			.messageSeverity = severityFlags,
+			.messageType = messageTypeFlags,
+			.pfnUserCallback = debug_utils_messenger_callback,
+		};
+
+		vk::StructureChain<vk::InstanceCreateInfo, vk::DebugUtilsMessengerCreateInfoEXT> complete_instance_create_info {
+			instance_createinfo, 
+			debug_util_createinfo,
+		};
+
+		return complete_instance_create_info;
 	}
 
 	vk::DebugUtilsMessengerEXT Device::create_debug_utils_messenger_EXT(const vk::Instance& instance)
@@ -1023,14 +1220,20 @@ namespace VKN {
 
 	vk::DebugUtilsMessengerCreateInfoEXT Device::make_debug_utils_messenger_create_info_EXT()
 	{
-		return {{}, vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-			vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-				vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
-			&debug_utils_messenger_callback};
+		vk::DebugUtilsMessageSeverityFlagsEXT severityFlags(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
+		vk::DebugUtilsMessageTypeFlagsEXT messageTypeFlags(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+														   vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
+
+		return vk::DebugUtilsMessengerCreateInfoEXT { 
+			.flags = {},
+			.messageSeverity = severityFlags, 
+			.messageType = messageTypeFlags,
+			.pfnUserCallback = debug_utils_messenger_callback 
+		};
 	}
 
-	VKAPI_ATTR VkBool32 VKAPI_CALL Device::debug_utils_messenger_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-		VkDebugUtilsMessageTypeFlagsEXT message_types, const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void*)
+	VKAPI_ATTR VkBool32 VKAPI_CALL Device::debug_utils_messenger_callback(vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
+		vk::DebugUtilsMessageTypeFlagsEXT message_types, const vk::DebugUtilsMessengerCallbackDataEXT* p_callback_data, void*)
 	{
 #if !defined(NDEBUG)
 		if (p_callback_data->messageIdNumber == 648835635) {
@@ -1161,39 +1364,6 @@ namespace VKN {
 		return {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME};
 	}
 
-	vk::SurfaceFormatKHR Device::pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats)
-	{
-		assert(!formats.empty());
-
-		vk::SurfaceFormatKHR picked_format = formats[0];
-		if (formats.size() == 1) {
-			if (formats[0].format == vk::Format::eUndefined) {
-				picked_format.format	 = vk::Format::eB8G8R8A8Unorm;
-				picked_format.colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
-			}
-		}
-		else {
-			// request several formats, the first found will be used
-			std::array<vk::Format, 4> requested_formats = {
-				vk::Format::eB8G8R8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::Format::eB8G8R8Unorm, vk::Format::eR8G8B8Unorm};
-			vk::ColorSpaceKHR requested_color_space = vk::ColorSpaceKHR::eSrgbNonlinear;
-			for (size_t i = 0; i < requested_formats.size(); i++) {
-				vk::Format requested_format = requested_formats[i];
-
-				auto it = std::find_if(formats.begin(), formats.end(), [requested_format, requested_color_space](vk::SurfaceFormatKHR const& f) {
-					return (f.format == requested_format) && (f.colorSpace == requested_color_space);
-				});
-				if (it != formats.end()) {
-					picked_format = *it;
-					break;
-				}
-			}
-		}
-
-		assert(picked_format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear);
-		return picked_format;
-	}
-
 	uint32_t Device::curr_frame_resource_idx()
 	{
 		return m_frame_count % MAX_FRAMES_IN_FLIGHT;
@@ -1234,5 +1404,39 @@ namespace VKN {
 		GetClientRect(m_hwnd, &client_rect);
 		return client_rect;
 	}
+
+	vk::SurfaceFormatKHR Device::pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats) const
+	{
+		assert(!formats.empty());
+
+		vk::SurfaceFormatKHR picked_format = formats[0];
+		if (formats.size() == 1) {
+			if (formats[0].format == vk::Format::eUndefined) {
+				picked_format.format	 = vk::Format::eB8G8R8A8Unorm;
+				picked_format.colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
+			}
+		}
+		else {
+			// request several formats, the first found will be used
+			std::array<vk::Format, 4> requested_formats = {
+				vk::Format::eB8G8R8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::Format::eB8G8R8Unorm, vk::Format::eR8G8B8Unorm};
+			vk::ColorSpaceKHR requested_color_space = vk::ColorSpaceKHR::eSrgbNonlinear;
+			for (size_t i = 0; i < requested_formats.size(); i++) {
+				vk::Format requested_format = requested_formats[i];
+
+				auto it = std::find_if(formats.begin(), formats.end(), [requested_format, requested_color_space](vk::SurfaceFormatKHR const& f) {
+					return (f.format == requested_format) && (f.colorSpace == requested_color_space);
+				});
+				if (it != formats.end()) {
+					picked_format = *it;
+					break;
+				}
+			}
+		}
+
+		assert(picked_format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear);
+		return picked_format;
+	}
+
 
 } // namespace VKN
