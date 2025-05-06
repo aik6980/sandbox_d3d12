@@ -2,42 +2,45 @@
 
 namespace VKN {
 
-    class Device;
-    class Shader;
+	class Device;
+	class Shader;
 
-    struct Descriptorset_layoutdata;
+	struct Descriptorset_layoutdata;
 
-    struct Technique_createinfo {
-        std::string m_vs_name;
-        std::string m_ps_name;
-    };
+	struct Technique_createinfo {
+		std::string m_vs_name;
+		std::string m_ps_name;
 
-    class Technique {
+		vk::Format m_color_format;
+		vk::Format m_depth_format;
+	};
 
-      public:
-        Technique(Device& gfx_device)
-            : m_gfx_device(gfx_device)
-        {
-        }
+	class Technique {
 
-        void destroy();
+	  public:
+		Technique(Device& gfx_device)
+			: m_gfx_device(gfx_device)
+		{
+		}
 
-        void create_pipeline();
-        void create_pipeline(vk::Format color_format, vk::Format depth_format);
+		void destroy();
 
-      public:
-        Device& m_gfx_device;
+		// void create_pipeline();
+		void create_pipeline(vk::Format color_format, vk::Format depth_format);
 
-        std::weak_ptr<Shader> mh_vs;
-        std::weak_ptr<Shader> mh_ps;
+	  public:
+		Device& m_gfx_device;
 
-        std::vector<vk::DescriptorSetLayout>   m_descriptorset_layouts;
-        std::vector<Descriptorset_layoutdata*> m_descriptorset_infos;
+		std::weak_ptr<Shader> mh_vs;
+		std::weak_ptr<Shader> mh_ps;
 
-        vk::PipelineLayout m_pipeline_layout;
-        vk::Pipeline       m_pipeline;
+		std::vector<vk::DescriptorSetLayout>   m_descriptorset_layouts;
+		std::vector<Descriptorset_layoutdata*> m_descriptorset_infos;
 
-        inline static const std::string ENTRY_POINT = "main";
-    };
+		vk::PipelineLayout m_pipeline_layout;
+		vk::Pipeline	   m_pipeline;
+
+		inline static const std::string ENTRY_POINT = "main";
+	};
 
 } // namespace VKN
