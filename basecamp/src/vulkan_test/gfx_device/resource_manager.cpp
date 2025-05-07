@@ -53,7 +53,11 @@ namespace VKN {
         vk::Buffer      staging_buffer;
         vma::Allocation staging_buffer_alloc;
         {
-            auto&& create_info       = vk::BufferCreateInfo({}, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
+            auto&& create_info = vk::BufferCreateInfo{
+                .size        = size,
+                .usage       = vk::BufferUsageFlagBits::eTransferSrc,
+                .sharingMode = vk::SharingMode::eExclusive,
+            };
             auto&& alloc_create_info = vma::AllocationCreateInfo();
             alloc_create_info.setUsage(vma::MemoryUsage::eAuto);
             alloc_create_info.setFlags(vma::AllocationCreateFlagBits::eHostAccessSequentialWrite | vma::AllocationCreateFlagBits::eMapped);
@@ -71,7 +75,11 @@ namespace VKN {
         vk::Buffer      buffer;
         vma::Allocation buffer_alloc;
         {
-            auto&& create_info       = vk::BufferCreateInfo({}, size, vk::BufferUsageFlagBits::eTransferDst | usage_flags, vk::SharingMode::eExclusive);
+            auto&& create_info = vk::BufferCreateInfo{
+                .size        = size,
+                .usage       = vk::BufferUsageFlagBits::eTransferDst | usage_flags,
+                .sharingMode = vk::SharingMode::eExclusive,
+            };
             auto&& alloc_create_info = vma::AllocationCreateInfo();
 
             std::tie(buffer, buffer_alloc) = vma_allocator.createBuffer(create_info, alloc_create_info);
@@ -90,7 +98,12 @@ namespace VKN {
 
         auto&& usage_flags = vk::BufferUsageFlagBits::eUniformBuffer;
 
-        auto&& create_info       = vk::BufferCreateInfo({}, size, vk::BufferUsageFlagBits::eTransferSrc | usage_flags, vk::SharingMode::eExclusive);
+        auto&& create_info = vk::BufferCreateInfo{
+            .size        = size,
+            .usage       = vk::BufferUsageFlagBits::eTransferSrc | usage_flags,
+            .sharingMode = vk::SharingMode::eExclusive,
+        };
+
         auto&& alloc_create_info = vma::AllocationCreateInfo();
         alloc_create_info.setUsage(vma::MemoryUsage::eAuto);
         alloc_create_info.setFlags(vma::AllocationCreateFlagBits::eHostAccessSequentialWrite | vma::AllocationCreateFlagBits::eMapped);

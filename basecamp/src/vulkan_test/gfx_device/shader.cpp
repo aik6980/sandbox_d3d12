@@ -38,8 +38,13 @@ namespace VKN {
         // create shader module -----------
         auto&& device = m_gfx_device.m_device;
 
-        auto&&                     shader_code = m_bin_data;
-        vk::ShaderModuleCreateInfo createinfo(vk::ShaderModuleCreateFlags(), (std::vector<uint32_t>&)shader_code);
+        auto&& shader_code = m_bin_data;
+
+        vk::ShaderModuleCreateInfo createinfo{
+            .codeSize = shader_code.size() / sizeof(uint32_t),
+            .pCode    = (uint32_t*)shader_code.data(),
+        };
+
         m_shader_module = device.createShaderModule(createinfo);
         // ----------
 

@@ -1,7 +1,7 @@
 # Format Style Options - Created with Clang Power Tools
 ---
-BasedOnStyle: Microsoft
-UseTab: Always
+BasedOnStyle: llvm
+UseTab: Never
 IndentWidth: 4
 ColumnLimit: 160
 # IndentAccessModifiers: True
