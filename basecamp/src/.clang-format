@@ -3,17 +3,18 @@
 BasedOnStyle: llvm
 UseTab: Never
 IndentWidth: 4
-ColumnLimit: 160
+ColumnLimit: 125
 # IndentAccessModifiers: True
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveDeclarations: Consecutive
 PointerAlignment: Left
 BreakBeforeBraces: Stroustrup
 AlwaysBreakTemplateDeclarations: Yes
-# AllowShortFunctionsOnASingleLine: Inline
 AlignAfterOpenBracket : DontAlign
 ConstructorInitializerIndentWidth : 4
 BreakConstructorInitializers : BeforeComma
 ContinuationIndentWidth : 4
 NamespaceIndentation : All
+BinPackParameters: false
+BinPackArguments: false
 ...

@@ -41,7 +41,7 @@ namespace VKN {
         auto&& shader_code = m_bin_data;
 
         vk::ShaderModuleCreateInfo createinfo{
-            .codeSize = shader_code.size() / sizeof(uint32_t),
+            .codeSize = shader_code.size(),
             .pCode    = (uint32_t*)shader_code.data(),
         };
 
@@ -99,7 +99,9 @@ namespace VKN {
             attribute_descriptions.push_back(attr_desc);
         }
         // Sort attributes by location
-        std::sort(std::begin(attribute_descriptions), std::end(attribute_descriptions), [](const auto& a, const auto& b) { return a.location < b.location; });
+        std::sort(std::begin(attribute_descriptions), std::end(attribute_descriptions), [](const auto& a, const auto& b) {
+            return a.location < b.location;
+        });
         // Compute final offsets of each attribute, and total vertex stride.
         for (auto& attribute : attribute_descriptions) {
             uint32_t format_size = Device::format_size(attribute.format);
@@ -138,8 +140,8 @@ namespace VKN {
                 layout.binding_names[i_binding]                = refl_binding.name;
                 vk::DescriptorSetLayoutBinding& layout_binding = layout.bindings[i_binding];
                 layout_binding.binding                         = refl_binding.binding;
-                layout_binding.descriptorType                  = static_cast<vk::DescriptorType>(refl_binding.descriptor_type);
-                layout_binding.descriptorCount                 = 1;
+                layout_binding.descriptorType  = static_cast<vk::DescriptorType>(refl_binding.descriptor_type);
+                layout_binding.descriptorCount = 1;
                 for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
                     layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
                 }

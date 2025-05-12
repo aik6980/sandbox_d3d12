@@ -9,9 +9,10 @@ namespace VKN {
         auto&& device = m_gfx_device.m_device;
 
         auto&& pool_size   = vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, Descriptor_pool::m_max_descriptor);
-        auto&& create_info = vk::DescriptorPoolCreateInfo {
-            .poolSizeCount = Descriptor_pool::m_max_descriptor,
-            .pPoolSizes = &pool_size
+        auto&& create_info = vk::DescriptorPoolCreateInfo{
+            .maxSets       = Descriptor_pool::m_max_descriptor,
+            .poolSizeCount = 1,
+            .pPoolSizes    = &pool_size,
         };
 
         m_descriptor_pool = device.createDescriptorPool(create_info);

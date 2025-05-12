@@ -54,11 +54,22 @@ namespace VKN {
         void end_frame();
 
         // utilities
-        vk::Format get_backbuffer_colour_format() const;
-        vk::Format get_backbuffer_depth_format() const;
+        vk::Format    get_backbuffer_colour_format() const;
+        vk::Image     get_backbuffer_colour_image() const { return m_swapchain_images[m_swapchain_buffer_idx]; }
+        vk::ImageView get_backbuffer_colour_image_view() const { return m_swapchain_image_views[m_swapchain_buffer_idx]; }
 
-        void transition_image_layout(vk::Image image, vk::ImageLayout dst_layout, vk::ImageLayout src_layout, vk::AccessFlags2 dst_access_flags,
-            vk::AccessFlags2 src_access_flags, vk::PipelineStageFlags2 dst_stage_flags, vk::PipelineStageFlags2 src_stage_flags);
+        vk::Format get_backbuffer_depth_format() const; // <- should be part of the frame graph
+
+        struct Transition_image_layout_info {
+            vk::ImageLayout         dst_layout;
+            vk::ImageLayout         src_layout;
+            vk::AccessFlags2        dst_access_flags;
+            vk::AccessFlags2        src_access_flags;
+            vk::PipelineStageFlags2 dst_stage_flags;
+            vk::PipelineStageFlags2 src_stage_flags;
+        };
+
+        void transition_image_layout(vk::Image image, const Transition_image_layout_info& transition_image_layout_info);
 
         // Sub system
         std::unique_ptr<Resource_manager> m_resource_manager;
@@ -67,18 +78,24 @@ namespace VKN {
       private:
         CRect get_window_rect() const;
 
-        std::vector<const char*> gather_layers(const std::vector<std::string>& layers, const std::vector<vk::LayerProperties>& layer_properties);
+        std::vector<const char*> gather_layers(
+            const std::vector<std::string>& layers, const std::vector<vk::LayerProperties>& layer_properties);
         std::vector<const char*> gather_extensions(
             const std::vector<std::string>& extensions, const std::vector<vk::ExtensionProperties>& extension_properties);
 
         vk::StructureChain<vk::InstanceCreateInfo, vk::DebugUtilsMessengerCreateInfoEXT> make_instance_create_info_chain(
-            const vk::ApplicationInfo& application_info, const std::vector<const char*>& layers, const std::vector<const char*>& extensions);
+            const vk::ApplicationInfo&      application_info,
+            const std::vector<const char*>& layers,
+            const std::vector<const char*>& extensions);
 
         vk::DebugUtilsMessengerEXT           create_debug_utils_messenger_EXT(const vk::Instance& instance);
         vk::DebugUtilsMessengerCreateInfoEXT make_debug_utils_messenger_create_info_EXT();
 
-        static VKAPI_ATTR VkBool32 VKAPI_CALL debug_utils_messenger_callback(vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
-            vk::DebugUtilsMessageTypeFlagsEXT message_types, const vk::DebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data = nullptr);
+        static VKAPI_ATTR VkBool32 VKAPI_CALL debug_utils_messenger_callback(
+            vk::DebugUtilsMessageSeverityFlagBitsEXT      message_severity,
+            vk::DebugUtilsMessageTypeFlagsEXT             message_types,
+            const vk::DebugUtilsMessengerCallbackDataEXT* p_callback_data,
+            void*                                         p_user_data = nullptr);
 
         uint32_t find_graphics_queue_family_index(const std::vector<vk::QueueFamilyProperties>& queue_family_properties);
         uint32_t find_present_queue_family_index();
@@ -136,6 +153,7 @@ namespace VKN {
         // Window surface
         vk::SurfaceKHR             m_surface;
         std::vector<vk::ImageView> m_swapchain_image_views;
+        std::vector<vk::Image>     m_swapchain_images;
         vk::SwapchainKHR           m_swapchain;
         vk::Extent2D               m_swapchain_image_size;
         vk::Format                 m_swapchain_format;
@@ -148,8 +166,8 @@ namespace VKN {
 
         // try to use Dynamic Pipeline instead of these
         // Render pass/Frame buffer (for swapchain)
-        vk::RenderPass               m_render_pass;
-        std::vector<vk::Framebuffer> m_frame_buffers;
+        // vk::RenderPass               m_render_pass;
+        // std::vector<vk::Framebuffer> m_frame_buffers;
 
         // Syncronization
         const uint64_t m_fence_timeout = 100000000;
@@ -174,13 +192,15 @@ namespace VKN {
     {
         // We cannot request extension features if the physical device properties 2 instance extension isnt enabled
         if (!is_instance_extension_enabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-            throw std::runtime_error(
-                "Couldn't request feature from device as " + std::string(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) + " isn't enabled!");
+            throw std::runtime_error("Couldn't request feature from device as " +
+                                     std::string(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) +
+                                     " isn't enabled!");
         }
 
         // If the type already exists in the map, return a casted pointer to get the extension feature struct
-        vk::StructureType structure_type        = Structure_type::structureType; // need to instantiate this value to be usable in find()!
-        auto              extension_features_it = m_extension_features.find(structure_type);
+        vk::StructureType structure_type =
+            Structure_type::structureType; // need to instantiate this value to be usable in find()!
+        auto extension_features_it = m_extension_features.find(structure_type);
         if (extension_features_it != m_extension_features.end()) {
             return *static_cast<Structure_type*>(extension_features_it->second.get());
         }
@@ -190,7 +210,8 @@ namespace VKN {
             m_physical_device.getFeatures2KHR<vk::PhysicalDeviceFeatures2KHR, Structure_type>();
 
         // Insert the extension feature into the extension feature map so its ownership is held
-        m_extension_features.insert({structure_type, std::make_shared<Structure_type>(feature_chain.template get<Structure_type>())});
+        m_extension_features.insert(
+            {structure_type, std::make_shared<Structure_type>(feature_chain.template get<Structure_type>())});
 
         // Pull out the dereferenced void pointer, we can assume its type based on the template
         auto* extension_ptr = static_cast<Structure_type*>(m_extension_features.find(structure_type)->second.get());

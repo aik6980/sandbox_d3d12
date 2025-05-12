@@ -32,12 +32,14 @@ namespace VKN {
 
             // Programable state -----------
             std::array<vk::PipelineShaderStageCreateInfo, 2> pipeline_shader_stage_createinfo = {
-                    vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlags(), vk::ShaderStageFlagBits::eVertex, vs->m_shader_module, "main"),
-                    vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlags(), vk::ShaderStageFlagBits::eFragment, ps->m_shader_module, "main")};
+                    vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlags(), vk::ShaderStageFlagBits::eVertex,
+    vs->m_shader_module, "main"), vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlags(),
+    vk::ShaderStageFlagBits::eFragment, ps->m_shader_module, "main")};
 
             vk::PipelineVertexInputStateCreateInfo pipeline_vertex_input_state_createinfo;
             if (vs->m_vertex_input_attribute_descriptions.size() > 0) {
-                    pipeline_vertex_input_state_createinfo = {{}, vs->m_vertex_input_binding_description, vs->m_vertex_input_attribute_descriptions};
+                    pipeline_vertex_input_state_createinfo = {{}, vs->m_vertex_input_binding_description,
+    vs->m_vertex_input_attribute_descriptions};
             }
             else {
                     pipeline_vertex_input_state_createinfo = {{}, 0, nullptr, 0, nullptr};
@@ -67,10 +69,12 @@ namespace VKN {
                             }
                     }
 
-                    m_pipeline_layout = device.createPipelineLayout(vk::PipelineLayoutCreateInfo({}, m_descriptorset_layouts));
+                    m_pipeline_layout = device.createPipelineLayout(vk::PipelineLayoutCreateInfo({},
+    m_descriptorset_layouts));
             }
             else {
-                    m_pipeline_layout = device.createPipelineLayout(vk::PipelineLayoutCreateInfo(vk::PipelineLayoutCreateFlags()));
+                    m_pipeline_layout =
+    device.createPipelineLayout(vk::PipelineLayoutCreateInfo(vk::PipelineLayoutCreateFlags()));
             }
 
             // ----------
@@ -79,10 +83,11 @@ namespace VKN {
             vk::PipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_createinfo(
                     vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::eTriangleList);
 
-            vk::PipelineViewportStateCreateInfo pipeline_viewport_state_createinfo(vk::PipelineViewportStateCreateFlags(), 1, nullptr, 1, nullptr);
+            vk::PipelineViewportStateCreateInfo pipeline_viewport_state_createinfo(vk::PipelineViewportStateCreateFlags(), 1,
+    nullptr, 1, nullptr);
 
-            vk::PipelineRasterizationStateCreateInfo pipeline_rasterization_state_createinfo(vk::PipelineRasterizationStateCreateFlags(), // flags
-                    false,
+            vk::PipelineRasterizationStateCreateInfo
+    pipeline_rasterization_state_createinfo(vk::PipelineRasterizationStateCreateFlags(), // flags false,
     // depthClampEnable false,
     // rasterizerDiscardEnable vk::PolygonMode::eFill,
     // polygonMode vk::CullModeFlagBits::eBack,
@@ -95,15 +100,15 @@ namespace VKN {
     // lineWidth
             );
 
-            vk::PipelineMultisampleStateCreateInfo pipeline_multisample_state_createinfo(vk::PipelineMultisampleStateCreateFlags(), // flags
-                    vk::SampleCountFlagBits::e1
+            vk::PipelineMultisampleStateCreateInfo
+    pipeline_multisample_state_createinfo(vk::PipelineMultisampleStateCreateFlags(), // flags vk::SampleCountFlagBits::e1
     // rasterizationSamples
                                                                                                                                                                                                                                                             // other values can be default
             );
 
-            vk::StencilOpState						stencil_op_state(vk::StencilOp::eKeep, vk::StencilOp::eKeep, vk::StencilOp::eKeep,
-    vk::CompareOp::eAlways); vk::PipelineDepthStencilStateCreateInfo pipeline_depth_stencil_state_createinfo(vk::PipelineDepthStencilStateCreateFlags(), //
-    flags true,
+            vk::StencilOpState						stencil_op_state(vk::StencilOp::eKeep, vk::StencilOp::eKeep,
+    vk::StencilOp::eKeep, vk::CompareOp::eAlways); vk::PipelineDepthStencilStateCreateInfo
+    pipeline_depth_stencil_state_createinfo(vk::PipelineDepthStencilStateCreateFlags(), // flags true,
     // depthTestEnable true,
     // depthWriteEnable vk::CompareOp::eLessOrEqual,
     // depthCompareOp false,
@@ -114,18 +119,18 @@ namespace VKN {
             );
 
             vk::ColorComponentFlags color_component_flags(
-                    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-            vk::PipelineColorBlendAttachmentState pipeline_color_blend_attachment_state(false, // blendEnable
-                    vk::BlendFactor::eZero,														   //
-    srcColorBlendFactor vk::BlendFactor::eZero,														   //
-    dstColorBlendFactor vk::BlendOp::eAdd, // colorBlendOp vk::BlendFactor::eZero,
+                    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB |
+    vk::ColorComponentFlagBits::eA); vk::PipelineColorBlendAttachmentState pipeline_color_blend_attachment_state(false, //
+    blendEnable vk::BlendFactor::eZero,
+    // srcColorBlendFactor vk::BlendFactor::eZero,
+    // dstColorBlendFactor vk::BlendOp::eAdd, // colorBlendOp vk::BlendFactor::eZero,
     // srcAlphaBlendFactor vk::BlendFactor::eZero, // dstAlphaBlendFactor vk::BlendOp::eAdd,
-    // alphaBlendOp color_component_flags														   //
-    colorWriteMask
+    // alphaBlendOp color_component_flags
+    // colorWriteMask
             );
 
-            vk::PipelineColorBlendStateCreateInfo pipeline_color_blend_state_createinfo(vk::PipelineColorBlendStateCreateFlags(), // flags
-                    false,
+            vk::PipelineColorBlendStateCreateInfo
+    pipeline_color_blend_state_createinfo(vk::PipelineColorBlendStateCreateFlags(), // flags false,
     // logicOpEnable vk::LogicOp::eNoOp,
     // logicOp pipeline_color_blend_attachment_state,
     // attachments
@@ -133,22 +138,25 @@ namespace VKN {
     // blendConstants
             );
 
-            std::array<vk::DynamicState, 2>	   dynamic_states = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
-            vk::PipelineDynamicStateCreateInfo pipeline_dynamic_state_createinfo(vk::PipelineDynamicStateCreateFlags(), dynamic_states);
+            std::array<vk::DynamicState, 2>	   dynamic_states = {vk::DynamicState::eViewport,
+    vk::DynamicState::eScissor}; vk::PipelineDynamicStateCreateInfo
+    pipeline_dynamic_state_createinfo(vk::PipelineDynamicStateCreateFlags(), dynamic_states);
             // -----------
 
             vk::GraphicsPipelineCreateInfo graphics_pipeline_createinfo(vk::PipelineCreateFlags(), // flags
-                    pipeline_shader_stage_createinfo,												   // stages
-                    &pipeline_vertex_input_state_createinfo,										   // pVertexInputState
-                    &pipeline_input_assembly_state_createinfo,										   //
-    pInputAssemblyState nullptr,
-    // pTessellationState &pipeline_viewport_state_createinfo,											   //
-    pViewportState &pipeline_rasterization_state_createinfo,										   //
-    pRasterizationState &pipeline_multisample_state_createinfo,											   //
-    pMultisampleState &pipeline_depth_stencil_state_createinfo,										   // pDepthStencilState
-                    &pipeline_color_blend_state_createinfo,											   //
-    pColorBlendState &pipeline_dynamic_state_createinfo,												   //
-    pDynamicState m_pipeline_layout, // layout render_pass
+                    pipeline_shader_stage_createinfo,												   //
+    stages
+                    &pipeline_vertex_input_state_createinfo,										   //
+    pVertexInputState &pipeline_input_assembly_state_createinfo,
+    // pInputAssemblyState nullptr,
+    // pTessellationState &pipeline_viewport_state_createinfo,
+    // pViewportState &pipeline_rasterization_state_createinfo,
+    // pRasterizationState &pipeline_multisample_state_createinfo,
+    //
+    pMultisampleState &pipeline_depth_stencil_state_createinfo,										   //
+    pDepthStencilState &pipeline_color_blend_state_createinfo,
+    // pColorBlendState &pipeline_dynamic_state_createinfo,
+    // pDynamicState m_pipeline_layout, // layout render_pass
     // renderPass
             );
 
@@ -178,8 +186,10 @@ namespace VKN {
 
         // Programable state -----------
         std::array<vk::PipelineShaderStageCreateInfo, 2> pipeline_shader_stage_createinfo = {
-            vk::PipelineShaderStageCreateInfo{.stage = vk::ShaderStageFlagBits::eVertex, .module = vs->m_shader_module, .pName = "main"},
-            vk::PipelineShaderStageCreateInfo{.stage = vk::ShaderStageFlagBits::eFragment, .module = ps->m_shader_module, .pName = "main"}};
+            vk::PipelineShaderStageCreateInfo{
+                .stage = vk::ShaderStageFlagBits::eVertex, .module = vs->m_shader_module, .pName = "main"},
+            vk::PipelineShaderStageCreateInfo{
+                .stage = vk::ShaderStageFlagBits::eFragment, .module = ps->m_shader_module, .pName = "main"}};
 
         vk::PipelineVertexInputStateCreateInfo pipeline_vertex_input_state_createinfo;
         if (vs->m_vertex_input_attribute_descriptions.size() > 0) {
@@ -228,7 +238,8 @@ namespace VKN {
         // ----------
 
         // Fixed pipeline state -----------
-        vk::PipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_createinfo{.topology = vk::PrimitiveTopology::eTriangleList};
+        vk::PipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_createinfo{
+            .topology = vk::PrimitiveTopology::eTriangleList};
 
         vk::PipelineRasterizationStateCreateInfo pipeline_rasterization_state_createinfo{
             .flags                   = vk::PipelineRasterizationStateCreateFlags(),
@@ -250,19 +261,21 @@ namespace VKN {
                                                                                // other values can be default
         };
 
-        vk::StencilOpState                      stencil_op_state(vk::StencilOp::eKeep, vk::StencilOp::eKeep, vk::StencilOp::eKeep, vk::CompareOp::eAlways);
-        vk::PipelineDepthStencilStateCreateInfo pipeline_depth_stencil_state_createinfo(vk::PipelineDepthStencilStateCreateFlags(), // flags
-            true,                                                                                                                   // depthTestEnable
-            true,                                                                                                                   // depthWriteEnable
-            vk::CompareOp::eLessOrEqual,                                                                                            // depthCompareOp
-            false,                                                                                                                  // depthBoundTestEnable
-            false,                                                                                                                  // stencilTestEnable
-            stencil_op_state,                                                                                                       // front
-            stencil_op_state                                                                                                        // back
-        );
+        vk::StencilOpState stencil_op_state(
+            vk::StencilOp::eKeep, vk::StencilOp::eKeep, vk::StencilOp::eKeep, vk::CompareOp::eAlways);
+        vk::PipelineDepthStencilStateCreateInfo pipeline_depth_stencil_state_createinfo{
+            .flags                 = vk::PipelineDepthStencilStateCreateFlags(), // flags
+            .depthTestEnable       = true,                                       // depthTestEnable
+            .depthWriteEnable      = true,                                       // depthWriteEnable
+            .depthCompareOp        = vk::CompareOp::eLessOrEqual,                // depthCompareOp
+            .depthBoundsTestEnable = false,                                      // depthBoundTestEnable
+            .stencilTestEnable     = false,                                      // stencilTestEnable
+            .front                 = stencil_op_state,                           // front
+            .back                  = stencil_op_state,                           // back
+        };
 
-        vk::ColorComponentFlags color_component_flags(
-            vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+        vk::ColorComponentFlags color_component_flags(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                                                      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
         vk::PipelineColorBlendAttachmentState pipeline_color_blend_attachment_state(false, // blendEnable
             vk::BlendFactor::eZero,                                                        // srcColorBlendFactor
             vk::BlendFactor::eZero,                                                        // dstColorBlendFactor
@@ -273,40 +286,61 @@ namespace VKN {
             color_component_flags                                                          // colorWriteMask
         );
 
-        vk::PipelineColorBlendStateCreateInfo pipeline_color_blend_state_createinfo(vk::PipelineColorBlendStateCreateFlags(), // flags
-            false,                                                                                                            // logicOpEnable
-            vk::LogicOp::eNoOp,                                                                                               // logicOp
-            pipeline_color_blend_attachment_state,                                                                            // attachments
-            {{1.0f, 1.0f, 1.0f, 1.0f}}                                                                                        // blendConstants
-        );
+        vk::PipelineColorBlendStateCreateInfo pipeline_color_blend_state_createinfo{
+            .flags           = vk::PipelineColorBlendStateCreateFlags(), // flags
+            .logicOpEnable   = false,                                    // logicOpEnable
+            .logicOp         = vk::LogicOp::eNoOp,                       // logicOp
+            .attachmentCount = 1,
+            .pAttachments    = &pipeline_color_blend_attachment_state, // attachments
+            .blendConstants  = {{1.0f, 1.0f, 1.0f, 1.0f}}              // blendConstants
+        };
 
-        const int                           num_render_targets = 1;
-        vk::PipelineViewportStateCreateInfo pipeline_viewport_state_createinfo(
-            vk::PipelineViewportStateCreateFlags(), num_render_targets, nullptr, num_render_targets, nullptr);
-        vk::PipelineRenderingCreateInfo render_info({}, num_render_targets, &color_format, depth_format);
+        const int num_render_targets = 1;
+
+        vk::PipelineViewportStateCreateInfo pipeline_viewport_state_createinfo{
+            .flags         = vk::PipelineViewportStateCreateFlags(),
+            .viewportCount = num_render_targets,
+            .scissorCount  = num_render_targets,
+        };
+
+        vk::PipelineRenderingCreateInfo render_info{
+            .colorAttachmentCount    = num_render_targets,
+            .pColorAttachmentFormats = &color_format,
+            .depthAttachmentFormat   = depth_format,
+        };
 
         // Dynamic states
-        std::array<vk::DynamicState, 5> dynamic_states = {vk::DynamicState::eViewport, vk::DynamicState::eScissor, vk::DynamicState::eCullMode,
-            vk::DynamicState::eFrontFace, vk::DynamicState::ePrimitiveTopology};
+        std::array<vk::DynamicState, 2> dynamic_states = {
+            vk::DynamicState::eViewport, vk::DynamicState::eScissor,
+            // vk::DynamicState::eCullMode,
+            // vk::DynamicState::eFrontFace,
+            // vk::DynamicState::ePrimitiveTopology,
+        };
 
-        vk::PipelineDynamicStateCreateInfo pipeline_dynamic_state_createinfo(vk::PipelineDynamicStateCreateFlags(), dynamic_states);
+        vk::PipelineDynamicStateCreateInfo pipeline_dynamic_state_createinfo{
+            .dynamicStateCount = (uint32_t)dynamic_states.size(),
+            .pDynamicStates    = dynamic_states.data(),
+        };
         // -----------
 
-        vk::GraphicsPipelineCreateInfo graphics_pipeline_createinfo(vk::PipelineCreateFlags(), // flags
-            pipeline_shader_stage_createinfo,                                                  // stages
-            &pipeline_vertex_input_state_createinfo,                                           // pVertexInputState
-            &pipeline_input_assembly_state_createinfo,                                         // pInputAssemblyState
-            nullptr,                                                                           // pTessellationState
-            &pipeline_viewport_state_createinfo,                                               // pViewportState
-            &pipeline_rasterization_state_createinfo,                                          // pRasterizationState
-            &pipeline_multisample_state_createinfo,                                            // pMultisampleState
-            &pipeline_depth_stencil_state_createinfo,                                          // pDepthStencilState
-            &pipeline_color_blend_state_createinfo,                                            // pColorBlendState
-            &pipeline_dynamic_state_createinfo,                                                // pDynamicState
-            m_pipeline_layout,                                                                 // layout
-            nullptr                                                                            // renderPass
-        );
-        graphics_pipeline_createinfo.pNext = &render_info;
+        vk::GraphicsPipelineCreateInfo graphics_pipeline_createinfo{
+            .pNext               = &render_info,
+            .flags               = vk::PipelineCreateFlags(),               // flags
+            .stageCount          = pipeline_shader_stage_createinfo.size(), // stages
+            .pStages             = pipeline_shader_stage_createinfo.data(),
+            .pVertexInputState   = &pipeline_vertex_input_state_createinfo,   // pVertexInputState
+            .pInputAssemblyState = &pipeline_input_assembly_state_createinfo, // pInputAssemblyState
+            .pTessellationState  = nullptr,                                   // pTessellationState
+            .pViewportState      = &pipeline_viewport_state_createinfo,       // pViewportState
+            .pRasterizationState = &pipeline_rasterization_state_createinfo,  // pRasterizationState
+            .pMultisampleState   = &pipeline_multisample_state_createinfo,    // pMultisampleState
+            .pDepthStencilState  = &pipeline_depth_stencil_state_createinfo,  // pDepthStencilState
+            .pColorBlendState    = &pipeline_color_blend_state_createinfo,    // pColorBlendState
+            .pDynamicState       = &pipeline_dynamic_state_createinfo,        // pDynamicState
+            .layout              = m_pipeline_layout,                         // layout
+            .renderPass          = nullptr, // renderPass, and since we are using dynamic rendering this will set as null
+            .subpass             = 0,
+        };
 
         vk::Result   result;
         vk::Pipeline pipeline;
@@ -315,7 +349,7 @@ namespace VKN {
         case vk::Result::eSuccess:
             break;
         case vk::Result::ePipelineCompileRequiredEXT:
-            // something meaningfull here
+            // something meaningful here
             break;
         default:
             assert(false); // should never happen
