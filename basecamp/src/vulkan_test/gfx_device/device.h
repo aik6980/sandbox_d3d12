@@ -83,10 +83,17 @@ namespace VKN {
         std::vector<const char*> gather_extensions(
             const std::vector<std::string>& extensions, const std::vector<vk::ExtensionProperties>& extension_properties);
 
+#if defined(DEBUG)
         vk::StructureChain<vk::InstanceCreateInfo, vk::DebugUtilsMessengerCreateInfoEXT> make_instance_create_info_chain(
             const vk::ApplicationInfo&      application_info,
             const std::vector<const char*>& layers,
             const std::vector<const char*>& extensions);
+#else
+        vk::StructureChain<vk::InstanceCreateInfo> make_instance_create_info_chain(
+            const vk::ApplicationInfo&      application_info,
+            const std::vector<const char*>& layers,
+            const std::vector<const char*>& extensions);
+#endif
 
         vk::DebugUtilsMessengerEXT           create_debug_utils_messenger_EXT(const vk::Instance& instance);
         vk::DebugUtilsMessengerCreateInfoEXT make_debug_utils_messenger_create_info_EXT();

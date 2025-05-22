@@ -129,14 +129,17 @@ namespace VKN {
         // create instance
         m_instance =
             vk::createInstanceUnique(make_instance_create_info_chain(applicationInfo, enabled_layers, enabled_extensions)
-                                         .get<vk::InstanceCreateInfo>());
+                    .get<vk::InstanceCreateInfo>());
+
 #if (VULKAN_HPP_DISPATCH_LOADER_DYNAMIC == 1)
         // initialize function pointers for instance
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*m_instance);
 #endif
 
+#if defined(_DEBUG)
         // create debug layer
         m_debug_utils_messenger = create_debug_utils_messenger_EXT(*m_instance);
+#endif
     }
 
     void Device::create_device()
@@ -1250,7 +1253,7 @@ namespace VKN {
                        }) != extension_properties.end());
             enabled_extensions.push_back(ext.data());
         }
-#if !defined(NDEBUG)
+#if defined(_DEBUG)
         if (std::find(extensions.begin(), extensions.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == extensions.end() &&
             std::find_if(extension_properties.begin(), extension_properties.end(), [](const vk::ExtensionProperties& ep) {
                 return (strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ep.extensionName) == 0);
@@ -1261,15 +1264,12 @@ namespace VKN {
         return enabled_extensions;
     }
 
+#if defined(_DEBUG)
     vk::StructureChain<vk::InstanceCreateInfo, vk::DebugUtilsMessengerCreateInfoEXT> Device::make_instance_create_info_chain(
         const vk::ApplicationInfo&      application_info,
         const std::vector<const char*>& layers,
         const std::vector<const char*>& extensions)
     {
-        // in non-debug mode just use the InstanceCreateInfo for instance creation
-        // vk::StructureChain<vk::InstanceCreateInfo> instance_create_info({{}, &application_info,
-        // layers, extensions});
-
         // in debug mode, addionally use the debugUtilsMessengerCallback in instance creation!
         vk::DebugUtilsMessageSeverityFlagsEXT severityFlags(
             vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
@@ -1298,6 +1298,25 @@ namespace VKN {
 
         return complete_instance_create_info;
     }
+#else
+    vk::StructureChain<vk::InstanceCreateInfo> Device::make_instance_create_info_chain(
+        const vk::ApplicationInfo&      application_info,
+        const std::vector<const char*>& layers,
+        const std::vector<const char*>& extensions)
+    {
+        // in non-debug mode just use the InstanceCreateInfo for instance creation
+        vk::InstanceCreateInfo instance_createinfo{
+            .pApplicationInfo        = &application_info,
+            .enabledLayerCount       = (uint32_t)layers.size(),
+            .ppEnabledLayerNames     = layers.data(),
+            .enabledExtensionCount   = (uint32_t)extensions.size(),
+            .ppEnabledExtensionNames = extensions.data(),
+        };
+
+        vk::StructureChain<vk::InstanceCreateInfo> complete_instance_create_info(instance_createinfo);
+        return complete_instance_create_info;
+    }
+#endif
 
     vk::DebugUtilsMessengerEXT Device::create_debug_utils_messenger_EXT(const vk::Instance& instance)
     {
@@ -1434,15 +1453,13 @@ namespace VKN {
 
     std::vector<std::string> Device::get_instance_extensions()
     {
-        std::vector<std::string> extensions = {
-            VK_KHR_SURFACE_EXTENSION_NAME
+        std::vector<std::string> extensions = {VK_KHR_SURFACE_EXTENSION_NAME
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
             ,
             VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 #endif
             ,
-            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
-        };
+            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};
         return extensions;
     }
 
