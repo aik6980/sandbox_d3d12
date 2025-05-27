@@ -18,19 +18,28 @@ std::atomic<bool>            game_running = true;
 
 VKN::Device m_gfx_device;
 
+void render_thread_func()
+{
+    while (game_running) {
+
+        Sleep(1000);
+        OutputDebugString(L"render frame\n");
+    }
+}
+
 void App::on_init(HINSTANCE hInstance, HWND hWnd)
 {
     m_hInstance = hInstance;
     m_hWnd      = hWnd;
 
+    OutputDebugString(L"app start\n");
+
     // time
     m_time_begin_frame = m_time_begin_app = std::chrono::high_resolution_clock::now();
 
-    // thread
     // m_engine->update();
-    // render_thread.reset(new std::thread(
-    //	[&]() { while (game_running) { m_engine->draw(); }
-    //}));
+    // render thread
+    render_thread.reset(new std::thread(render_thread_func));
 
     m_gfx_device.create(m_hInstance, m_hWnd);
     // device.draw();
@@ -44,7 +53,8 @@ void App::on_init(HINSTANCE hInstance, HWND hWnd)
 void App::on_update()
 {
     // frame time
-    m_duration_frame   = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_time_begin_frame);
+    m_duration_frame =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_time_begin_frame);
     m_time_begin_frame = std::chrono::steady_clock::now();
 
     m_gfx_device.draw();
@@ -53,9 +63,11 @@ void App::on_update()
 void App::on_destroy()
 {
     game_running = false;
-    // render_thread->join();
 
+    render_thread->join();
     m_gfx_device.destroy();
+
+    OutputDebugString(L"app destroy\n");
 }
 
 void App::create_scene()
@@ -64,12 +76,15 @@ void App::create_scene()
     auto&& resource_manager = m_gfx_device.m_resource_manager;
 
     // for each render passes
-    auto&& colour_format = m_gfx_device.get_backbuffer_colour_format();
-    auto&& depth_format = m_gfx_device.get_backbuffer_depth_format();
-    VKN::Targets_createinfo targets_info = {colour_format, depth_format};
+    auto&&                  colour_format = m_gfx_device.get_backbuffer_colour_format();
+    auto&&                  depth_format  = m_gfx_device.get_backbuffer_depth_format();
+    VKN::Targets_createinfo targets_info  = {colour_format, depth_format};
     // create techniques
-    shader_manager->register_technique("t0", VKN::Technique_createinfo{.m_vs_name = "hello_triangle.vs", .m_ps_name = "hello_triangle.ps"}, targets_info);
-    shader_manager->register_technique("t1", VKN::Technique_createinfo{.m_vs_name = "hello_triangle_mesh.vs", .m_ps_name = "hello_triangle.ps"}, targets_info);
+    shader_manager->register_technique(
+        "t0", VKN::Technique_createinfo{.m_vs_name = "hello_triangle.vs", .m_ps_name = "hello_triangle.ps"}, targets_info);
+    shader_manager->register_technique("t1",
+        VKN::Technique_createinfo{.m_vs_name = "hello_triangle_mesh.vs", .m_ps_name = "hello_triangle.ps"},
+        targets_info);
 
     // create mesh
     resource_manager->create_mesh();

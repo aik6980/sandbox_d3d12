@@ -11,6 +11,389 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace VKN {
 
+    uint32_t Device::format_size(vk::Format format)
+    {
+        uint32_t result = 0;
+        switch (static_cast<VkFormat>(format)) {
+        case VK_FORMAT_UNDEFINED:
+            result = 0;
+            break;
+        case VK_FORMAT_R4G4_UNORM_PACK8:
+            result = 1;
+            break;
+        case VK_FORMAT_R4G4B4A4_UNORM_PACK16:
+            result = 2;
+            break;
+        case VK_FORMAT_B4G4R4A4_UNORM_PACK16:
+            result = 2;
+            break;
+        case VK_FORMAT_R5G6B5_UNORM_PACK16:
+            result = 2;
+            break;
+        case VK_FORMAT_B5G6R5_UNORM_PACK16:
+            result = 2;
+            break;
+        case VK_FORMAT_R5G5B5A1_UNORM_PACK16:
+            result = 2;
+            break;
+        case VK_FORMAT_B5G5R5A1_UNORM_PACK16:
+            result = 2;
+            break;
+        case VK_FORMAT_A1R5G5B5_UNORM_PACK16:
+            result = 2;
+            break;
+        case VK_FORMAT_R8_UNORM:
+            result = 1;
+            break;
+        case VK_FORMAT_R8_SNORM:
+            result = 1;
+            break;
+        case VK_FORMAT_R8_USCALED:
+            result = 1;
+            break;
+        case VK_FORMAT_R8_SSCALED:
+            result = 1;
+            break;
+        case VK_FORMAT_R8_UINT:
+            result = 1;
+            break;
+        case VK_FORMAT_R8_SINT:
+            result = 1;
+            break;
+        case VK_FORMAT_R8_SRGB:
+            result = 1;
+            break;
+        case VK_FORMAT_R8G8_UNORM:
+            result = 2;
+            break;
+        case VK_FORMAT_R8G8_SNORM:
+            result = 2;
+            break;
+        case VK_FORMAT_R8G8_USCALED:
+            result = 2;
+            break;
+        case VK_FORMAT_R8G8_SSCALED:
+            result = 2;
+            break;
+        case VK_FORMAT_R8G8_UINT:
+            result = 2;
+            break;
+        case VK_FORMAT_R8G8_SINT:
+            result = 2;
+            break;
+        case VK_FORMAT_R8G8_SRGB:
+            result = 2;
+            break;
+        case VK_FORMAT_R8G8B8_UNORM:
+            result = 3;
+            break;
+        case VK_FORMAT_R8G8B8_SNORM:
+            result = 3;
+            break;
+        case VK_FORMAT_R8G8B8_USCALED:
+            result = 3;
+            break;
+        case VK_FORMAT_R8G8B8_SSCALED:
+            result = 3;
+            break;
+        case VK_FORMAT_R8G8B8_UINT:
+            result = 3;
+            break;
+        case VK_FORMAT_R8G8B8_SINT:
+            result = 3;
+            break;
+        case VK_FORMAT_R8G8B8_SRGB:
+            result = 3;
+            break;
+        case VK_FORMAT_B8G8R8_UNORM:
+            result = 3;
+            break;
+        case VK_FORMAT_B8G8R8_SNORM:
+            result = 3;
+            break;
+        case VK_FORMAT_B8G8R8_USCALED:
+            result = 3;
+            break;
+        case VK_FORMAT_B8G8R8_SSCALED:
+            result = 3;
+            break;
+        case VK_FORMAT_B8G8R8_UINT:
+            result = 3;
+            break;
+        case VK_FORMAT_B8G8R8_SINT:
+            result = 3;
+            break;
+        case VK_FORMAT_B8G8R8_SRGB:
+            result = 3;
+            break;
+        case VK_FORMAT_R8G8B8A8_UNORM:
+            result = 4;
+            break;
+        case VK_FORMAT_R8G8B8A8_SNORM:
+            result = 4;
+            break;
+        case VK_FORMAT_R8G8B8A8_USCALED:
+            result = 4;
+            break;
+        case VK_FORMAT_R8G8B8A8_SSCALED:
+            result = 4;
+            break;
+        case VK_FORMAT_R8G8B8A8_UINT:
+            result = 4;
+            break;
+        case VK_FORMAT_R8G8B8A8_SINT:
+            result = 4;
+            break;
+        case VK_FORMAT_R8G8B8A8_SRGB:
+            result = 4;
+            break;
+        case VK_FORMAT_B8G8R8A8_UNORM:
+            result = 4;
+            break;
+        case VK_FORMAT_B8G8R8A8_SNORM:
+            result = 4;
+            break;
+        case VK_FORMAT_B8G8R8A8_USCALED:
+            result = 4;
+            break;
+        case VK_FORMAT_B8G8R8A8_SSCALED:
+            result = 4;
+            break;
+        case VK_FORMAT_B8G8R8A8_UINT:
+            result = 4;
+            break;
+        case VK_FORMAT_B8G8R8A8_SINT:
+            result = 4;
+            break;
+        case VK_FORMAT_B8G8R8A8_SRGB:
+            result = 4;
+            break;
+        case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A8B8G8R8_USCALED_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A8B8G8R8_SSCALED_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2R10G10B10_USCALED_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2R10G10B10_SSCALED_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2R10G10B10_UINT_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2R10G10B10_SINT_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2B10G10R10_SNORM_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2B10G10R10_USCALED_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2B10G10R10_SSCALED_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2B10G10R10_UINT_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_A2B10G10R10_SINT_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_R16_UNORM:
+            result = 2;
+            break;
+        case VK_FORMAT_R16_SNORM:
+            result = 2;
+            break;
+        case VK_FORMAT_R16_USCALED:
+            result = 2;
+            break;
+        case VK_FORMAT_R16_SSCALED:
+            result = 2;
+            break;
+        case VK_FORMAT_R16_UINT:
+            result = 2;
+            break;
+        case VK_FORMAT_R16_SINT:
+            result = 2;
+            break;
+        case VK_FORMAT_R16_SFLOAT:
+            result = 2;
+            break;
+        case VK_FORMAT_R16G16_UNORM:
+            result = 4;
+            break;
+        case VK_FORMAT_R16G16_SNORM:
+            result = 4;
+            break;
+        case VK_FORMAT_R16G16_USCALED:
+            result = 4;
+            break;
+        case VK_FORMAT_R16G16_SSCALED:
+            result = 4;
+            break;
+        case VK_FORMAT_R16G16_UINT:
+            result = 4;
+            break;
+        case VK_FORMAT_R16G16_SINT:
+            result = 4;
+            break;
+        case VK_FORMAT_R16G16_SFLOAT:
+            result = 4;
+            break;
+        case VK_FORMAT_R16G16B16_UNORM:
+            result = 6;
+            break;
+        case VK_FORMAT_R16G16B16_SNORM:
+            result = 6;
+            break;
+        case VK_FORMAT_R16G16B16_USCALED:
+            result = 6;
+            break;
+        case VK_FORMAT_R16G16B16_SSCALED:
+            result = 6;
+            break;
+        case VK_FORMAT_R16G16B16_UINT:
+            result = 6;
+            break;
+        case VK_FORMAT_R16G16B16_SINT:
+            result = 6;
+            break;
+        case VK_FORMAT_R16G16B16_SFLOAT:
+            result = 6;
+            break;
+        case VK_FORMAT_R16G16B16A16_UNORM:
+            result = 8;
+            break;
+        case VK_FORMAT_R16G16B16A16_SNORM:
+            result = 8;
+            break;
+        case VK_FORMAT_R16G16B16A16_USCALED:
+            result = 8;
+            break;
+        case VK_FORMAT_R16G16B16A16_SSCALED:
+            result = 8;
+            break;
+        case VK_FORMAT_R16G16B16A16_UINT:
+            result = 8;
+            break;
+        case VK_FORMAT_R16G16B16A16_SINT:
+            result = 8;
+            break;
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            result = 8;
+            break;
+        case VK_FORMAT_R32_UINT:
+            result = 4;
+            break;
+        case VK_FORMAT_R32_SINT:
+            result = 4;
+            break;
+        case VK_FORMAT_R32_SFLOAT:
+            result = 4;
+            break;
+        case VK_FORMAT_R32G32_UINT:
+            result = 8;
+            break;
+        case VK_FORMAT_R32G32_SINT:
+            result = 8;
+            break;
+        case VK_FORMAT_R32G32_SFLOAT:
+            result = 8;
+            break;
+        case VK_FORMAT_R32G32B32_UINT:
+            result = 12;
+            break;
+        case VK_FORMAT_R32G32B32_SINT:
+            result = 12;
+            break;
+        case VK_FORMAT_R32G32B32_SFLOAT:
+            result = 12;
+            break;
+        case VK_FORMAT_R32G32B32A32_UINT:
+            result = 16;
+            break;
+        case VK_FORMAT_R32G32B32A32_SINT:
+            result = 16;
+            break;
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            result = 16;
+            break;
+        case VK_FORMAT_R64_UINT:
+            result = 8;
+            break;
+        case VK_FORMAT_R64_SINT:
+            result = 8;
+            break;
+        case VK_FORMAT_R64_SFLOAT:
+            result = 8;
+            break;
+        case VK_FORMAT_R64G64_UINT:
+            result = 16;
+            break;
+        case VK_FORMAT_R64G64_SINT:
+            result = 16;
+            break;
+        case VK_FORMAT_R64G64_SFLOAT:
+            result = 16;
+            break;
+        case VK_FORMAT_R64G64B64_UINT:
+            result = 24;
+            break;
+        case VK_FORMAT_R64G64B64_SINT:
+            result = 24;
+            break;
+        case VK_FORMAT_R64G64B64_SFLOAT:
+            result = 24;
+            break;
+        case VK_FORMAT_R64G64B64A64_UINT:
+            result = 32;
+            break;
+        case VK_FORMAT_R64G64B64A64_SINT:
+            result = 32;
+            break;
+        case VK_FORMAT_R64G64B64A64_SFLOAT:
+            result = 32;
+            break;
+        case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+            result = 4;
+            break;
+        case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:
+            result = 4;
+            break;
+
+        default:
+            break;
+        }
+        return result;
+    }
+
     Device::Device()
     {
         for (auto&& frame_resource : m_frame_resource) {
@@ -27,30 +410,117 @@ namespace VKN {
         m_hwnd      = hwnd;
 
         try {
-            create_instance();
-            create_device();
+            // create_raw();
+            create_vkb();
+
             create_vma_allocator();
             create_command_buffer();
 
             create_descriptor_pool();
-
-            create_swapchain();
             create_depth_buffer();
 
             create_sync_object();
         }
         catch (vk::SystemError& err) {
-            std::cout << "vk::SystemError: " << err.what() << std::endl;
+            DBG::OutputString("vk::SystemError: %s\n", err.what());
             exit(-1);
         }
         catch (std::exception& err) {
-            std::cout << "std::exception: " << err.what() << std::endl;
+            DBG::OutputString("std::exception: %s\n", err.what());
             exit(-1);
         }
         catch (...) {
-            std::cout << "unknown error\n";
+            DBG::OutputString("unknown error\n");
             exit(-1);
         }
+    }
+
+    void Device::create_raw()
+    {
+        create_instance();
+        create_surface();
+        create_device();
+
+        create_swapchain();
+    }
+
+    void Device::create_vkb()
+    {
+        // create vk instance
+        vkb::InstanceBuilder instance_builder;
+
+        auto&& instance_extensions = get_instance_extensions();
+
+        auto&& ret_instance = instance_builder.require_api_version(m_req_api_version)
+                                  .enable_extensions(instance_extensions)
+                                  .request_validation_layers()
+                                  .use_default_debug_messenger()
+                                  .build();
+
+        if (!ret_instance) {
+            throw std::runtime_error("Failed to create instance");
+        }
+
+        auto&& vkb_instance = ret_instance.value();
+        m_vk_instance       = vk::Instance(vkb_instance.instance);
+
+        // create win32 surface
+        create_surface();
+
+        // create physical device and logical device
+        vkb::PhysicalDeviceSelector selector{vkb_instance};
+        auto&& ret_physical_device = selector.set_surface(static_cast<VkSurfaceKHR>(m_surface)).select();
+
+        if (!ret_physical_device) {
+            throw std::runtime_error("Failed to select physical device");
+        }
+
+        auto&& vkb_physical_device = ret_physical_device.value();
+
+        vkb::DeviceBuilder device_builder{vkb_physical_device};
+
+        auto&& ret_device = device_builder.build();
+
+        if (!ret_device) {
+            throw std::runtime_error("Failed to create logical device");
+        }
+
+        auto&& vkb_device = ret_device.value();
+        m_device          = vk::Device(vkb_device);
+
+        // create swapchain
+        vkb::SwapchainBuilder swapchain_builder{vkb_device};
+
+        auto&& ret_swapchain = swapchain_builder.set_old_swapchain(m_vkb_swapchain).build();
+
+        if (!ret_swapchain) {
+            throw std::runtime_error(ret_swapchain.error().message());
+        }
+
+        vkb::destroy_swapchain(m_vkb_swapchain);
+        m_vkb_swapchain = ret_swapchain.value();
+
+        m_swapchain            = m_vkb_swapchain.swapchain;
+        m_swapchain_image_size = m_vkb_swapchain.extent;
+
+        auto&& vkb_swapchain_images = m_vkb_swapchain.get_images().value();
+        std::copy(vkb_swapchain_images.begin(), vkb_swapchain_images.end(), std::back_inserter(m_swapchain_images));
+
+        auto&& vkb_swapchain_image_views = m_vkb_swapchain.get_image_views().value();
+        std::copy(
+            vkb_swapchain_image_views.begin(), vkb_swapchain_image_views.end(), std::back_inserter(m_swapchain_image_views));
+    }
+
+    void Device::create_surface()
+    {
+        // create Surface from Win32;
+        vk::Win32SurfaceCreateInfoKHR win32_surface_createinfo{
+            .flags     = vk::Win32SurfaceCreateFlagsKHR(),
+            .hinstance = m_hinstance,
+            .hwnd      = m_hwnd,
+        };
+
+        m_surface = m_vk_instance.createWin32SurfaceKHR(win32_surface_createinfo);
     }
 
     void Device::destroy()
@@ -79,7 +549,7 @@ namespace VKN {
             m_device.destroyImageView(view);
         }
         m_device.destroySwapchainKHR(m_swapchain);
-        m_instance->destroySurfaceKHR(m_surface);
+        m_vk_instance.destroySurfaceKHR(m_surface);
 
         // destroy command buffer
         // freeing the commandBuffer is optional, as it will automatically freed when the
@@ -98,7 +568,9 @@ namespace VKN {
         m_device.destroy();
 
         // destroy
-        m_instance->destroyDebugUtilsMessengerEXT(m_debug_utils_messenger);
+        m_vk_instance.destroyDebugUtilsMessengerEXT(m_debug_utils_messenger);
+
+        m_vk_instance.destroy();
     }
 
     void Device::create_instance()
@@ -107,7 +579,7 @@ namespace VKN {
         const static auto                     app_name    = std::string("vulkan_gfx");
         const static auto                     api_version = m_req_api_version;
         const static std::vector<std::string> layers      = {};
-        const static std::vector<std::string> extensions  = get_instance_extensions();
+        auto&&                                extensions  = get_instance_extensions();
 
 #if (VULKAN_HPP_DISPATCH_LOADER_DYNAMIC == 1)
         static vk::detail::DynamicLoader dl;
@@ -127,25 +599,25 @@ namespace VKN {
             gather_extensions(extensions, vk::enumerateInstanceExtensionProperties());
 
         // create instance
-        m_instance =
-            vk::createInstanceUnique(make_instance_create_info_chain(applicationInfo, enabled_layers, enabled_extensions)
+        m_vk_instance =
+            vk::createInstance(make_instance_create_info_chain(applicationInfo, enabled_layers, enabled_extensions)
                     .get<vk::InstanceCreateInfo>());
 
 #if (VULKAN_HPP_DISPATCH_LOADER_DYNAMIC == 1)
         // initialize function pointers for instance
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(*m_instance);
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vk_instance);
 #endif
 
 #if defined(_DEBUG)
         // create debug layer
-        m_debug_utils_messenger = create_debug_utils_messenger_EXT(*m_instance);
+        m_debug_utils_messenger = create_debug_utils_messenger_EXT(m_vk_instance);
 #endif
     }
 
     void Device::create_device()
     {
         // enumerate the physical devices
-        m_physical_device = m_instance->enumeratePhysicalDevices().front();
+        m_physical_device = m_vk_instance.enumeratePhysicalDevices().front();
 
         // get the QueueFamilyProperties of the first PhysicalDevice
         std::vector<vk::QueueFamilyProperties> queue_family_properties = m_physical_device.getQueueFamilyProperties();
@@ -202,7 +674,7 @@ namespace VKN {
         // set allocator properties
         createinfo.physicalDevice   = m_physical_device;
         createinfo.device           = m_device;
-        createinfo.instance         = *m_instance;
+        createinfo.instance         = m_vk_instance;
         createinfo.vulkanApiVersion = m_req_api_version;
 
         m_vma_allocator = vma::createAllocator(createinfo);
@@ -231,16 +703,7 @@ namespace VKN {
 
     void Device::create_swapchain()
     {
-        // create Surface from Win32;
-        vk::Win32SurfaceCreateInfoKHR win32_surface_createinfo{
-            .flags     = vk::Win32SurfaceCreateFlagsKHR(),
-            .hinstance = m_hinstance,
-            .hwnd      = m_hwnd,
-        };
-
-        m_surface   = m_instance->createWin32SurfaceKHR(win32_surface_createinfo);
         auto&& rect = get_window_rect();
-
         // get the supported VkFormats
         std::vector<vk::SurfaceFormatKHR> formats = m_physical_device.getSurfaceFormatsKHR(m_surface);
         assert(!formats.empty());
@@ -662,389 +1125,6 @@ namespace VKN {
         end_frame();
     }
 
-    uint32_t Device::format_size(vk::Format format)
-    {
-        uint32_t result = 0;
-        switch (static_cast<VkFormat>(format)) {
-        case VK_FORMAT_UNDEFINED:
-            result = 0;
-            break;
-        case VK_FORMAT_R4G4_UNORM_PACK8:
-            result = 1;
-            break;
-        case VK_FORMAT_R4G4B4A4_UNORM_PACK16:
-            result = 2;
-            break;
-        case VK_FORMAT_B4G4R4A4_UNORM_PACK16:
-            result = 2;
-            break;
-        case VK_FORMAT_R5G6B5_UNORM_PACK16:
-            result = 2;
-            break;
-        case VK_FORMAT_B5G6R5_UNORM_PACK16:
-            result = 2;
-            break;
-        case VK_FORMAT_R5G5B5A1_UNORM_PACK16:
-            result = 2;
-            break;
-        case VK_FORMAT_B5G5R5A1_UNORM_PACK16:
-            result = 2;
-            break;
-        case VK_FORMAT_A1R5G5B5_UNORM_PACK16:
-            result = 2;
-            break;
-        case VK_FORMAT_R8_UNORM:
-            result = 1;
-            break;
-        case VK_FORMAT_R8_SNORM:
-            result = 1;
-            break;
-        case VK_FORMAT_R8_USCALED:
-            result = 1;
-            break;
-        case VK_FORMAT_R8_SSCALED:
-            result = 1;
-            break;
-        case VK_FORMAT_R8_UINT:
-            result = 1;
-            break;
-        case VK_FORMAT_R8_SINT:
-            result = 1;
-            break;
-        case VK_FORMAT_R8_SRGB:
-            result = 1;
-            break;
-        case VK_FORMAT_R8G8_UNORM:
-            result = 2;
-            break;
-        case VK_FORMAT_R8G8_SNORM:
-            result = 2;
-            break;
-        case VK_FORMAT_R8G8_USCALED:
-            result = 2;
-            break;
-        case VK_FORMAT_R8G8_SSCALED:
-            result = 2;
-            break;
-        case VK_FORMAT_R8G8_UINT:
-            result = 2;
-            break;
-        case VK_FORMAT_R8G8_SINT:
-            result = 2;
-            break;
-        case VK_FORMAT_R8G8_SRGB:
-            result = 2;
-            break;
-        case VK_FORMAT_R8G8B8_UNORM:
-            result = 3;
-            break;
-        case VK_FORMAT_R8G8B8_SNORM:
-            result = 3;
-            break;
-        case VK_FORMAT_R8G8B8_USCALED:
-            result = 3;
-            break;
-        case VK_FORMAT_R8G8B8_SSCALED:
-            result = 3;
-            break;
-        case VK_FORMAT_R8G8B8_UINT:
-            result = 3;
-            break;
-        case VK_FORMAT_R8G8B8_SINT:
-            result = 3;
-            break;
-        case VK_FORMAT_R8G8B8_SRGB:
-            result = 3;
-            break;
-        case VK_FORMAT_B8G8R8_UNORM:
-            result = 3;
-            break;
-        case VK_FORMAT_B8G8R8_SNORM:
-            result = 3;
-            break;
-        case VK_FORMAT_B8G8R8_USCALED:
-            result = 3;
-            break;
-        case VK_FORMAT_B8G8R8_SSCALED:
-            result = 3;
-            break;
-        case VK_FORMAT_B8G8R8_UINT:
-            result = 3;
-            break;
-        case VK_FORMAT_B8G8R8_SINT:
-            result = 3;
-            break;
-        case VK_FORMAT_B8G8R8_SRGB:
-            result = 3;
-            break;
-        case VK_FORMAT_R8G8B8A8_UNORM:
-            result = 4;
-            break;
-        case VK_FORMAT_R8G8B8A8_SNORM:
-            result = 4;
-            break;
-        case VK_FORMAT_R8G8B8A8_USCALED:
-            result = 4;
-            break;
-        case VK_FORMAT_R8G8B8A8_SSCALED:
-            result = 4;
-            break;
-        case VK_FORMAT_R8G8B8A8_UINT:
-            result = 4;
-            break;
-        case VK_FORMAT_R8G8B8A8_SINT:
-            result = 4;
-            break;
-        case VK_FORMAT_R8G8B8A8_SRGB:
-            result = 4;
-            break;
-        case VK_FORMAT_B8G8R8A8_UNORM:
-            result = 4;
-            break;
-        case VK_FORMAT_B8G8R8A8_SNORM:
-            result = 4;
-            break;
-        case VK_FORMAT_B8G8R8A8_USCALED:
-            result = 4;
-            break;
-        case VK_FORMAT_B8G8R8A8_SSCALED:
-            result = 4;
-            break;
-        case VK_FORMAT_B8G8R8A8_UINT:
-            result = 4;
-            break;
-        case VK_FORMAT_B8G8R8A8_SINT:
-            result = 4;
-            break;
-        case VK_FORMAT_B8G8R8A8_SRGB:
-            result = 4;
-            break;
-        case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A8B8G8R8_USCALED_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A8B8G8R8_SSCALED_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A8B8G8R8_UINT_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A8B8G8R8_SINT_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2R10G10B10_USCALED_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2R10G10B10_SSCALED_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2R10G10B10_UINT_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2R10G10B10_SINT_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2B10G10R10_SNORM_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2B10G10R10_USCALED_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2B10G10R10_SSCALED_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2B10G10R10_UINT_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_A2B10G10R10_SINT_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_R16_UNORM:
-            result = 2;
-            break;
-        case VK_FORMAT_R16_SNORM:
-            result = 2;
-            break;
-        case VK_FORMAT_R16_USCALED:
-            result = 2;
-            break;
-        case VK_FORMAT_R16_SSCALED:
-            result = 2;
-            break;
-        case VK_FORMAT_R16_UINT:
-            result = 2;
-            break;
-        case VK_FORMAT_R16_SINT:
-            result = 2;
-            break;
-        case VK_FORMAT_R16_SFLOAT:
-            result = 2;
-            break;
-        case VK_FORMAT_R16G16_UNORM:
-            result = 4;
-            break;
-        case VK_FORMAT_R16G16_SNORM:
-            result = 4;
-            break;
-        case VK_FORMAT_R16G16_USCALED:
-            result = 4;
-            break;
-        case VK_FORMAT_R16G16_SSCALED:
-            result = 4;
-            break;
-        case VK_FORMAT_R16G16_UINT:
-            result = 4;
-            break;
-        case VK_FORMAT_R16G16_SINT:
-            result = 4;
-            break;
-        case VK_FORMAT_R16G16_SFLOAT:
-            result = 4;
-            break;
-        case VK_FORMAT_R16G16B16_UNORM:
-            result = 6;
-            break;
-        case VK_FORMAT_R16G16B16_SNORM:
-            result = 6;
-            break;
-        case VK_FORMAT_R16G16B16_USCALED:
-            result = 6;
-            break;
-        case VK_FORMAT_R16G16B16_SSCALED:
-            result = 6;
-            break;
-        case VK_FORMAT_R16G16B16_UINT:
-            result = 6;
-            break;
-        case VK_FORMAT_R16G16B16_SINT:
-            result = 6;
-            break;
-        case VK_FORMAT_R16G16B16_SFLOAT:
-            result = 6;
-            break;
-        case VK_FORMAT_R16G16B16A16_UNORM:
-            result = 8;
-            break;
-        case VK_FORMAT_R16G16B16A16_SNORM:
-            result = 8;
-            break;
-        case VK_FORMAT_R16G16B16A16_USCALED:
-            result = 8;
-            break;
-        case VK_FORMAT_R16G16B16A16_SSCALED:
-            result = 8;
-            break;
-        case VK_FORMAT_R16G16B16A16_UINT:
-            result = 8;
-            break;
-        case VK_FORMAT_R16G16B16A16_SINT:
-            result = 8;
-            break;
-        case VK_FORMAT_R16G16B16A16_SFLOAT:
-            result = 8;
-            break;
-        case VK_FORMAT_R32_UINT:
-            result = 4;
-            break;
-        case VK_FORMAT_R32_SINT:
-            result = 4;
-            break;
-        case VK_FORMAT_R32_SFLOAT:
-            result = 4;
-            break;
-        case VK_FORMAT_R32G32_UINT:
-            result = 8;
-            break;
-        case VK_FORMAT_R32G32_SINT:
-            result = 8;
-            break;
-        case VK_FORMAT_R32G32_SFLOAT:
-            result = 8;
-            break;
-        case VK_FORMAT_R32G32B32_UINT:
-            result = 12;
-            break;
-        case VK_FORMAT_R32G32B32_SINT:
-            result = 12;
-            break;
-        case VK_FORMAT_R32G32B32_SFLOAT:
-            result = 12;
-            break;
-        case VK_FORMAT_R32G32B32A32_UINT:
-            result = 16;
-            break;
-        case VK_FORMAT_R32G32B32A32_SINT:
-            result = 16;
-            break;
-        case VK_FORMAT_R32G32B32A32_SFLOAT:
-            result = 16;
-            break;
-        case VK_FORMAT_R64_UINT:
-            result = 8;
-            break;
-        case VK_FORMAT_R64_SINT:
-            result = 8;
-            break;
-        case VK_FORMAT_R64_SFLOAT:
-            result = 8;
-            break;
-        case VK_FORMAT_R64G64_UINT:
-            result = 16;
-            break;
-        case VK_FORMAT_R64G64_SINT:
-            result = 16;
-            break;
-        case VK_FORMAT_R64G64_SFLOAT:
-            result = 16;
-            break;
-        case VK_FORMAT_R64G64B64_UINT:
-            result = 24;
-            break;
-        case VK_FORMAT_R64G64B64_SINT:
-            result = 24;
-            break;
-        case VK_FORMAT_R64G64B64_SFLOAT:
-            result = 24;
-            break;
-        case VK_FORMAT_R64G64B64A64_UINT:
-            result = 32;
-            break;
-        case VK_FORMAT_R64G64B64A64_SINT:
-            result = 32;
-            break;
-        case VK_FORMAT_R64G64B64A64_SFLOAT:
-            result = 32;
-            break;
-        case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
-            result = 4;
-            break;
-        case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:
-            result = 4;
-            break;
-
-        default:
-            break;
-        }
-        return result;
-    }
-
     void Device::load_resources()
     {
         // use dynamic rendering
@@ -1242,16 +1322,16 @@ namespace VKN {
     }
 
     std::vector<const char*> Device::gather_extensions(
-        const std::vector<std::string>& extensions, const std::vector<vk::ExtensionProperties>& extension_properties)
+        const std::vector<const char*>& extensions, const std::vector<vk::ExtensionProperties>& extension_properties)
     {
         std::vector<char const*> enabled_extensions;
         enabled_extensions.reserve(extensions.size());
         for (const auto& ext : extensions) {
             assert(std::find_if(
                        extension_properties.begin(), extension_properties.end(), [ext](const vk::ExtensionProperties& ep) {
-                           return ext == ep.extensionName;
+                           return (strcmp(ext, ep.extensionName) == 0);
                        }) != extension_properties.end());
-            enabled_extensions.push_back(ext.data());
+            enabled_extensions.push_back(ext);
         }
 #if defined(_DEBUG)
         if (std::find(extensions.begin(), extensions.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == extensions.end() &&
@@ -1451,9 +1531,9 @@ namespace VKN {
         return present_queue_family_index;
     }
 
-    std::vector<std::string> Device::get_instance_extensions()
+    std::vector<const char*> Device::get_instance_extensions()
     {
-        std::vector<std::string> extensions = {VK_KHR_SURFACE_EXTENSION_NAME
+        std::vector<const char*> extensions = {VK_KHR_SURFACE_EXTENSION_NAME
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
             ,
             VK_KHR_WIN32_SURFACE_EXTENSION_NAME
@@ -1466,10 +1546,9 @@ namespace VKN {
     bool Device::is_instance_extension_enabled(const std::string& name)
     {
         auto&& instance_extensions = get_instance_extensions();
-        return std::find_if(
-                   instance_extensions.begin(), instance_extensions.end(), [name](const std::string enabled_extension) {
-                       return strcmp(name.c_str(), enabled_extension.c_str()) == 0;
-                   }) != instance_extensions.end();
+        return std::find_if(instance_extensions.begin(), instance_extensions.end(), [name](const char* enabled_extension) {
+            return strcmp(name.c_str(), enabled_extension) == 0;
+        }) != instance_extensions.end();
     }
 
     std::vector<std::string> Device::get_device_extensions()
@@ -1481,7 +1560,7 @@ namespace VKN {
         };
     }
 
-    uint32_t Device::curr_frame_resource_idx() { return m_frame_count % MAX_FRAMES_IN_FLIGHT; }
+    uint32_t Device::curr_frame_resource_idx() const { return m_frame_count % MAX_FRAMES_IN_FLIGHT; }
 
     Frame_resource& Device::curr_frame_resource()
     {

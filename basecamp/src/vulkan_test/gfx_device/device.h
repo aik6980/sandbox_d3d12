@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vkb/VkBootstrap.h"
 #include "vma/vma.h"
 
 #include "buffer.h"
@@ -33,7 +34,8 @@ namespace VKN {
         void create_swapchain();
         void create_depth_buffer();
 
-        void create_render_pass();
+        // retired - use Dynamic Pipeline instead
+        // void create_render_pass();
 
         void create_sync_object();
         void destroy_sync_object();
@@ -76,12 +78,20 @@ namespace VKN {
         std::unique_ptr<Shader_manager>   m_shader_manager;
 
       private:
+        void create_raw();
+        void destroy_raw();
+
+        void create_vkb();
+        void destroy_vkb();
+
+        void create_surface();
+
         CRect get_window_rect() const;
 
         std::vector<const char*> gather_layers(
             const std::vector<std::string>& layers, const std::vector<vk::LayerProperties>& layer_properties);
         std::vector<const char*> gather_extensions(
-            const std::vector<std::string>& extensions, const std::vector<vk::ExtensionProperties>& extension_properties);
+            const std::vector<const char*>& extensions, const std::vector<vk::ExtensionProperties>& extension_properties);
 
 #if defined(DEBUG)
         vk::StructureChain<vk::InstanceCreateInfo, vk::DebugUtilsMessengerCreateInfoEXT> make_instance_create_info_chain(
@@ -107,13 +117,13 @@ namespace VKN {
         uint32_t find_graphics_queue_family_index(const std::vector<vk::QueueFamilyProperties>& queue_family_properties);
         uint32_t find_present_queue_family_index();
 
-        std::vector<std::string> get_instance_extensions();
+        std::vector<const char*> get_instance_extensions();
         bool                     is_instance_extension_enabled(const std::string& name);
         std::vector<std::string> get_device_extensions();
 
         vk::SurfaceFormatKHR pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats) const;
 
-        uint32_t        curr_frame_resource_idx();
+        uint32_t        curr_frame_resource_idx() const;
         Frame_resource& curr_frame_resource();
 
         vk::CommandBuffer* curr_command_buffer();
@@ -133,7 +143,7 @@ namespace VKN {
 
         // Instance
         static const uint32_t      m_req_api_version = VK_API_VERSION_1_3;
-        vk::UniqueInstance         m_instance;
+        vk::Instance               m_vk_instance;
         vk::DebugUtilsMessengerEXT m_debug_utils_messenger;
 
         vk::PhysicalDevice m_physical_device;
@@ -149,21 +159,25 @@ namespace VKN {
         uint32_t   m_present_queue_family_index  = 0;
 
         //
-        const static uint32_t MAX_FRAMES_IN_FLIGHT   = 2;
-        uint32_t              m_frame_count          = 0;
-        uint32_t              m_swapchain_buffer_idx = 0;
+        const static uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+        uint32_t              m_frame_count        = 0;
 
         // Command pool
         vk::CommandPool m_command_pool;
         // vk::CommandBuffer m_command_buffer; // move into Frame_resource
 
         // Window surface
-        vk::SurfaceKHR             m_surface;
+        vk::SurfaceKHR m_surface;
+
+        // Swapchain
+        uint32_t                   m_swapchain_buffer_idx = 0;
         std::vector<vk::ImageView> m_swapchain_image_views;
         std::vector<vk::Image>     m_swapchain_images;
         vk::SwapchainKHR           m_swapchain;
         vk::Extent2D               m_swapchain_image_size;
         vk::Format                 m_swapchain_format;
+
+        vkb::Swapchain m_vkb_swapchain;
 
         // VMA Allocator
         vma::Allocator m_vma_allocator;
@@ -171,7 +185,7 @@ namespace VKN {
         // Buffer
         Image m_depth_buffer;
 
-        // try to use Dynamic Pipeline instead of these
+        // retired - use Dynamic Pipeline instead
         // Render pass/Frame buffer (for swapchain)
         // vk::RenderPass               m_render_pass;
         // std::vector<vk::Framebuffer> m_frame_buffers;
