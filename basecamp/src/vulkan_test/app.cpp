@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "common/common_cpp.h"
+
 #include "gfx_device/device.h"
 #include "gfx_device/resource_manager.h"
 #include "gfx_device/shader_manager.h"
