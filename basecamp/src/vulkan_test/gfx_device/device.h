@@ -54,17 +54,17 @@ namespace VKN {
         void end_frame();
 
         // utilities
-        vk::Format    get_backbuffer_colour_format() const;
-        vk::Image     get_backbuffer_colour_image() const { return m_swapchain_images[m_swapchain_buffer_idx]; }
+        vk::Format get_backbuffer_colour_format() const;
+        vk::Image get_backbuffer_colour_image() const { return m_swapchain_images[m_swapchain_buffer_idx]; }
         vk::ImageView get_backbuffer_colour_image_view() const { return m_swapchain_image_views[m_swapchain_buffer_idx]; }
 
         vk::Format get_backbuffer_depth_format() const; // <- should be part of the frame graph
 
         struct Transition_image_layout_info {
-            vk::ImageLayout         dst_layout;
-            vk::ImageLayout         src_layout;
-            vk::AccessFlags2        dst_access_flags;
-            vk::AccessFlags2        src_access_flags;
+            vk::ImageLayout dst_layout;
+            vk::ImageLayout src_layout;
+            vk::AccessFlags2 dst_access_flags;
+            vk::AccessFlags2 src_access_flags;
             vk::PipelineStageFlags2 dst_stage_flags;
             vk::PipelineStageFlags2 src_stage_flags;
         };
@@ -73,7 +73,7 @@ namespace VKN {
 
         // Sub system
         std::unique_ptr<Resource_manager> m_resource_manager;
-        std::unique_ptr<Shader_manager>   m_shader_manager;
+        std::unique_ptr<Shader_manager> m_shader_manager;
 
       private:
         void create_from_initialization_helper();
@@ -88,7 +88,7 @@ namespace VKN {
 
         vk::SurfaceFormatKHR pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats) const;
 
-        uint32_t        curr_frame_resource_idx() const;
+        uint32_t curr_frame_resource_idx() const;
         Frame_resource& curr_frame_resource();
 
         vk::CommandBuffer* curr_command_buffer();
@@ -100,37 +100,37 @@ namespace VKN {
 
         // Window
         HINSTANCE m_hinstance;
-        HWND      m_hwnd;
+        HWND m_hwnd;
 
         // Instance
         static const uint32_t m_req_api_version = VK_API_VERSION_1_3;
-        vk::Instance          m_vk_instance;
+        vk::Instance m_vk_instance;
         // Surface
         vk::SurfaceKHR m_surface;
         // Physical/Logical device
         vk::PhysicalDevice m_physical_device;
-        vk::Device         m_device;
+        vk::Device m_device;
         // Queues
-        uint32_t  m_graphics_queue_family_index = 0;
-        uint32_t  m_present_queue_family_index  = 0;
+        uint32_t m_graphics_queue_family_index = 0;
+        uint32_t m_present_queue_family_index  = 0;
         vk::Queue m_graphics_queue;
         vk::Queue m_present_queue;
 
         //
         const static uint32_t MAX_FRAMES_IN_FLIGHT = 2;
-        uint32_t              m_frame_count        = 0;
+        uint32_t m_frame_count                     = 0;
 
         // Command pool
         vk::CommandPool m_command_pool;
         // vk::CommandBuffer m_command_buffer; // move into Frame_resource
 
         // Swapchain
-        uint32_t                   m_swapchain_buffer_idx = 0;
+        uint32_t m_swapchain_buffer_idx = 0;
         std::vector<vk::ImageView> m_swapchain_image_views;
-        std::vector<vk::Image>     m_swapchain_images;
-        vk::SwapchainKHR           m_swapchain;
-        vk::Extent2D               m_swapchain_image_size;
-        vk::Format                 m_swapchain_format;
+        std::vector<vk::Image> m_swapchain_images;
+        vk::SwapchainKHR m_swapchain;
+        vk::Extent2D m_swapchain_image_size;
+        vk::Format m_swapchain_format;
 
         // vkBootstrap
         vkb::Swapchain m_vkb_swapchain;

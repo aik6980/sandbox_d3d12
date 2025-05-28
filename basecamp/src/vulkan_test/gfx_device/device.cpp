@@ -397,6 +397,70 @@ namespace VKN {
         return result;
     }
 
+    VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+        VkDebugUtilsMessageTypeFlagsEXT message_type,
+        const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
+        void* p_user_data)
+    {
+#if !defined(NDEBUG)
+        if (p_callback_data->messageIdNumber == 648835635) {
+            // UNASSIGNED-khronos-Validation-debug-build-warning-message
+            return VK_FALSE;
+        }
+        if (p_callback_data->messageIdNumber == 767975156) {
+            // UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension
+            return VK_FALSE;
+        }
+#endif
+        stringstream ss;
+
+        ss << vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(message_severity)) << ": "
+           << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(message_type)) << ":\n";
+        ss << "\t" << "messageIDName   = <" << p_callback_data->pMessageIdName << ">\n";
+        ss << "\t"
+           << "messageIdNumber = " << p_callback_data->messageIdNumber << "\n";
+        ss << "\t"
+           << "message         = <" << p_callback_data->pMessage << ">\n";
+        if (0 < p_callback_data->queueLabelCount) {
+            ss << "\t"
+               << "Queue Labels:\n";
+            for (uint32_t i = 0; i < p_callback_data->queueLabelCount; i++) {
+                ss << "\t\t"
+                   << "labelName = <" << p_callback_data->pQueueLabels[i].pLabelName << ">\n";
+            }
+        }
+        if (0 < p_callback_data->cmdBufLabelCount) {
+            ss << "\t"
+               << "CommandBuffer Labels:\n";
+            for (uint32_t i = 0; i < p_callback_data->cmdBufLabelCount; i++) {
+                ss << "\t\t"
+                   << "labelName = <" << p_callback_data->pCmdBufLabels[i].pLabelName << ">\n";
+            }
+        }
+        if (0 < p_callback_data->objectCount) {
+            ss << "\t"
+               << "Objects:\n";
+            for (uint32_t i = 0; i < p_callback_data->objectCount; i++) {
+                ss << "\t\t"
+                   << "Object " << i << "\n";
+                ss << "\t\t\t"
+                   << "objectType   = "
+                   << vk::to_string(static_cast<vk::ObjectType>(p_callback_data->pObjects[i].objectType)) << "\n";
+                ss << "\t\t\t"
+                   << "objectHandle = " << p_callback_data->pObjects[i].objectHandle << "\n";
+                if (p_callback_data->pObjects[i].pObjectName) {
+                    ss << "\t\t\t"
+                       << "objectName   = <" << p_callback_data->pObjects[i].pObjectName << ">\n";
+                }
+            }
+        }
+
+        // output to debug window
+        DBG::OutputString(ss.str().c_str());
+
+        return VK_TRUE;
+    }
+
     Device::Device()
     {
         for (auto&& frame_resource : m_frame_resource) {
@@ -413,7 +477,7 @@ namespace VKN {
         m_hwnd      = hwnd;
 
         try {
-            //create_from_initialization_helper(); // retired code
+            // create_from_initialization_helper(); // retired code
             create_from_vk_bootstrap();
 
             create_vma_allocator();
@@ -475,16 +539,16 @@ namespace VKN {
 
         // get queues
         m_graphics_queue_family_index = helper.m_graphics_queue_family_index;
-        m_present_queue_family_index = helper.m_present_queue_family_index;
-        m_graphics_queue = helper.m_graphics_queue;
-        m_present_queue = helper.m_present_queue;
+        m_present_queue_family_index  = helper.m_present_queue_family_index;
+        m_graphics_queue              = helper.m_graphics_queue;
+        m_present_queue               = helper.m_present_queue;
     }
 
     void Device::create_from_vk_bootstrap()
     {
 #if (VULKAN_HPP_DISPATCH_LOADER_DYNAMIC == 1)
         static vk::detail::DynamicLoader dl;
-        PFN_vkGetInstanceProcAddr        vkGetInstanceProcAddr =
+        PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
             dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 #endif
@@ -494,10 +558,21 @@ namespace VKN {
 
         auto&& instance_extensions = get_instance_extensions();
 
+        vk::DebugUtilsMessageSeverityFlagsEXT severity_flags{
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError};
+
+        vk::DebugUtilsMessageTypeFlagsEXT message_type_flags{vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                                                             vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                                                             vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation};
+
         auto&& ret_instance = instance_builder.require_api_version(m_req_api_version)
                                   .enable_extensions(instance_extensions)
                                   .request_validation_layers()
-                                  .use_default_debug_messenger()
+                                  .set_debug_messenger_severity(
+                                      static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(static_cast<VkFlags>(severity_flags)))
+                                  .set_debug_messenger_type(
+                                      static_cast<VkDebugUtilsMessageTypeFlagsEXT>(static_cast<VkFlags>(message_type_flags)))
+                                  .set_debug_callback(debug_callback)
                                   .build();
 
         if (!ret_instance) {
@@ -527,7 +602,8 @@ namespace VKN {
         };
 
         vkb::PhysicalDeviceSelector selector{vkb_instance};
-        auto&&                      ret_physical_device = selector.set_surface(static_cast<VkSurfaceKHR>(m_surface))
+
+        auto&& ret_physical_device = selector.set_surface(static_cast<VkSurfaceKHR>(m_surface))
                                          .add_required_extensions(device_extensions)
                                          .add_required_extension_features(required_dynamic_rendering)
                                          .add_required_extension_features(required_synchronization2)
@@ -688,7 +764,7 @@ namespace VKN {
 
     void Device::create_depth_buffer()
     {
-        const vk::Format     depth_format      = vk::Format::eD24UnormS8Uint;
+        const vk::Format depth_format          = vk::Format::eD24UnormS8Uint;
         vk::FormatProperties format_properties = m_physical_device.getFormatProperties(depth_format);
 
         vk::ImageTiling tiling;
@@ -862,7 +938,7 @@ namespace VKN {
                 .src_stage_flags  = vk::PipelineStageFlagBits2::eTopOfPipe,
             });
 
-        vk::ClearColorValue        clear_colour{{{0.2f, 0.2f, 0.2f, 0.2f}}};
+        vk::ClearColorValue clear_colour{{{0.2f, 0.2f, 0.2f, 0.2f}}};
         vk::ClearDepthStencilValue clear_depth = {
             .depth   = 1.0f,
             .stencil = 0u,
@@ -912,7 +988,7 @@ namespace VKN {
         // 2nd draw
         auto&& technique          = m_shader_manager->get_technique("t1").lock();
         auto&& technique_instance = Technique_instance(*technique);
-        float  data[]             = {4.0f, 1.0f};
+        float data[]              = {4.0f, 1.0f};
         technique_instance.set_constant("Data_cbv", data, sizeof(data));
 
         command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, technique->m_pipeline);
@@ -938,14 +1014,11 @@ namespace VKN {
         end_frame();
 
         // update display window title
-        auto title_str = DBG::Format(L"Current frame number: %d", m_frame_count);
-        SetWindowText(m_hwnd, title_str.c_str());
+        // auto title_str = DBG::Format(L"Current frame number: %d", m_frame_count);
+        // SetWindowText(m_hwnd, title_str.c_str());
     }
 
-    void Device::load_resources()
-    {
-
-    }
+    void Device::load_resources() {}
 
     void Device::begin_single_command_submission()
     {

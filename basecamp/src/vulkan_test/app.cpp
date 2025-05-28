@@ -58,6 +58,9 @@ void App::on_update()
         std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_time_begin_frame);
     m_time_begin_frame = std::chrono::steady_clock::now();
 
+    auto&& debug_str = DBG::Format(L"Cureent frame time %.4f ms", m_duration_frame.count()/1000.0f);
+    SetWindowText(m_hWnd, debug_str.c_str());
+
     m_gfx_device.draw();
 }
 

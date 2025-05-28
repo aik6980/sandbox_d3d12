@@ -13,7 +13,8 @@ namespace VKN {
 
         void destroy_resources();
 
-        std::weak_ptr<Technique> register_technique(std::string name, const Technique_createinfo& create_info, const Targets_createinfo& targets);
+        std::weak_ptr<Technique> register_technique(
+            std::string name, const Technique_createinfo& create_info, const Targets_createinfo& targets);
         std::weak_ptr<Technique> get_technique(std::string name);
 
       private:

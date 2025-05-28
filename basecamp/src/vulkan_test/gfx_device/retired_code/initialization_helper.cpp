@@ -14,7 +14,7 @@ namespace Retired_code {
 
 #if (VULKAN_HPP_DISPATCH_LOADER_DYNAMIC == 1)
         static vk::detail::DynamicLoader dl;
-        PFN_vkGetInstanceProcAddr        vkGetInstanceProcAddr =
+        PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
             dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 #endif
@@ -95,8 +95,8 @@ namespace Retired_code {
 #if defined(_DEBUG)
     vk::StructureChain<vk::InstanceCreateInfo, vk::DebugUtilsMessengerCreateInfoEXT>
     Initialization_helper::make_instance_create_info_chain(const vk::ApplicationInfo& application_info,
-        const std::vector<const char*>&                                               layers,
-        const std::vector<const char*>&                                               extensions)
+        const std::vector<const char*>& layers,
+        const std::vector<const char*>& extensions)
     {
         // in debug mode, addionally use the debugUtilsMessengerCallback in instance creation!
         vk::DebugUtilsMessageSeverityFlagsEXT severityFlags(
@@ -128,7 +128,7 @@ namespace Retired_code {
     }
 #else
     vk::StructureChain<vk::InstanceCreateInfo> Initialization_helper::make_instance_create_info_chain(
-        const vk::ApplicationInfo&      application_info,
+        const vk::ApplicationInfo& application_info,
         const std::vector<const char*>& layers,
         const std::vector<const char*>& extensions)
     {
@@ -166,8 +166,8 @@ namespace Retired_code {
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL Initialization_helper::debug_utils_messenger_callback(
-        vk::DebugUtilsMessageSeverityFlagBitsEXT      message_severity,
-        vk::DebugUtilsMessageTypeFlagsEXT             message_types,
+        vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
+        vk::DebugUtilsMessageTypeFlagsEXT message_types,
         const vk::DebugUtilsMessengerCallbackDataEXT* p_callback_data,
         void*)
     {
@@ -260,7 +260,7 @@ namespace Retired_code {
         }
 
         // create a Device
-        float                     queue_priority = 0.0f;
+        float queue_priority = 0.0f;
         vk::DeviceQueueCreateInfo device_queue_createinfo{.flags = vk::DeviceQueueCreateFlags(),
             .queueFamilyIndex                                    = graphics_queue_family_index,
             .queueCount                                          = 1,
@@ -296,7 +296,7 @@ namespace Retired_code {
         vk::Format format = (formats[0].format == vk::Format::eUndefined) ? vk::Format::eB8G8R8A8Unorm : formats[0].format;
 
         vk::SurfaceCapabilitiesKHR surface_capabilities = m_physical_device.getSurfaceCapabilitiesKHR(m_surface);
-        vk::Extent2D               swapchain_extent;
+        vk::Extent2D swapchain_extent;
         if (surface_capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max()) {
             // If the surface size is undefined, the size is set to the size of the images
             // requested.
@@ -410,7 +410,8 @@ namespace Retired_code {
         }) != instance_extensions.end();
     }
 
-    uint32_t Initialization_helper::find_graphics_queue_family_index(const std::vector<vk::QueueFamilyProperties>& queue_family_properties)
+    uint32_t Initialization_helper::find_graphics_queue_family_index(
+        const std::vector<vk::QueueFamilyProperties>& queue_family_properties)
     {
         // get the first index into queueFamiliyProperties which supports graphics
         std::vector<vk::QueueFamilyProperties>::const_iterator graphics_queue_family_property = std::find_if(
@@ -471,7 +472,7 @@ namespace Retired_code {
         m_device.waitIdle();
 
         // destroy sync object
-        //destroy_sync_object();
+        // destroy_sync_object();
 
         // retired - destroy render pass
         // for (auto framebuffer : m_frame_buffers) {
@@ -480,11 +481,11 @@ namespace Retired_code {
         // m_device.destroyRenderPass(m_render_pass);
 
         // destroy shader
-        //m_shader_manager->destroy_resources();
+        // m_shader_manager->destroy_resources();
 
         // destroy resources
-        //m_resource_manager->destroy();
-        //destroy_resource(m_depth_buffer);
+        // m_resource_manager->destroy();
+        // destroy_resource(m_depth_buffer);
 
         // destroy the imageViews, the swapChain,and the surface
         for (auto& view : m_swapchain_image_views) {
@@ -496,15 +497,15 @@ namespace Retired_code {
         // destroy command buffer
         // freeing the commandBuffer is optional, as it will automatically freed when the
         // corresponding CommandPool is destroyed.
-        //for (uint32_t i = 0; i < m_frame_resource.size(); ++i) {
+        // for (uint32_t i = 0; i < m_frame_resource.size(); ++i) {
         //    m_device.freeCommandBuffers(m_command_pool, m_frame_resource[i]->m_command_buffer);
         //    m_frame_resource[i]->destroy_resources();
         //}
         // destroy the command pool
-        //m_device.destroyCommandPool(m_command_pool);
+        // m_device.destroyCommandPool(m_command_pool);
 
         // vma allocator
-        //m_vma_allocator.destroy();
+        // m_vma_allocator.destroy();
 
         // destroy the device
         m_device.destroy();

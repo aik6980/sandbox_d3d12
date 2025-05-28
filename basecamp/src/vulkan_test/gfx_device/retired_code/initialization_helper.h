@@ -12,20 +12,20 @@ namespace Retired_code {
         vk::Instance m_vk_instance;
 
         vk::PhysicalDevice m_physical_device;
-        vk::Device         m_device;
+        vk::Device m_device;
 
-        vk::SwapchainKHR           m_swapchain;
+        vk::SwapchainKHR m_swapchain;
         std::vector<vk::ImageView> m_swapchain_image_views;
-        std::vector<vk::Image>     m_swapchain_images;
-        vk::Extent2D               m_swapchain_image_size;
-        vk::Format                 m_swapchain_format;
+        std::vector<vk::Image> m_swapchain_images;
+        vk::Extent2D m_swapchain_image_size;
+        vk::Format m_swapchain_format;
 
         vk::Queue m_graphics_queue;
         vk::Queue m_present_queue;
-        uint32_t  m_graphics_queue_family_index = 0;
-        uint32_t  m_present_queue_family_index  = 0;
+        uint32_t m_graphics_queue_family_index = 0;
+        uint32_t m_present_queue_family_index  = 0;
         // input
-        uint32_t                 m_req_api_version;
+        uint32_t m_req_api_version;
         std::vector<const char*> m_instance_extension_names;
 
         std::vector<const char*> m_physical_device_extension_names;
@@ -49,24 +49,24 @@ namespace Retired_code {
 
 #if defined(DEBUG)
         vk::StructureChain<vk::InstanceCreateInfo, vk::DebugUtilsMessengerCreateInfoEXT> make_instance_create_info_chain(
-            const vk::ApplicationInfo&      application_info,
+            const vk::ApplicationInfo& application_info,
             const std::vector<const char*>& layers,
             const std::vector<const char*>& extensions);
 #else
         vk::StructureChain<vk::InstanceCreateInfo> make_instance_create_info_chain(
-            const vk::ApplicationInfo&      application_info,
+            const vk::ApplicationInfo& application_info,
             const std::vector<const char*>& layers,
             const std::vector<const char*>& extensions);
 #endif
 
-        vk::DebugUtilsMessengerEXT           create_debug_utils_messenger_EXT(const vk::Instance& instance);
+        vk::DebugUtilsMessengerEXT create_debug_utils_messenger_EXT(const vk::Instance& instance);
         vk::DebugUtilsMessengerCreateInfoEXT make_debug_utils_messenger_create_info_EXT();
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_utils_messenger_callback(
-            vk::DebugUtilsMessageSeverityFlagBitsEXT      message_severity,
-            vk::DebugUtilsMessageTypeFlagsEXT             message_types,
+            vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
+            vk::DebugUtilsMessageTypeFlagsEXT message_types,
             const vk::DebugUtilsMessengerCallbackDataEXT* p_callback_data,
-            void*                                         p_user_data = nullptr);
+            void* p_user_data = nullptr);
 
         template <typename Structure_type>
         Structure_type& request_extension_features();

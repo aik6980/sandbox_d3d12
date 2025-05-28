@@ -6,7 +6,7 @@ IndentWidth: 4
 ColumnLimit: 125
 # IndentAccessModifiers: True
 AlignConsecutiveAssignments: Consecutive
-AlignConsecutiveDeclarations: Consecutive
+# AlignConsecutiveDeclarations: Consecutive #it also align function arguments and this is ugly
 PointerAlignment: Left
 BreakBeforeBraces: Stroustrup
 AlwaysBreakTemplateDeclarations: Yes
