@@ -616,25 +616,12 @@ namespace VKN {
         // destroy sync object
         destroy_sync_object();
 
-        // retired - destroy render pass
-        // for (auto framebuffer : m_frame_buffers) {
-        //    m_device.destroyFramebuffer(framebuffer);
-        //}
-        // m_device.destroyRenderPass(m_render_pass);
-
         // destroy shader
         m_shader_manager->destroy_resources();
 
         // destroy resources
         m_resource_manager->destroy();
         destroy_resource(m_depth_buffer);
-
-        // destroy the imageViews, the swapChain,and the surface
-        for (auto& view : m_swapchain_image_views) {
-            m_device.destroyImageView(view);
-        }
-        m_device.destroySwapchainKHR(m_swapchain);
-        m_vk_instance.destroySurfaceKHR(m_surface);
 
         // destroy command buffer
         // freeing the commandBuffer is optional, as it will automatically freed when the
@@ -649,11 +636,20 @@ namespace VKN {
         // vma allocator
         m_vma_allocator.destroy();
 
+        // destroy the imageViews, the swapChain,and the surface
+        for (auto& view : m_swapchain_image_views) {
+            m_device.destroyImageView(view);
+        }
+        vkb::destroy_swapchain(m_vkb_swapchain);
+        m_swapchain = VK_NULL_HANDLE;
+
         // destroy the device
         m_device.destroy();
 
+        // destroy surface
+        m_vk_instance.destroySurfaceKHR(m_surface);
+
         // destroy instance
-        // m_vk_instance.destroyDebugUtilsMessengerEXT(m_debug_utils_messenger); // retired : move to vk-bootstrap
         m_vk_instance.destroy();
     }
 
@@ -745,55 +741,6 @@ namespace VKN {
 
         m_depth_buffer.m_view = m_device.createImageView(image_view_createinfo);
     }
-
-    /*
-    void Device::create_render_pass()
-    {
-            vk::Format color_format =
-    pick_surface_format(m_physical_device.getSurfaceFormatsKHR(m_surface)).format; auto&&
-    depth_format = m_depth_buffer.m_format;
-
-            // Render pass ----------
-            std::array<vk::AttachmentDescription, 2> attachment_desc;
-            attachment_desc[0] = vk::AttachmentDescription(vk::AttachmentDescriptionFlags(),
-    color_format, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-    vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
-    vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
-            attachment_desc[1] = vk::AttachmentDescription(vk::AttachmentDescriptionFlags(),
-    depth_format, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-    vk::AttachmentStoreOp::eDontCare, vk::AttachmentLoadOp::eDontCare,
-    vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-    vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
-            vk::AttachmentReference color_reference(0, vk::ImageLayout::eColorAttachmentOptimal);
-            vk::AttachmentReference depth_reference(1,
-    vk::ImageLayout::eDepthStencilAttachmentOptimal); vk::SubpassDescription
-    subpass(vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics, {}, color_reference,
-    {}, &depth_reference);
-
-            m_render_pass =
-    m_device.createRenderPass(vk::RenderPassCreateInfo(vk::RenderPassCreateFlags(), attachment_desc,
-    subpass));
-            // ----------
-
-            // Note: if multiple RT is used, attachments should equal numRT+Depth
-            // Frame buffer for Back buffers
-            vk::ImageView attachments[2];
-            attachments[1] = m_depth_buffer.m_view;
-
-            auto&& r = get_window_rect();
-
-            vk::FramebufferCreateInfo framebuffer_createinfo(
-                    vk::FramebufferCreateFlags(), m_render_pass, m_depth_buffer.m_view ? 2 : 1,
-    attachments, r.Width(), r.Height(), 1);
-
-            m_frame_buffers.reserve(m_swapchain_image_views.size());
-            for (auto&& view : m_swapchain_image_views) {
-                    attachments[0] = view;
-                    m_frame_buffers.push_back(m_device.createFramebuffer(framebuffer_createinfo));
-            }
-    }
-    */
 
     void Device::create_sync_object()
     {
@@ -901,14 +848,6 @@ namespace VKN {
             return;
         }
 
-        // std::array<vk::ClearValue, 2> clear_values;
-        // clear_values[0].color		 = vk::ClearColorValue(std::array<float, 4>({{0.2f,
-        // 0.2f, 0.2f, 0.2f}})); clear_values[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
-        // vk::RenderPassBeginInfo renderPassBeginInfo(
-        //	m_render_pass, m_frame_buffers[m_swapchain_buffer_idx], vk::Rect2D(vk::Offset2D(0,
-        // 0), m_swapchain_image_size), clear_values);
-        // command_buffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-
         // setup render pass
         auto&& render_target_image = get_backbuffer_colour_image();
         auto&& depth_target_image  = m_depth_buffer.m_image;
@@ -984,8 +923,6 @@ namespace VKN {
 
         command_buffer->drawIndexed(36, 1, 0, 0, 0);
 
-        // command_buffer->endRenderPass();
-
         command_buffer->endRendering();
 
         transition_image_layout(render_target_image,
@@ -999,12 +936,15 @@ namespace VKN {
             });
 
         end_frame();
+
+        // update display window title
+        auto title_str = DBG::Format(L"Current frame number: %d", m_frame_count);
+        SetWindowText(m_hwnd, title_str.c_str());
     }
 
     void Device::load_resources()
     {
-        // use dynamic rendering
-        // create_render_pass();
+
     }
 
     void Device::begin_single_command_submission()
@@ -1124,6 +1064,9 @@ namespace VKN {
         default:
             assert(false); // an unexpected result is returned !
         }
+
+        // increasing frame count
+        m_frame_count++;
     }
 
     vk::Format Device::get_backbuffer_colour_format() const

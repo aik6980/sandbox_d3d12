@@ -462,4 +462,56 @@ namespace Retired_code {
         return present_queue_family_index;
     }
 
+    void Initialization_helper::destroy()
+    {
+        DBG::OutputString("Documention only! Do not use in code");
+        return;
+
+        // wait until GPU finished all the work
+        m_device.waitIdle();
+
+        // destroy sync object
+        //destroy_sync_object();
+
+        // retired - destroy render pass
+        // for (auto framebuffer : m_frame_buffers) {
+        //    m_device.destroyFramebuffer(framebuffer);
+        //}
+        // m_device.destroyRenderPass(m_render_pass);
+
+        // destroy shader
+        //m_shader_manager->destroy_resources();
+
+        // destroy resources
+        //m_resource_manager->destroy();
+        //destroy_resource(m_depth_buffer);
+
+        // destroy the imageViews, the swapChain,and the surface
+        for (auto& view : m_swapchain_image_views) {
+            m_device.destroyImageView(view);
+        }
+        m_device.destroySwapchainKHR(m_swapchain);
+        m_vk_instance.destroySurfaceKHR(m_surface);
+
+        // destroy command buffer
+        // freeing the commandBuffer is optional, as it will automatically freed when the
+        // corresponding CommandPool is destroyed.
+        //for (uint32_t i = 0; i < m_frame_resource.size(); ++i) {
+        //    m_device.freeCommandBuffers(m_command_pool, m_frame_resource[i]->m_command_buffer);
+        //    m_frame_resource[i]->destroy_resources();
+        //}
+        // destroy the command pool
+        //m_device.destroyCommandPool(m_command_pool);
+
+        // vma allocator
+        //m_vma_allocator.destroy();
+
+        // destroy the device
+        m_device.destroy();
+
+        // destroy instance
+        m_vk_instance.destroyDebugUtilsMessengerEXT(m_debug_utils_messenger); // retired : move to vk-bootstrap
+        m_vk_instance.destroy();
+    }
+
 } // namespace Retired_code

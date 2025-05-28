@@ -37,6 +37,9 @@ namespace Retired_code {
         void create_device();
         void create_swapchain(const CRect& win_rect);
 
+        // document my legacy destroy routine before moving to vk-bootstrap
+        void destroy();
+
         bool is_instance_extension_enabled(const std::string& name);
 
         std::vector<const char*> gather_layers(

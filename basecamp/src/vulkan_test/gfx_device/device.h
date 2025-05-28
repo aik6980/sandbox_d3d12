@@ -35,9 +35,6 @@ namespace VKN {
         void create_command_buffer();
         void create_depth_buffer();
 
-        // retired - use Dynamic Pipeline instead
-        // void create_render_pass();
-
         void create_sync_object();
         void destroy_sync_object();
 
@@ -143,11 +140,6 @@ namespace VKN {
 
         // Buffer
         Image m_depth_buffer;
-
-        // retired - use Dynamic Pipeline instead
-        // Render pass/Frame buffer (for swapchain)
-        // vk::RenderPass               m_render_pass;
-        // std::vector<vk::Framebuffer> m_frame_buffers;
 
         // Syncronization
         const uint64_t m_fence_timeout = 100000000;
