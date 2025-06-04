@@ -48,8 +48,19 @@ namespace VKN {
         m_shader_module = device.createShaderModule(createinfo);
         // ----------
 
+        // create a file to output shader reflection info
+        std::ofstream sref_file("shader_spirv/" + filename + ".sref", std::ios::out | std::ios::trunc);
+        if(!sref_file)
+        {
+            throw std::runtime_error("failed to create shader reflection file!");
+        }
+
+        sref_file << "Output Shader Reflection Info\n";
+
         // create shader reflection
         create_shader_reflection();
+
+        sref_file.close();
     }
 
     void Shader::create_shader_reflection()

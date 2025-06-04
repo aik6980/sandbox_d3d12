@@ -40,7 +40,13 @@ add_custom_command(TARGET ${PROJECT_NAME}
 macro(Dxc_compile src_files dxc_path profile spirv_opt)
 	foreach(var ${src_files})
 		get_filename_component(file_wle ${var} NAME_WLE)
-		set(OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}/${file_wle})
+		
+		get_filename_component(file_dir ${var} DIRECTORY)
+		file(RELATIVE_PATH rel_dir "${CMAKE_CURRENT_SOURCE_DIR}" "${file_dir}")
+		cmake_path(APPEND OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH} ${PROJECT_NAME} ${rel_dir} ${file_wle})
+		
+		#set(OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}/${file_wle})
+		
 		add_custom_command(
 			OUTPUT ${OUTPUT_FILENAME}.obj ${OUTPUT_FILENAME}.asm
 			PRE_BUILD 
@@ -62,13 +68,21 @@ Dxc_compile("${RAY_FILES}" ${DXC} "lib_6_5" "")
 
 func_group_src("${ALL_FILES}")
 
+############################################
+#### Project Begin
 set(PROJECT_NAME shader_spirv)
 project(${PROJECT_NAME})
 
 set(OUTPUT_FILES)
 foreach(var ${ALL_FILES})
 	get_filename_component(file_wle ${var} NAME_WLE)
-	set(OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}/${file_wle})
+	get_filename_component(file_dir ${var} DIRECTORY)
+	file(RELATIVE_PATH rel_dir "${CMAKE_CURRENT_SOURCE_DIR}" "${file_dir}")
+
+	cmake_path(APPEND OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH} ${PROJECT_NAME} ${rel_dir} ${file_wle})
+	#message(" TEST ${OUTPUT_FILENAME_TEST}")
+
+	#set(OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}/${file_wle})
 	list(APPEND OUTPUT_FILES ${OUTPUT_FILENAME}.obj ${OUTPUT_FILENAME}.asm)
 endforeach(var)
 message(${OUTPUT_FILES})
@@ -76,10 +90,6 @@ message(${OUTPUT_FILES})
 add_custom_target(${PROJECT_NAME} SOURCES ${ALL_FILES} DEPENDS ${OUTPUT_FILES})
 
 set_source_files_properties(${ALL_FILES} PROPERTIES VS_TOOL_OVERRIDE "None")
-
-#find_program(FXC fxc
-#	PATHS "$ENV{PROGRAMFILES\(X86\)}/Windows Kits/10/bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/x64")
-#set(DXC "${CMAKE_SOURCE_DIR}/ext/dxc/dxc.exe")
 
 find_package(Vulkan)
 set(DXC "${Vulkan_INCLUDE_DIRS}/../bin/dxc.exe")
