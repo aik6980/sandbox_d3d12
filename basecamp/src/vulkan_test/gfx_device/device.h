@@ -54,11 +54,14 @@ namespace VKN {
         void end_frame();
 
         // utilities
-        vk::Format get_backbuffer_colour_format() const;
-        vk::Image get_backbuffer_colour_image() const { return m_swapchain_images[m_swapchain_buffer_idx]; }
-        vk::ImageView get_backbuffer_colour_image_view() const { return m_swapchain_image_views[m_swapchain_buffer_idx]; }
+        vk::Format backbuffer_colour_format() const { return m_swapchain_format; }
+        vk::Image backbuffer_colour_image() const { return m_swapchain_images[m_swapchain_buffer_idx]; }
+        vk::ImageView backbuffer_colour_image_view() const { return m_swapchain_image_views[m_swapchain_buffer_idx]; }
+        vk::Extent2D backbuffer_colour_size() const { return m_swapchain_image_size; }
 
-        vk::Format get_backbuffer_depth_format() const; // <- should be part of the frame graph
+        // should be part of the frame pipeline?
+        vk::Format backbuffer_depth_format() const { return m_depth_buffer.m_format; }
+        vk::Image backbuffer_depth_image() const { return m_depth_buffer.m_image; }
 
         struct Transition_image_layout_info {
             vk::ImageLayout dst_layout;
@@ -71,7 +74,9 @@ namespace VKN {
 
         void transition_image_layout(vk::Image image, const Transition_image_layout_info& transition_image_layout_info);
 
-        // Sub system
+        vk::CommandBuffer* curr_command_buffer();
+
+        // Gfx subsystems
         std::unique_ptr<Resource_manager> m_resource_manager;
         std::unique_ptr<Shader_manager> m_shader_manager;
 
@@ -90,8 +95,6 @@ namespace VKN {
 
         uint32_t curr_frame_resource_idx() const;
         Frame_resource& curr_frame_resource();
-
-        vk::CommandBuffer* curr_command_buffer();
 
         vk::CommandBuffer m_single_use_command_buffer;
 

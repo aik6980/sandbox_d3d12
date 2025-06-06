@@ -13,8 +13,11 @@ namespace VKN {
 
         void destroy_resources();
 
+        std::weak_ptr<Technique> register_technique(const std::string& filename, const Targets_createinfo& targets);
+
         std::weak_ptr<Technique> register_technique(
-            std::string name, const Technique_createinfo& create_info, const Targets_createinfo& targets);
+            const std::string& name, const Technique_createinfo& create_info, const Targets_createinfo& targets);
+
         std::weak_ptr<Technique> get_technique(std::string name);
 
       private:
@@ -23,7 +26,7 @@ namespace VKN {
 
         Device& m_gfx_device;
 
-        std::unordered_map<std::string, std::shared_ptr<Shader>>    m_shader_map;
+        std::unordered_map<std::string, std::shared_ptr<Shader>> m_shader_map;
         std::unordered_map<std::string, std::shared_ptr<Technique>> m_technique_map;
     };
 } // namespace VKN

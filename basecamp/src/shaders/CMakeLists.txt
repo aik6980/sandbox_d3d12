@@ -5,16 +5,25 @@ file(GLOB_RECURSE PS_FILES "*.ps.hlsl")
 file(GLOB_RECURSE RAY_FILES "*.ray.hlsl")
 file(GLOB_RECURSE INC_FILES "*.inc.hlsl")
 
-
 set(PROJECT_NAME shader_hlsl)
 project(${PROJECT_NAME})
 
+macro(Gen_output_files)
+	foreach(var ${ALL_FILES})
+		get_filename_component(file_wle ${var} NAME_WLE)
+		get_filename_component(file_dir ${var} DIRECTORY)
+		file(RELATIVE_PATH rel_dir "${CMAKE_CURRENT_SOURCE_DIR}" "${file_dir}")
+
+		cmake_path(APPEND OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH} ${PROJECT_NAME} ${rel_dir} ${file_wle})
+		#message(" TEST ${OUTPUT_FILENAME_TEST}")
+
+		#set(OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}/${file_wle})
+		list(APPEND OUTPUT_FILES ${OUTPUT_FILENAME}.obj ${OUTPUT_FILENAME}.asm)
+	endforeach(var)
+endmacro()
+
 set(OUTPUT_FILES)
-foreach(var ${ALL_FILES})
-	get_filename_component(file_wle ${var} NAME_WLE)
-	set(OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}/${file_wle})
-	list(APPEND OUTPUT_FILES ${OUTPUT_FILENAME}.obj ${OUTPUT_FILENAME}.asm)
-endforeach(var)
+Gen_output_files()
 message(${OUTPUT_FILES})
 
 add_custom_target(${PROJECT_NAME} SOURCES ${ALL_FILES} DEPENDS ${OUTPUT_FILES})
@@ -74,17 +83,7 @@ set(PROJECT_NAME shader_spirv)
 project(${PROJECT_NAME})
 
 set(OUTPUT_FILES)
-foreach(var ${ALL_FILES})
-	get_filename_component(file_wle ${var} NAME_WLE)
-	get_filename_component(file_dir ${var} DIRECTORY)
-	file(RELATIVE_PATH rel_dir "${CMAKE_CURRENT_SOURCE_DIR}" "${file_dir}")
-
-	cmake_path(APPEND OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH} ${PROJECT_NAME} ${rel_dir} ${file_wle})
-	#message(" TEST ${OUTPUT_FILENAME_TEST}")
-
-	#set(OUTPUT_FILENAME ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME}/${file_wle})
-	list(APPEND OUTPUT_FILES ${OUTPUT_FILENAME}.obj ${OUTPUT_FILENAME}.asm)
-endforeach(var)
+Gen_output_files()
 message(${OUTPUT_FILES})
 
 add_custom_target(${PROJECT_NAME} SOURCES ${ALL_FILES} DEPENDS ${OUTPUT_FILES})

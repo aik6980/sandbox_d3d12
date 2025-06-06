@@ -20,7 +20,7 @@ namespace VKN {
         }
 
         // read from file ----------
-        const auto    filename_relative = std::string("shader_spirv/" + filename + ".obj");
+        const auto filename_relative = std::string("shader_spirv/" + filename + ".obj");
         std::ifstream file(filename_relative, std::ios::ate | std::ios::binary);
         if (!file.is_open()) {
             throw std::runtime_error("failed to open file!");
@@ -50,8 +50,7 @@ namespace VKN {
 
         // create a file to output shader reflection info
         std::ofstream sref_file("shader_spirv/" + filename + ".sref", std::ios::out | std::ios::trunc);
-        if(!sref_file)
-        {
+        if (!sref_file) {
             throw std::runtime_error("failed to create shader reflection file!");
         }
 
@@ -74,8 +73,8 @@ namespace VKN {
 
     void Shader::create_vertex_input()
     {
-        uint32_t count  = 0;
-        auto&&   result = spvReflectEnumerateInputVariables(&m_reflection_module, &count, NULL);
+        uint32_t count = 0;
+        auto&& result  = spvReflectEnumerateInputVariables(&m_reflection_module, &count, NULL);
         assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
         std::vector<SpvReflectInterfaceVariable*> input_vars(count);
@@ -126,8 +125,8 @@ namespace VKN {
         // usign reflection
         auto&& module = m_reflection_module;
 
-        uint32_t count  = 0;
-        auto&&   result = spvReflectEnumerateDescriptorSets(&module, &count, NULL);
+        uint32_t count = 0;
+        auto&& result  = spvReflectEnumerateDescriptorSets(&module, &count, NULL);
         assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
         std::vector<SpvReflectDescriptorSet*> sets(count);
@@ -136,31 +135,61 @@ namespace VKN {
 
         // Demonstrates how to generate all necessary data structures to create a
         // VkDescriptorSetLayout for each descriptor set in this shader.
-        auto&& set_layouts = m_descriptorset_layoutdata;
-        set_layouts.resize(sets.size());
+        auto&& desc_set_layouts = m_descriptorset_layoutdata;
+        desc_set_layouts.resize(sets.size());
+
         for (size_t i_set = 0; i_set < sets.size(); ++i_set) {
             const SpvReflectDescriptorSet& refl_set = *(sets[i_set]);
-            Descriptorset_layoutdata&      layout   = set_layouts[i_set];
+            Descriptorset_layoutdata& set_layout    = desc_set_layouts[i_set];
 
-            layout.bindings.resize(refl_set.binding_count);
-            layout.binding_names.resize(refl_set.binding_count);
+            set_layout.binding_names.resize(refl_set.binding_count);
+            set_layout.bindings.resize(refl_set.binding_count);
+            set_layout.binding_flags.resize(refl_set.binding_count);
 
             for (uint32_t i_binding = 0; i_binding < refl_set.binding_count; ++i_binding) {
                 const SpvReflectDescriptorBinding& refl_binding = *(refl_set.bindings[i_binding]);
 
-                layout.binding_names[i_binding]                = refl_binding.name;
-                vk::DescriptorSetLayoutBinding& layout_binding = layout.bindings[i_binding];
-                layout_binding.binding                         = refl_binding.binding;
-                layout_binding.descriptorType  = static_cast<vk::DescriptorType>(refl_binding.descriptor_type);
-                layout_binding.descriptorCount = 1;
-                for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
-                    layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
+                set_layout.binding_names[i_binding] = refl_binding.name;
+
+                vk::DescriptorSetLayoutBinding& layout_binding = set_layout.bindings[i_binding];
+
+                layout_binding.binding        = refl_binding.binding;
+                layout_binding.descriptorType = static_cast<vk::DescriptorType>(refl_binding.descriptor_type);
+
+                // if bindless
+                const bool is_bindless = (refl_binding.count == 0);
+
+                if (is_bindless) {
+                    static const uint MAX_TEXTURES = 16;
+                    layout_binding.descriptorCount = MAX_TEXTURES;
+
+                    set_layout.binding_flags[i_binding] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount |
+                                                          vk::DescriptorBindingFlagBits::ePartiallyBound;
                 }
+                else {
+                    layout_binding.descriptorCount = refl_binding.count;
+
+                    // if resource is an array
+                    for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
+                        layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
+                    }
+                }
+
                 layout_binding.stageFlags = static_cast<vk::ShaderStageFlagBits>(module.shader_stage);
             }
-            layout.set_number               = refl_set.set;
-            layout.create_info.bindingCount = refl_set.binding_count;
-            layout.create_info.pBindings    = layout.bindings.data();
+
+            set_layout.set_number = refl_set.set;
+
+            set_layout.set_binding_flags_create_info = vk::DescriptorSetLayoutBindingFlagsCreateInfo{
+                .bindingCount  = refl_set.binding_count,
+                .pBindingFlags = set_layout.binding_flags.data(),
+            };
+
+            set_layout.set_create_info = vk::DescriptorSetLayoutCreateInfo{
+                .pNext        = &set_layout.set_binding_flags_create_info,
+                .bindingCount = refl_set.binding_count,
+                .pBindings    = set_layout.bindings.data(),
+            };
         }
     }
 

@@ -27,7 +27,6 @@ namespace VKN {
 
         void destroy();
 
-        // void create_pipeline();
         void create_pipeline(vk::Format color_format, vk::Format depth_format);
 
       public:
@@ -36,11 +35,11 @@ namespace VKN {
         std::weak_ptr<Shader> mh_vs;
         std::weak_ptr<Shader> mh_ps;
 
-        std::vector<vk::DescriptorSetLayout>   m_descriptorset_layouts;
+        std::vector<vk::DescriptorSetLayout> m_descriptorset_layouts;
         std::vector<Descriptorset_layoutdata*> m_descriptorset_infos;
 
         vk::PipelineLayout m_pipeline_layout;
-        vk::Pipeline       m_pipeline;
+        vk::Pipeline m_pipeline;
 
         inline static const std::string ENTRY_POINT = "main";
     };

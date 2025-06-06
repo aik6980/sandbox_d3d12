@@ -601,12 +601,19 @@ namespace VKN {
             .synchronization2 = VK_TRUE,
         };
 
+        auto&& required_descriptor_indexing = vk::PhysicalDeviceDescriptorIndexingFeatures{
+            .descriptorBindingPartiallyBound          = VK_TRUE, // optional but useful?
+            .descriptorBindingVariableDescriptorCount = VK_TRUE,
+            .runtimeDescriptorArray                   = VK_TRUE,
+        };
+
         vkb::PhysicalDeviceSelector selector{vkb_instance};
 
         auto&& ret_physical_device = selector.set_surface(static_cast<VkSurfaceKHR>(m_surface))
                                          .add_required_extensions(device_extensions)
                                          .add_required_extension_features(required_dynamic_rendering)
                                          .add_required_extension_features(required_synchronization2)
+                                         .add_required_extension_features(required_descriptor_indexing)
                                          .select();
 
         if (!ret_physical_device) {
@@ -915,6 +922,7 @@ namespace VKN {
     //     m_device.waitIdle();
     // }
 
+    /*
     void Device::draw()
     {
         begin_frame();
@@ -925,7 +933,7 @@ namespace VKN {
         }
 
         // setup render pass
-        auto&& render_target_image = get_backbuffer_colour_image();
+        auto&& render_target_image = backbuffer_colour_image();
         auto&& depth_target_image  = m_depth_buffer.m_image;
 
         transition_image_layout(render_target_image,
@@ -945,7 +953,7 @@ namespace VKN {
         };
 
         vk::RenderingAttachmentInfo colour_attachment{
-            .imageView   = get_backbuffer_colour_image_view(),
+            .imageView   = backbuffer_colour_image_view(),
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp      = vk::AttachmentLoadOp::eClear,
             .storeOp     = vk::AttachmentStoreOp::eStore,
@@ -975,7 +983,7 @@ namespace VKN {
                 1.0f));
         command_buffer->setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), m_swapchain_image_size));
 
-        auto&& t0 = m_shader_manager->get_technique("t0").lock();
+        auto&& t0 = m_shader_manager->get_technique("test/single_triangle").lock();
         command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, t0->m_pipeline);
         // m_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0,
         // descriptorSet, nullptr);
@@ -1017,6 +1025,7 @@ namespace VKN {
         // auto title_str = DBG::Format(L"Current frame number: %d", m_frame_count);
         // SetWindowText(m_hwnd, title_str.c_str());
     }
+    */
 
     void Device::load_resources() {}
 
@@ -1141,14 +1150,6 @@ namespace VKN {
         // increasing frame count
         m_frame_count++;
     }
-
-    vk::Format Device::get_backbuffer_colour_format() const
-    {
-        return m_swapchain_format;
-        // return pick_surface_format(m_physical_device.getSurfaceFormatsKHR(m_surface)).format;
-    }
-
-    vk::Format Device::get_backbuffer_depth_format() const { return m_depth_buffer.m_format; }
 
     void Device::transition_image_layout(vk::Image image, const Transition_image_layout_info& transition_image_layout_info)
     {
