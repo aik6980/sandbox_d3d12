@@ -1,6 +1,8 @@
 struct PS_INPUT
 {
-    float2 uv : Texcoord0;
+    float4 position : SV_Position;
+    float3 colour : Colour;
+    float2 uv_coord : Texcoord0;
     uint texture_id : Texcoord1;
 };
 
@@ -11,8 +13,10 @@ SamplerState Linear_sam;
 Texture2D Textures_srv[]; //: register(t0, space1);
  
 float4 main(PS_INPUT input) : SV_Target0
-{    
-    float3 tex_color = Textures_srv[input.texture_id].Sample(Linear_sam, input.uv).rgb;
-    return float4(tex_color, 1.0);
+{
+    return float4(input.colour, 0.0);
+    
+    //float3 tex_color = Textures_srv[input.texture_id].Sample(Linear_sam, input.uv).rgb;
+    //return float4(tex_color, 1.0);
 
 }

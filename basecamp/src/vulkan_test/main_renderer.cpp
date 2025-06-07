@@ -67,15 +67,19 @@ void Main_renderer::draw()
             1.0f));
     command_buffer->setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), rendering_info.renderArea.extent));
 
-    auto&& technique = shader_manager.get_technique("test/single_triangle").lock();
-    command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, technique->m_pipeline);
-    // m_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0,
-    // descriptorSet, nullptr);
+    // 1st draw
+    {
+        auto&& technique = shader_manager.get_technique("test/single_triangle").lock();
+        command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, technique->m_pipeline);
+        command_buffer->draw(3, 1, 0, 0);
+    }
 
-    // command_buffer.bindVertexBuffers(0, 0, nullptr, nullptr);
-
-    // m_command_buffer.draw(12 * 3, 1, 0, 0);
-    command_buffer->draw(3, 1, 0, 0);
+    // 2nd draw
+    {
+        auto&& technique = shader_manager.get_technique("test/bindless_textures").lock();
+        command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, technique->m_pipeline);
+        command_buffer->draw(6, 4, 0, 0);
+    }
 
     // 2nd draw
     // auto&& technique          = shader_manager.get_technique("t1").lock();
