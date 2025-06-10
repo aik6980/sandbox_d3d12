@@ -149,6 +149,7 @@ namespace VKN {
             vma_allocator.createBuffer(buffer_create_info, alloc_create_info, buffer_alloc_info);
 
         // copy data to staging buffer
+        memcpy()
     }
 
 } // namespace VKN
