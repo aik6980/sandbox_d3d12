@@ -99,6 +99,10 @@ void App::create_scene()
         VKN::Technique_createinfo{.m_vs_name = "hello_triangle_mesh.vs", .m_ps_name = "hello_triangle.ps"},
         targets_info);
 
+    // create Textures
+    auto texture_size = 64u;
+    auto&& texdata    = TextureDataGenerator::create_checkerboard_texture(texture_size);
+
     // create mesh
     // resource_manager->create_mesh();
 

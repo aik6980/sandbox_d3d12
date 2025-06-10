@@ -91,8 +91,6 @@ namespace VKN {
         std::vector<const char*> get_instance_extensions();
         std::vector<const char*> get_device_extensions();
 
-        vk::SurfaceFormatKHR pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats) const;
-
         uint32_t curr_frame_resource_idx() const;
         Frame_resource& curr_frame_resource();
 

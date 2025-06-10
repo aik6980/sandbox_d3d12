@@ -22,13 +22,15 @@ namespace VKN {
 
         // create vertex buffer
         auto&& vb_data = MeshDataGenerator::to_p1c1(mesh.m_vertices);
-        auto&& vb =
-            create_buffer({.m_usage_flags = vk::BufferUsageFlagBits::eVertexBuffer, .m_data = vb_data.data(), .m_size = vb_data.size() * sizeof(vb_data[0])});
+        auto&& vb      = create_buffer({.m_usage_flags = vk::BufferUsageFlagBits::eVertexBuffer,
+                 .m_data                               = vb_data.data(),
+                 .m_size                               = vb_data.size() * sizeof(vb_data[0])});
 
         // create index buffer
         auto&& ib_data = mesh.m_indices.m_indices32;
-        auto&& ib =
-            create_buffer({.m_usage_flags = vk::BufferUsageFlagBits::eIndexBuffer, .m_data = ib_data.data(), .m_size = ib_data.size() * sizeof(ib_data[0])});
+        auto&& ib      = create_buffer({.m_usage_flags = vk::BufferUsageFlagBits::eIndexBuffer,
+                 .m_data                               = ib_data.data(),
+                 .m_size                               = ib_data.size() * sizeof(ib_data[0])});
 
         m_vertex_buffer = vb;
         m_index_buffer  = ib;
@@ -50,7 +52,7 @@ namespace VKN {
         auto&& command_buffer = m_gfx_device.m_single_use_command_buffer;
 
         // create staging buffer
-        vk::Buffer      staging_buffer;
+        vk::Buffer staging_buffer;
         vma::Allocation staging_buffer_alloc;
         {
             auto&& create_info = vk::BufferCreateInfo{
@@ -60,11 +62,13 @@ namespace VKN {
             };
             auto&& alloc_create_info = vma::AllocationCreateInfo();
             alloc_create_info.setUsage(vma::MemoryUsage::eAuto);
-            alloc_create_info.setFlags(vma::AllocationCreateFlagBits::eHostAccessSequentialWrite | vma::AllocationCreateFlagBits::eMapped);
+            alloc_create_info.setFlags(
+                vma::AllocationCreateFlagBits::eHostAccessSequentialWrite | vma::AllocationCreateFlagBits::eMapped);
 
             vma::AllocationInfo buffer_alloc_info;
 
-            std::tie(staging_buffer, staging_buffer_alloc) = vma_allocator.createBuffer(create_info, alloc_create_info, buffer_alloc_info);
+            std::tie(staging_buffer, staging_buffer_alloc) =
+                vma_allocator.createBuffer(create_info, alloc_create_info, buffer_alloc_info);
 
             // copy src data
             std::memcpy(buffer_alloc_info.pMappedData, data, size);
@@ -72,7 +76,7 @@ namespace VKN {
             m_staging_buffers.emplace_back(Buffer{.m_buffer = staging_buffer, .m_allocation = staging_buffer_alloc});
         }
 
-        vk::Buffer      buffer;
+        vk::Buffer buffer;
         vma::Allocation buffer_alloc;
         {
             auto&& create_info = vk::BufferCreateInfo{
@@ -106,10 +110,11 @@ namespace VKN {
 
         auto&& alloc_create_info = vma::AllocationCreateInfo();
         alloc_create_info.setUsage(vma::MemoryUsage::eAuto);
-        alloc_create_info.setFlags(vma::AllocationCreateFlagBits::eHostAccessSequentialWrite | vma::AllocationCreateFlagBits::eMapped);
+        alloc_create_info.setFlags(
+            vma::AllocationCreateFlagBits::eHostAccessSequentialWrite | vma::AllocationCreateFlagBits::eMapped);
 
-        vk::Buffer          buffer;
-        vma::Allocation     buffer_alloc;
+        vk::Buffer buffer;
+        vma::Allocation buffer_alloc;
         vma::AllocationInfo buffer_alloc_info;
         std::tie(buffer, buffer_alloc) = vma_allocator.createBuffer(create_info, alloc_create_info, buffer_alloc_info);
 
@@ -117,6 +122,33 @@ namespace VKN {
         std::memcpy(buffer_alloc_info.pMappedData, src_data, size);
 
         return Buffer{.m_buffer = buffer, .m_allocation = buffer_alloc, .m_size = buffer_alloc_info.size};
+    }
+
+    void Resource_manager::create_texture(const TextureData& texture_data)
+    {
+        auto&& device        = m_gfx_device.m_device;
+        auto&& vma_allocator = m_gfx_device.m_vma_allocator;
+
+        // create staging buffer
+        uint size_in_bytes = texture_data.pixel_size_in_byte() * texture_data.m_width * texture_data.m_height;
+
+        vk::BufferCreateInfo buffer_create_info{
+            .size        = size_in_bytes,
+            .usage       = vk::BufferUsageFlagBits::eTransferSrc,
+            .sharingMode = vk::SharingMode::eExclusive,
+        };
+
+        vma::AllocationCreateInfo alloc_create_info{
+            .usage = vma::MemoryUsage::eCpuOnly,
+        };
+
+        vk::Buffer buffer;
+        vma::Allocation buffer_alloc;
+        vma::AllocationInfo buffer_alloc_info;
+        std::tie(buffer, buffer_alloc) =
+            vma_allocator.createBuffer(buffer_create_info, alloc_create_info, buffer_alloc_info);
+
+        // copy data to staging buffer
     }
 
 } // namespace VKN

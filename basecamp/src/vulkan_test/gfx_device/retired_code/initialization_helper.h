@@ -74,6 +74,8 @@ namespace Retired_code {
         uint32_t find_graphics_queue_family_index(const std::vector<vk::QueueFamilyProperties>& queue_family_properties);
         uint32_t find_present_queue_family_index(uint32_t graphics_queue_family_index);
 
+        vk::SurfaceFormatKHR pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats) const;
+
         // extension features
         // Holds the extension feature structures, we use a map to retain an order of requested structures
         std::unordered_map<vk::StructureType, std::shared_ptr<void>> m_extension_features;

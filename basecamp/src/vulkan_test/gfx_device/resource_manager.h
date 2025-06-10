@@ -23,6 +23,8 @@ namespace VKN {
         Buffer create_buffer(const Buffer_create_info& create_info);
         Buffer create_constant_buffer(const void* src_data, size_t size);
 
+        void create_texture(const TextureData& texture_data);
+
         Buffer m_vertex_buffer;
         Buffer m_index_buffer;
 

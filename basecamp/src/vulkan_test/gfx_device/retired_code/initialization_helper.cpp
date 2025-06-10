@@ -515,4 +515,39 @@ namespace Retired_code {
         m_vk_instance.destroy();
     }
 
+    vk::SurfaceFormatKHR Initialization_helper::pick_surface_format(std::vector<vk::SurfaceFormatKHR> const& formats) const
+    {
+        assert(!formats.empty());
+
+        vk::SurfaceFormatKHR picked_format = formats[0];
+        if (formats.size() == 1) {
+            if (formats[0].format == vk::Format::eUndefined) {
+                picked_format.format     = vk::Format::eB8G8R8A8Unorm;
+                picked_format.colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
+            }
+        }
+        else {
+            // request several formats, the first found will be used
+            std::array<vk::Format, 4> requested_formats = {
+                vk::Format::eB8G8R8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::Format::eB8G8R8Unorm, vk::Format::eR8G8B8Unorm};
+            vk::ColorSpaceKHR requested_color_space = vk::ColorSpaceKHR::eSrgbNonlinear;
+            for (size_t i = 0; i < requested_formats.size(); i++) {
+                vk::Format requested_format = requested_formats[i];
+
+                auto it = std::find_if(formats.begin(),
+                    formats.end(),
+                    [requested_format, requested_color_space](vk::SurfaceFormatKHR const& f) {
+                        return (f.format == requested_format) && (f.colorSpace == requested_color_space);
+                    });
+                if (it != formats.end()) {
+                    picked_format = *it;
+                    break;
+                }
+            }
+        }
+
+        assert(picked_format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear);
+        return picked_format;
+    }
+
 } // namespace Retired_code
