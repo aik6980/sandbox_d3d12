@@ -130,26 +130,61 @@ namespace VKN {
         auto&& vma_allocator = m_gfx_device.m_vma_allocator;
 
         // create staging buffer
-        uint size_in_bytes = texture_data.pixel_size_in_byte() * texture_data.m_width * texture_data.m_height;
+        {
+            uint size_in_bytes = texture_data.pixel_size_in_byte() * texture_data.m_width * texture_data.m_height;
 
-        vk::BufferCreateInfo buffer_create_info{
-            .size        = size_in_bytes,
-            .usage       = vk::BufferUsageFlagBits::eTransferSrc,
-            .sharingMode = vk::SharingMode::eExclusive,
-        };
+            vk::BufferCreateInfo buffer_create_info{
+                .size        = size_in_bytes,
+                .usage       = vk::BufferUsageFlagBits::eTransferSrc,
+                .sharingMode = vk::SharingMode::eExclusive,
+            };
 
-        vma::AllocationCreateInfo alloc_create_info{
-            .usage = vma::MemoryUsage::eCpuOnly,
-        };
+            vma::AllocationCreateInfo alloc_create_info{
+                .usage = vma::MemoryUsage::eCpuOnly,
+            };
 
-        vk::Buffer buffer;
-        vma::Allocation buffer_alloc;
-        vma::AllocationInfo buffer_alloc_info;
-        std::tie(buffer, buffer_alloc) =
-            vma_allocator.createBuffer(buffer_create_info, alloc_create_info, buffer_alloc_info);
+            vk::Buffer buffer;
+            vma::Allocation buffer_alloc;
+            vma::AllocationInfo buffer_alloc_info;
+            std::tie(buffer, buffer_alloc) =
+                vma_allocator.createBuffer(buffer_create_info, alloc_create_info, buffer_alloc_info);
 
-        // copy data to staging buffer
-        memcpy()
+            // copy data to staging buffer
+            memcpy(buffer_alloc_info.pMappedData, texture_data.m_data.data(), size_in_bytes);
+        }
+
+        // create texture
+        {
+            vk::ImageCreateInfo image_create_info{
+                .imageType     = vk::ImageType::e2D,
+                .format        = vk::Format::eR8G8B8A8Unorm, // same as XMCOLOR
+                .extent        = vk::Extent3D{.width = texture_data.m_width, .height = texture_data.m_height, .depth = 1},
+                .mipLevels     = 1,
+                .arrayLayers   = 1,
+                .samples       = vk::SampleCountFlagBits::e1,
+                .tiling        = vk::ImageTiling::eOptimal,
+                .usage         = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                .initialLayout = vk::ImageLayout::eUndefined,
+
+            };
+
+            vma::AllocationCreateInfo alloc_create_info{
+                .usage = vma::MemoryUsage::eGpuOnly,
+            };
+
+            vk::Image texture_image;
+            vma::Allocation buffer_alloc;
+            vma::AllocationInfo buffer_alloc_info;
+
+            std::tie(texture_image, buffer_alloc) = vma_allocator.createImage(image_create_info, alloc_create_info);
+        }
+
+        // transition layout and copy
+        // transition_image_layout() //  todo
+        // copy buffer to image() // todo
+        // transition image layout()
+
+        // create views
     }
 
 } // namespace VKN
